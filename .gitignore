@@ -1,0 +1,11 @@
+build/
+*.o
+*.lst
+*.sym
+*.asm
+*.map
+*.noi
+*.ihx
+__pycache__/
+test/sameboy/sb_harness
+ref/IMG_*.png

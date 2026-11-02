@@ -1,0 +1,977 @@
+{
+ "batch": "batch01",
+ "frames": [
+  "idle0",
+  "idle1",
+  "move0",
+  "move1",
+  "move2",
+  "move3",
+  "atk0",
+  "atk1",
+  "hurt",
+  "sleep"
+ ],
+ "anims": {
+  "idle": [
+   [
+    "idle0",
+    24
+   ],
+   [
+    "idle1",
+    24
+   ]
+  ],
+  "move": [
+   [
+    "move0",
+    7
+   ],
+   [
+    "move1",
+    7
+   ],
+   [
+    "move2",
+    7
+   ],
+   [
+    "move3",
+    7
+   ]
+  ],
+  "attack": [
+   [
+    "atk0",
+    14
+   ],
+   [
+    "atk1",
+    18
+   ]
+  ],
+  "hurt": [
+   [
+    "hurt",
+    20
+   ]
+  ],
+  "sleep": [
+   [
+    "sleep",
+    255
+   ]
+  ]
+ },
+ "entities": [
+  {
+   "slug": "bigfoot",
+   "name": "BIGFOOT",
+   "classification": "Hominid",
+   "tiles_8x16": 60,
+   "vram_slots": 120,
+   "palettes": 2,
+   "pal_a": [
+    "#1a1410",
+    "#6b4a2e",
+    "#3ff0f8"
+   ],
+   "pal_b": [
+    "#1a1410",
+    "#b98458",
+    "#e8c095"
+   ],
+   "max_objs": 9,
+   "max_per_line": 6,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "idle1",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move0",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move1",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move2",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move3",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "atk0",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "atk1",
+     "objs": 9,
+     "max_line": 6
+    },
+    {
+     "frame": "hurt",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "sleep",
+     "objs": 9,
+     "max_line": 5
+    }
+   ]
+  },
+  {
+   "slug": "skunk_ape",
+   "name": "SKUNK APE",
+   "classification": "Hominid",
+   "tiles_8x16": 54,
+   "vram_slots": 108,
+   "palettes": 1,
+   "pal_a": [
+    "#10180c",
+    "#4f6b2e",
+    "#c8f048"
+   ],
+   "pal_b": null,
+   "max_objs": 8,
+   "max_per_line": 4,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "idle1",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move0",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "move1",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move2",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move3",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "atk0",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "atk1",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "hurt",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "sleep",
+     "objs": 7,
+     "max_line": 4
+    }
+   ]
+  },
+  {
+   "slug": "dogman",
+   "name": "DOGMAN",
+   "classification": "Terrestrial",
+   "tiles_8x16": 46,
+   "vram_slots": 92,
+   "palettes": 2,
+   "pal_a": [
+    "#141418",
+    "#6f747e",
+    "#3ff0f8"
+   ],
+   "pal_b": [
+    "#141418",
+    "#b8b09a",
+    "#ece6d2"
+   ],
+   "max_objs": 9,
+   "max_per_line": 5,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "idle1",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "move0",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "move1",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "move2",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move3",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "atk0",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "atk1",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "hurt",
+     "objs": 6,
+     "max_line": 5
+    },
+    {
+     "frame": "sleep",
+     "objs": 6,
+     "max_line": 5
+    }
+   ]
+  },
+  {
+   "slug": "jersey_devil",
+   "name": "JERSEY DEVIL",
+   "classification": "Aerial",
+   "tiles_8x16": 48,
+   "vram_slots": 96,
+   "palettes": 1,
+   "pal_a": [
+    "#1c1418",
+    "#d6c9aa",
+    "#3ff0f8"
+   ],
+   "pal_b": null,
+   "max_objs": 8,
+   "max_per_line": 4,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "idle1",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move0",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "move1",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "move2",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move3",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "atk0",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "atk1",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "hurt",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "sleep",
+     "objs": 7,
+     "max_line": 3
+    }
+   ]
+  },
+  {
+   "slug": "mothman",
+   "name": "MOTHMAN",
+   "classification": "Aerial",
+   "tiles_8x16": 50,
+   "vram_slots": 100,
+   "palettes": 1,
+   "pal_a": [
+    "#0b0910",
+    "#3b3550",
+    "#ff2a3a"
+   ],
+   "pal_b": null,
+   "max_objs": 8,
+   "max_per_line": 4,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "idle1",
+     "objs": 6,
+     "max_line": 4
+    },
+    {
+     "frame": "move0",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "move1",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "move2",
+     "objs": 6,
+     "max_line": 4
+    },
+    {
+     "frame": "move3",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "atk0",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "atk1",
+     "objs": 6,
+     "max_line": 4
+    },
+    {
+     "frame": "hurt",
+     "objs": 8,
+     "max_line": 4
+    },
+    {
+     "frame": "sleep",
+     "objs": 5,
+     "max_line": 2
+    }
+   ]
+  },
+  {
+   "slug": "wendigo",
+   "name": "WENDIGO",
+   "classification": "Supernatural",
+   "tiles_8x16": 46,
+   "vram_slots": 92,
+   "palettes": 2,
+   "pal_a": [
+    "#121410",
+    "#6c6a4c",
+    "#3ff0f8"
+   ],
+   "pal_b": [
+    "#121410",
+    "#a69a7e",
+    "#ece4cc"
+   ],
+   "max_objs": 8,
+   "max_per_line": 6,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "idle1",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move0",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move1",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "move2",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "move3",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "atk0",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "atk1",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "hurt",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "sleep",
+     "objs": 8,
+     "max_line": 6
+    }
+   ]
+  },
+  {
+   "slug": "thunderbird",
+   "name": "THUNDERBIRD",
+   "classification": "Aerial",
+   "tiles_8x16": 45,
+   "vram_slots": 90,
+   "palettes": 2,
+   "pal_a": [
+    "#140e0a",
+    "#5c3c22",
+    "#3ff0f8"
+   ],
+   "pal_b": [
+    "#140e0a",
+    "#c43c2c",
+    "#f0c848"
+   ],
+   "max_objs": 8,
+   "max_per_line": 6,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "idle1",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "move0",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "move1",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "move2",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "move3",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "atk0",
+     "objs": 8,
+     "max_line": 5
+    },
+    {
+     "frame": "atk1",
+     "objs": 8,
+     "max_line": 6
+    },
+    {
+     "frame": "hurt",
+     "objs": 7,
+     "max_line": 5
+    },
+    {
+     "frame": "sleep",
+     "objs": 8,
+     "max_line": 5
+    }
+   ]
+  },
+  {
+   "slug": "loveland_frog",
+   "name": "LOVELAND FROG",
+   "classification": "Terrestrial",
+   "tiles_8x16": 25,
+   "vram_slots": 50,
+   "palettes": 1,
+   "pal_a": [
+    "#12180a",
+    "#6f7c2c",
+    "#f0e048"
+   ],
+   "pal_b": null,
+   "max_objs": 5,
+   "max_per_line": 3,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "idle1",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "move0",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "move1",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "move2",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "move3",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "atk0",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "atk1",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "hurt",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "sleep",
+     "objs": 5,
+     "max_line": 3
+    }
+   ]
+  },
+  {
+   "slug": "nightcrawler",
+   "name": "FRESNO NIGHTCRAWLER",
+   "classification": "Terrestrial",
+   "tiles_8x16": 36,
+   "vram_slots": 72,
+   "palettes": 1,
+   "pal_a": [
+    "#10141c",
+    "#e8eaf2",
+    "#3ff0f8"
+   ],
+   "pal_b": null,
+   "max_objs": 6,
+   "max_per_line": 3,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "idle1",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "move0",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move1",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "move2",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "move3",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "atk0",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "atk1",
+     "objs": 4,
+     "max_line": 3
+    },
+    {
+     "frame": "hurt",
+     "objs": 4,
+     "max_line": 2
+    },
+    {
+     "frame": "sleep",
+     "objs": 4,
+     "max_line": 3
+    }
+   ]
+  },
+  {
+   "slug": "flatwoods",
+   "name": "FLATWOODS MONSTER",
+   "classification": "Terrestrial",
+   "tiles_8x16": 37,
+   "vram_slots": 74,
+   "palettes": 2,
+   "pal_a": [
+    "#120c0a",
+    "#6e4c30",
+    "#3ff0f8"
+   ],
+   "pal_b": [
+    "#120c0a",
+    "#a01818",
+    "#ff4a30"
+   ],
+   "max_objs": 8,
+   "max_per_line": 4,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "idle1",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "move0",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "move1",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "move2",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "move3",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "atk0",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "atk1",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "hurt",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "sleep",
+     "objs": 8,
+     "max_line": 4
+    }
+   ]
+  },
+  {
+   "slug": "pope_lick",
+   "name": "POPE LICK MONSTER",
+   "classification": "Hominid",
+   "tiles_8x16": 63,
+   "vram_slots": 126,
+   "palettes": 2,
+   "pal_a": [
+    "#0e0c10",
+    "#4a4458",
+    "#3ff0f8"
+   ],
+   "pal_b": [
+    "#0e0c10",
+    "#9a929e",
+    "#e0dce4"
+   ],
+   "max_objs": 11,
+   "max_per_line": 6,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "idle1",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "move0",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "move1",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "move2",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "move3",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "atk0",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "atk1",
+     "objs": 11,
+     "max_line": 6
+    },
+    {
+     "frame": "hurt",
+     "objs": 9,
+     "max_line": 5
+    },
+    {
+     "frame": "sleep",
+     "objs": 8,
+     "max_line": 5
+    }
+   ]
+  },
+  {
+   "slug": "bray_road",
+   "name": "BEAST OF BRAY ROAD",
+   "classification": "Terrestrial",
+   "tiles_8x16": 43,
+   "vram_slots": 86,
+   "palettes": 1,
+   "pal_a": [
+    "#10141c",
+    "#5d6d84",
+    "#3ff0f8"
+   ],
+   "pal_b": null,
+   "max_objs": 7,
+   "max_per_line": 4,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "idle1",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move0",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move1",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "move2",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "move3",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "atk0",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "atk1",
+     "objs": 7,
+     "max_line": 4
+    },
+    {
+     "frame": "hurt",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "sleep",
+     "objs": 5,
+     "max_line": 4
+    }
+   ]
+  },
+  {
+   "slug": "champ",
+   "name": "CHAMP",
+   "classification": "Aquatic",
+   "tiles_8x16": 38,
+   "vram_slots": 76,
+   "palettes": 1,
+   "pal_a": [
+    "#10140c",
+    "#5c5a32",
+    "#3ff0f8"
+   ],
+   "pal_b": null,
+   "max_objs": 6,
+   "max_per_line": 4,
+   "frames": [
+    {
+     "frame": "idle0",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "idle1",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "move0",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "move1",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "move2",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "move3",
+     "objs": 5,
+     "max_line": 3
+    },
+    {
+     "frame": "atk0",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "atk1",
+     "objs": 5,
+     "max_line": 4
+    },
+    {
+     "frame": "hurt",
+     "objs": 6,
+     "max_line": 3
+    },
+    {
+     "frame": "sleep",
+     "objs": 5,
+     "max_line": 4
+    }
+   ]
+  }
+ ]
+}

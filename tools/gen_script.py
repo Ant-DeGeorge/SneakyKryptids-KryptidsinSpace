@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Story script: crew names, per-stage briefings/debriefs and in-flight comms.
+
+Cutscene lines wrap at 12 columns x 6 rows (beside a 48x48 portrait).
+In-flight comm lines wrap at 15 columns x 3 rows (beside a 32x32 portrait).
+Emits src/script_data.c (ROM0) and src/script_ids.h (CM* ids for stage logic).
+"""
+import os, textwrap
+
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
+
+# ---- crew names (one place to change them)
+NAMES = {
+    'cap':    "YETI",
+    'static': "STATIC",
+    'forge':  "FORGE",
+    'doc':    "SUTURE",
+    'vex':    "ZANNAH",
+}
+CREW = ['cap', 'static', 'forge', 'doc', 'vex']   # portrait order in assets
+
+# scene ids (see scenes.c load_scene)
+SC_SHIP, SC_STATION, SC_KRAKEN, SC_TBIRD, SC_JDEVIL, SC_STORM, SC_BARRENS, SC_WENDIGO, SC_FROST = range(9)
+
+INTRO = [
+  [ # 1 Rimeveil Lane
+    (SC_STATION, 'vex',    0, "NEW CONTRACT. SOMETHING IS EATING ICE HAULERS."),
+    (SC_STATION, 'cap',    0, "WHAT'S IT PAY?"),
+    (SC_STATION, 'vex',    1, "TRIPLE IF WE BRING IT IN ALIVE. AND WE WILL."),
+    (SC_STATION, 'doc',    0, "SIX HAULERS. ZERO DISTRESS CALLS. IT'S SMART."),
+    (SC_SHIP,    'forge',  1, "RUNE NET IS LOADED. FLY CLEAN, SCORE BIG, AND IT'S OURS."),
+    (SC_SHIP,    'static', 0, "SHOOT THEIR BULLETS, TOO. OUR ROUNDS EAT THEM."),
+    (SC_SHIP,    'cap',    1, "SNEAKY KRYPTID. LET'S GO TO WORK."),
+  ],
+  [ # 2 Stormwall Nebula
+    (SC_STORM,   'vex',    0, "RELAY GUILD. THEIR BEACONS KEEP GOING DARK."),
+    (SC_STORM,   'static', 0, "SOMETHING IN THE STORM IS EATING THE LIGHTNING."),
+    (SC_TBIRD,   'doc',    1, "A THUNDERBIRD. WINGSPAN OF A HAULER. GORGEOUS."),
+    (SC_TBIRD,   'cap',    0, "SUTURE. FOCUS."),
+    (SC_TBIRD,   'doc',    0, "GORGEOUS AND DEADLY. FOCUSED."),
+    (SC_SHIP,    'forge',  1, "HULL IS RUNE-WARDED. LIGHTNING SLIDES OFF. MOSTLY."),
+    (SC_SHIP,    'cap',    1, "MOSTLY IS GOOD ENOUGH. PUNCH IT."),
+  ],
+  [ # 3 Barrens Belt
+    (SC_BARRENS, 'vex',    0, "BARRENS SETTLERS. SOMETHING SCREAMS AT NIGHT."),
+    (SC_BARRENS, 'doc',    1, "THEY SLEEP WITH EVERY LIGHT ON. CAN'T BLAME THEM."),
+    (SC_JDEVIL,  'static', 0, "HORSE SKULL. BAT WINGS. KANGAROO LEGS."),
+    (SC_JDEVIL,  'cap',    0, "THAT'S NOT A MONSTER. THAT'S A SPARE PARTS BIN."),
+    (SC_JDEVIL,  'doc',    1, "THE JERSEY DEVIL. AND IT LAYS EGGS. DON'T POP THEM."),
+    (SC_SHIP,    'forge',  1, "COLD IRON ROUNDS. DEVILS HATE IRON."),
+    (SC_SHIP,    'vex',    1, "AND I HEAR NUBS IS OUT HERE. HE STILL OWES ME."),
+  ],
+  [ # 4 Frostbite Moon
+    (SC_FROST,   'vex',    1, "THE MINERS' GUILD. BIGGEST PAYOUT YET."),
+    (SC_FROST,   'static', 0, "WHOLE MINING CREW, GONE. JUST A HOWL ON THE COMMS."),
+    (SC_WENDIGO, 'doc',    0, "ANTLERS. BONES. ALWAYS HUNGRY. A WENDIGO."),
+    (SC_WENDIGO, 'cap',    0, "HUNGRY FOR WHAT?"),
+    (SC_WENDIGO, 'doc',    0, "YOU DON'T WANT ME TO ANSWER THAT."),
+    (SC_SHIP,    'forge',  1, "FIRE RUNES ON THE CANNONS. IT HATES HEAT."),
+    (SC_SHIP,    'cap',    1, "BUNDLE UP, CREW. WE'RE GOING HUNTING."),
+  ],
+]
+# debriefs by outcome: [stage][0 escaped, 1 killed, 2 captured]
+OUTRO = [
+  [ # 1
+    [ (SC_KRAKEN,  'static', 0, "IT TORE THE NET AND DOVE INTO THE ICE. GONE."),
+      (SC_SHIP,    'vex',    0, "PARTIAL PAY. BRIGHT BASIN IS NOT IMPRESSED."),
+      (SC_SHIP,    'cap',    0, "NEITHER AM I. WE FLY CLEANER NEXT TIME.") ],
+    [ (SC_KRAKEN,  'cap',    1, "TARGET DOWN. LANE IS CLEAR."),
+      (SC_SHIP,    'vex',    1, "FULL PAY. NOT TRIPLE. BUT FULL."),
+      (SC_SHIP,    'forge',  0, "SHE NEEDS NEW PAINT. AGAIN."),
+      (SC_SHIP,    'doc',    1, "AND NOBODY GOT BIT. I CALL THAT A GOOD DAY.") ],
+    [ (SC_KRAKEN,  'forge',  1, "RUNE NET HOLDING! ONE SPACE KRAKEN, GIFT WRAPPED!"),
+      (SC_SHIP,    'doc',    1, "IT'S SULKING IN THE HOLD. IT HAS A CUTE BEAK."),
+      (SC_SHIP,    'vex',    1, "TRIPLE PAY! I'M FRAMING THIS INVOICE."),
+      (SC_SHIP,    'cap',    1, "THAT'S HOW PROS DO IT. NEXT CONTRACT.") ],
+  ],
+  [ # 2
+    [ (SC_TBIRD,   'static', 0, "IT RODE A LIGHTNING BOLT OUT OF THE STORM."),
+      (SC_SHIP,    'vex',    0, "THE GUILD PAID US IN... COUPONS. PARTIAL PAY."),
+      (SC_SHIP,    'forge',  0, "MY EYEBROWS ARE STILL SMOKING. FOR COUPONS.") ],
+    [ (SC_TBIRD,   'cap',    1, "THUNDERBIRD DOWN. STORM'S BREAKING UP."),
+      (SC_STORM,   'static', 1, "BEACONS COMING BACK ONLINE. ALL OF THEM."),
+      (SC_SHIP,    'vex',    1, "RELAY GUILD PAID IN FULL. NICE FLYING.") ],
+    [ (SC_TBIRD,   'forge',  1, "NETTED! THE WARDS ARE SOAKING UP ITS LIGHTNING!"),
+      (SC_SHIP,    'static', 1, "WE HAVE FREE POWER FOR A MONTH. IT'S A BATTERY."),
+      (SC_SHIP,    'doc',    1, "IT'S A LIVING CREATURE, STATIC. NOT A BATTERY."),
+      (SC_SHIP,    'vex',    1, "TRIPLE PAY AND FREE POWER. BEST. DAY. EVER.") ],
+  ],
+  [ # 3
+    [ (SC_JDEVIL,  'static', 0, "IT SCREAMED AND FLAPPED OFF INTO THE DARK."),
+      (SC_BARRENS, 'doc',    0, "THE SETTLERS ARE STILL SLEEPING WITH THE LIGHTS ON."),
+      (SC_SHIP,    'cap',    0, "PARTIAL PAY. WE'LL BE BACK FOR IT.") ],
+    [ (SC_JDEVIL,  'cap',    1, "DEVIL'S DONE. NO MORE SCREAMING."),
+      (SC_BARRENS, 'doc',    1, "THE SETTLERS CAN TURN THEIR LIGHTS OFF."),
+      (SC_SHIP,    'vex',    1, "FULL PAY. AND A FREE PIE. THEY LIKE US.") ],
+    [ (SC_JDEVIL,  'forge',  1, "COLD IRON NET! ONE JERSEY DEVIL, BAGGED!"),
+      (SC_SHIP,    'doc',    1, "IT'S TRYING TO EAT THE NET. IT'S ALSO PURRING?"),
+      (SC_SHIP,    'static', 0, "PLEASE DON'T NAME IT, SUTURE."),
+      (SC_SHIP,    'doc',    1, "HIS NAME IS GERALD."),
+      (SC_SHIP,    'vex',    1, "GERALD IS WORTH TRIPLE. HI, GERALD.") ],
+  ],
+  [ # 4
+    [ (SC_WENDIGO, 'static', 0, "IT CLAWED BACK UNDER THE ICE. IT'S STILL DOWN THERE."),
+      (SC_FROST,   'vex',    0, "THE MINERS PAID HALF. THEY'RE NOT GOING BACK DOWN."),
+      (SC_SHIP,    'cap',    0, "THEN NEITHER ARE WE. YET.") ],
+    [ (SC_WENDIGO, 'cap',    1, "WENDIGO'S FINISHED. MOON IS SAFE."),
+      (SC_FROST,   'doc',    1, "THE MINERS CAN GO HOME. NOBODY GOT EATEN."),
+      (SC_SHIP,    'vex',    1, "MINERS' GUILD PAID IN FULL. WE'RE RICH! FOR A WEEK."),
+      (SC_SHIP,    'static', 0, "CAPTAIN. NEW SIGNAL. FLATWOODS. SOMETHING BIG.") ],
+    [ (SC_WENDIGO, 'forge',  1, "FIRE RUNES ARE HOLDING! WENDIGO IN THE HOLD!"),
+      (SC_SHIP,    'doc',    0, "I'M KEEPING THE HOLD AT FREEZING. FOR ITS COMFORT."),
+      (SC_SHIP,    'vex',    1, "TRIPLE PAY! I'M BUYING US ALL NEW BOOTS."),
+      (SC_SHIP,    'static', 0, "CAPTAIN. NEW SIGNAL. FLATWOODS. SOMETHING BIG."),
+      (SC_SHIP,    'cap',    1, "THEN THAT'S OUR NEXT BOUNTY.") ],
+  ],
+]
+# in-flight comms: (id, speaker, text)   15 cols x 3 rows
+COMMS = [
+    ('CM1_SWARM',   'static', "KRAKENLINGS! A WHOLE BROOD OF THEM!"),
+    ('CM1_PODS',    'forge',  "GRAB THE PODS! NEW TOYS INSIDE."),
+    ('CM1_ICE',     'static', "ENTERING THE ICE RING. SHOOT ROCKS."),
+    ('CM1_NUBS',    'cap',    "IS THAT A GREMLIN IN A GUNSHIP?"),
+    ('CM1_OWES',    'vex',    "NUBS! HE OWES ME MONEY. NET HIM!"),
+    ('CM1_TANKER',  'doc',    "A HAULER. TORN OPEN LIKE A SNACK."),
+    ('CM1_HUGE',    'static', "SOMETHING HUGE. UNDER THE ICE..."),
+    ('CM1_KRAKEN',  'cap',    "THERE'S OUR PAYCHECK! SPACE KRAKEN!"),
+    ('CM1_HURT',    'doc',    "IT'S BLEEDING INK! KEEP PUSHING!"),
+    ('CM1_TENT',    'forge',  "TENTACLES! DON'T GET HUGGED!"),
+    ('CM1_GOTAWAY', 'vex',    "NUBS GOT AWAY. HE STILL OWES ME."),
+    ('CM1_MARKS',   'doc',    "SUCKER MARKS ON EVERY HULL. CUTE."),
+    ('CM1_MIDCAP',  'vex',    "NUBS, NETTED! DEBT PAID IN FULL!"),
+    ('CM1_MIDKILL', 'forge',  "SCRAPPED! NUBS BAILED IN A POD."),
+    ('CM1_BFLEE',   'static', "IT TORE LOOSE! IT'S GETTING AWAY!"),
+    ('CM1_BKILL',   'cap',    "KRAKEN DOWN. CONTRACT CLOSED."),
+    ('CM1_BCAP',    'forge',  "RUNE NET HOLDS! KRAKEN IS OURS!"),
+    ('CM1_CANCEL',  'forge',  "SHOOT THEIR BULLETS! OUR ROUNDS EAT 'EM."),
+
+    ('CM2_FRONT',   'static', "STORM FRONT AHEAD. HOLD ON TO SOMETHING."),
+    ('CM2_MOTHS',   'forge',  "IMPUNDULU! LIGHTNING BIRDS! DIVING!"),
+    ('CM2_EELS',    'static', "LINDWORMS IN THE CLOUDS! HIT THE HEAD!"),
+    ('CM2_CLOUDS',  'cap',    "THUNDERCLOUDS! MOVE OFF THE MARKERS!"),
+    ('CM2_PYLONS',  'doc',    "RELAY PYLONS. SOMETHING IS WATCHING."),
+    ('CM2_MOTHMAN', 'vex',    "MOTHMAN! HE'S GOT A BOUNTY TOO!"),
+    ('CM2_MMGONE',  'vex',    "MOTHMAN FLEW OFF. THERE GOES A BONUS."),
+    ('CM2_EYE',     'static', "WE'RE IN THE EYE OF THE STORM..."),
+    ('CM2_TBIRD',   'cap',    "THUNDERBIRD! LET'S CLIP SOME WINGS!"),
+    ('CM2_HURT',    'doc',    "IT'S TIRING! DON'T LET UP!"),
+    ('CM2_CHARGE',  'forge',  "IT'S CHARGING! WARDS WON'T TAKE THAT!"),
+    ('CM2_GUST',    'static', "WIND SHEAR! FIGHT THE STICK!"),
+    ('CM2_MIDCAP',  'doc',    "MOTHMAN BAGGED! HE'S... SO FUZZY."),
+    ('CM2_MIDKILL', 'static', "MOTHMAN DOWN. LIGHTS OUT."),
+    ('CM2_BFLEE',   'static', "IT'S RIDING THE LIGHTNING OUT OF HERE!"),
+    ('CM2_BKILL',   'cap',    "THUNDERBIRD DOWN. NICE SHOOTING."),
+    ('CM2_BCAP',    'forge',  "NETTED! WARDS ARE EATING ITS SPARK!"),
+
+    ('CM3_WELCOME', 'vex',    "WELCOME TO THE BARRENS. LOVELY."),
+    ('CM3_BEHIND',  'static', "PUKWUDGIES! COMING UP FROM BEHIND!"),
+    ('CM3_CONES',   'doc',    "DEVIL EGGS! DON'T POP THEM UP CLOSE!"),
+    ('CM3_NUBS',    'cap',    "NUBS AGAIN. IN A NEW PILE OF JUNK."),
+    ('CM3_OWES',    'vex',    "NUBS! I CAN SEE YOU! PAY UP!"),
+    ('CM3_NUBSGONE','vex',    "NUBS ESCAPED. I'M BILLING HIS MOM."),
+    ('CM3_FOG',     'doc',    "LIGHTS IN THE FOG. DON'T FOLLOW THEM."),
+    ('CM3_WISPS',   'static', "WILL-O'-THE-WISPS! SHOOT WHEN THEY GLOW."),
+    ('CM3_DEVIL',   'cap',    "JERSEY DEVIL! DEAD AHEAD!"),
+    ('CM3_HURT',    'doc',    "IT'S LIMPING! KEEP AT IT!"),
+    ('CM3_FIRE',    'forge',  "FIRE BREATH! FIND THE GAP!"),
+    ('CM3_MIDCAP',  'vex',    "GOT YOU, NUBS! NOW PAY UP!"),
+    ('CM3_MIDKILL', 'forge',  "JUNK SHIP JUNKED. NUBS EJECTED."),
+    ('CM3_BFLEE',   'static', "IT'S FLAPPING AWAY! NO NO NO!"),
+    ('CM3_BKILL',   'cap',    "DEVIL'S DONE. BOUNTY CLOSED."),
+    ('CM3_BCAP',    'forge',  "COLD IRON NET! THE DEVIL IS OURS!"),
+
+    ('CM4_DESCENT', 'static', "DESCENDING. TEMPERATURE: RUDE."),
+    ('CM4_TURRETS', 'forge',  "MINE TURRETS! BOLTED DOWN, STILL MEAN."),
+    ('CM4_SNAKES',  'doc',    "TATZELWURMS! CAT FACE. HIT THE HEAD!"),
+    ('CM4_MINES',   'vex',    "THE OLD MINES. WATCH THE DOMES."),
+    ('CM4_BEAST',   'static', "BIG HEAT SIGNAL. AND IT'S LEAPING!"),
+    ('CM4_BEASTNAME','cap',   "BEAST OF BRAY ROAD! BOUNTY ON IT TOO!"),
+    ('CM4_BEASTGONE','static',"IT BOLTED ON ALL FOURS. BONUS GONE."),
+    ('CM4_WIND',    'static', "ICE STORM! WIND IS SHOVING US!"),
+    ('CM4_WENDIGO', 'cap',    "WENDIGO! THERE'S OUR PAYDAY!"),
+    ('CM4_HURT',    'doc',    "IT'S WEAKENING! KEEP THE HEAT ON!"),
+    ('CM4_CLAWS',   'forge',  "CLAWS! MOVE WHEN IT REACHES!"),
+    ('CM4_MIDCAP',  'doc',    "BEAST SEDATED! GOOD... DOGGY?"),
+    ('CM4_MIDKILL', 'cap',    "BEAST IS DOWN. STAY SHARP."),
+    ('CM4_BFLEE',   'static', "IT'S DIGGING BACK UNDER THE ICE!"),
+    ('CM4_BKILL',   'cap',    "WENDIGO'S FINISHED. MOON IS SAFE."),
+    ('CM4_BCAP',    'forge',  "FIRE RUNES HOLD! WENDIGO IS OURS!"),
+
+    ('CM_BUDHINT',  'doc',    "A SLEEPING BABY CRYPTID! FLY INTO IT!"),
+    ('CM_BUDGOT',   'vex',    "NEW BUDDY ON BOARD! NO SALARY!"),
+]
+# per stage: mid-boss (fled, killed, captured) and boss (fled, killed, captured) comms
+MID_COMM = [['CM1_GOTAWAY', 'CM1_MIDKILL', 'CM1_MIDCAP'], ['CM2_MMGONE', 'CM2_MIDKILL', 'CM2_MIDCAP'],
+            ['CM3_NUBSGONE', 'CM3_MIDKILL', 'CM3_MIDCAP'], ['CM4_BEASTGONE', 'CM4_MIDKILL', 'CM4_MIDCAP']]
+BOSS_COMM = [[f'CM{s}_BFLEE', f'CM{s}_BKILL', f'CM{s}_BCAP'] for s in range(1, 5)]
+
+
+def wrap(txt, w, rows):
+    lines = textwrap.wrap(txt, w)
+    assert len(lines) <= rows, (txt, lines)
+    return lines
+
+
+def cstr(s):
+    return '"' + s.replace('\\', '\\\\').replace('"', '\\"').replace(chr(10), '\\n') + '"'
+
+
+def emit():
+    L = ["// generated by tools/gen_script.py - edit the script there", "#include <stdint.h>"]
+    for name, stages in (("intro", INTRO), ("outro", [o for st in OUTRO for o in st])):
+        for s, tab in enumerate(stages):
+            for i, (sc, who, ex, txt) in enumerate(tab):
+                L.append(f"static const char {name}{s}_{i}[] = {cstr(chr(10).join(wrap(txt, 12, 6)))};")
+            L.append(f"static const uint8_t {name}{s}_meta[] = {{" + ",".join(f"{sc},{CREW.index(who) * 2 + ex}" for sc, who, ex, _ in tab) + "};")
+            L.append(f"static const char * const {name}{s}_text[] = {{" + ",".join(f"{name}{s}_{i}" for i in range(len(tab))) + "};")
+        L.append(f"const uint8_t * const {name}_meta[] = {{" + ",".join(f"{name}{s}_meta" for s in range(len(stages))) + "};")
+        L.append(f"const char * const * const {name}_text[] = {{" + ",".join(f"{name}{s}_text" for s in range(len(stages))) + "};")
+        L.append(f"const uint8_t {name}_count[] = {{" + ",".join(str(len(t)) for t in stages) + "};")
+    for i, (cid, who, txt) in enumerate(COMMS):
+        L.append(f"static const char comm_{i}[] = {cstr(chr(10).join(wrap(txt, 15, 3)))};")
+    L.append("const uint8_t comm_who[] = {" + ",".join(str(CREW.index(w)) for _, w, _ in COMMS) + "};")
+    L.append("const char * const comm_text[] = {" + ",".join(f"comm_{i}" for i in range(len(COMMS))) + "};")
+    L.append("const char * const crew_names[] = {" + ",".join(cstr(NAMES[c]) for c in CREW) + "};")
+    ids = [c for c, _, _ in COMMS]
+    L.append(f"const uint8_t comm_buddy_hint = {ids.index('CM_BUDHINT')};")
+    L.append(f"const uint8_t comm_buddy_got = {ids.index('CM_BUDGOT')};")
+    L.append("const uint8_t mid_comm[] = {" + ",".join(str(ids.index(c)) for st in MID_COMM for c in st) + "};")
+    L.append("const uint8_t boss_out_comm[] = {" + ",".join(str(ids.index(c)) for st in BOSS_COMM for c in st) + "};")
+    open(os.path.join(OUT, "script_data.c"), "w").write("\n".join(L) + "\n")
+    H = ["// generated by tools/gen_script.py", "#ifndef SCRIPT_IDS_H", "#define SCRIPT_IDS_H"]
+    H += [f"#define {c} {i}" for i, c in enumerate(ids)]
+    H += ["#endif"]
+    open(os.path.join(OUT, "script_ids.h"), "w").write("\n".join(H) + "\n")
+    print("script ok:", [len(t) for t in INTRO], [[len(o) for o in t] for t in OUTRO], len(COMMS), "comms")
+
+
+if __name__ == "__main__":
+    emit()

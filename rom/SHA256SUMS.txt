@@ -1,0 +1,2 @@
+2f758a318fba130e1b9ba89ef86e4e78d8fa22cdd514445ccd660832c8c3022e  rom/sneaky_kryptid.gbc
+576e67337a6e4bb1afe98e695f1752397ef2bd5b791b669c79a522ef8f343378  rom/sneaky_kryptid_nosave.gbc
