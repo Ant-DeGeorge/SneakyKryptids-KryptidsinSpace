@@ -1,11 +1,11 @@
-# Kryptids in Space: The Sneaky Kryptid — Game Boy Color demo
+# Sneaky Kryptid: Kryptids in Space — Game Boy Color demo
 
 A vertical space shooter for the Game Boy Color. You fly the Sneaky Kryptid, a bounty-hunter
 ship, on four cryptid contracts: the Space Kraken, the Thunderbird, the Jersey Devil and the
 Wendigo. Fly clean and score high to bring the bounty in alive.
 
-**Demo build.** Four full missions, two difficulties, saves, upgrades. Runs on real hardware
-(ModRetro Chromatic, GBC, GBA) and any Game Boy Color emulator.
+**Demo v1.0.** Four full missions, three difficulties, saves, upgrades. Runs on real hardware
+(tested on a ModRetro Chromatic; original GBC and GBA hardware should work too) and any Game Boy Color emulator.
 
 A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space / Kryptid Prime Empire.
 
@@ -19,6 +19,15 @@ A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space 
   your cart has no save RAM.
 
 The game opens with the Rejected By The Machines studio card (A or START skips it).
+
+**Version:** Demo v1.0 (shown on the title screen).
+
+### Saves
+- Progress saves to the cart automatically: three slots (CADET, PILOT, HUNTER) with missions,
+  stars, high scores, credits and gear.
+- **Erase all saves:** on the title screen hold **SELECT** and press **B**, then **A** to confirm.
+- The demo uses its own save block (signature `SKD`, version 1). Saves left on a cart by other
+  builds of the game are ignored and left untouched.
 
 ## Pilots
 Studio card → title → WHO'S FLYING? → mission map → briefing → mission → debrief.
@@ -130,6 +139,7 @@ PyBoy is not timing-accurate for the studio card's per-line effects; use SameBoy
 C. MAGICIAN on → back up the cart → Write Homebrew → `sneaky_kryptid.gbc` → verify →
 C. MAGICIAN off → power-cycle. Writing replaces the game on the cart.
 If the cart refuses the save header, use `sneaky_kryptid_nosave.gbc` (no saves). The ROM is 512 KB, so the cart needs at least 512 KB of flash.
+Tested on a ModRetro Chromatic (2026-11-02).
 
 ## Credits
 Design, story and characters: Anthony DeGeorge / Rejected By The Machines.

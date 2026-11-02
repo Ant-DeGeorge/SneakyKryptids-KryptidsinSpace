@@ -54,17 +54,27 @@ static const uint16_t pal_star[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(232, 9
 static const uint16_t pal_lock[4] = { RGB8(150, 160, 180), RGB8(6, 8, 24), RGB8(90, 100, 120), RGB8(6, 8, 24) };
 static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52, 70), RGB8(90, 100, 120) };
 
-// ------------------------------------------------------------------ save (SRAM 0xA000)
-#define SAVE ((uint8_t *)0xA000)
-#define SAVE_LEN (3 + N_PROFILES * (2 + N_STAGES + 4 * N_STAGES + N_STAGES + 2 + N_GEAR) + 1)
+// ------------------------------------------------------------------ save (SRAM 0xA200)
+// The demo keeps its own save block with its own signature ('S','K','D'), away from the
+// family build's block at 0xA000 ('K','S'), so a cart that already holds family saves
+// starts the demo clean and the family saves survive if that ROM is flashed back.
+#define SAVE ((uint8_t *)0xA200)
+#define SAVE_VER 1
+#define DEMO_VERSION "DEMO V1.0"
+#define SAVE_LEN (4 + N_PROFILES * (2 + N_STAGES + 4 * N_STAGES + N_STAGES + 2 + N_GEAR) + 1)
 static uint8_t sum8(uint8_t *p, uint8_t n) { uint8_t s = 0x5A; while (n--) s += *p++; return s; }
+static void save_clear(void) {
+    memset(pf_unlock, 0, sizeof pf_unlock); memset(pf_done, 0, sizeof pf_done);
+    memset(pf_best, 0, sizeof pf_best); memset(pf_hi, 0, sizeof pf_hi);
+    memset(pf_out, 0, sizeof pf_out); memset(pf_credits, 0, sizeof pf_credits); memset(pf_gear, 0, sizeof pf_gear);
+}
 void save_read(void) {
     uint8_t buf[SAVE_LEN], p, *q;
     ENABLE_RAM; SWITCH_RAM(0);
     memcpy(buf, SAVE, SAVE_LEN);
     DISABLE_RAM;
-    if (buf[0] == 'K' && buf[1] == 'S' && buf[2] == 4 && buf[SAVE_LEN - 1] == sum8(buf, SAVE_LEN - 1)) {
-        q = buf + 3;
+    if (buf[0] == 'S' && buf[1] == 'K' && buf[2] == 'D' && buf[3] == SAVE_VER && buf[SAVE_LEN - 1] == sum8(buf, SAVE_LEN - 1)) {
+        q = buf + 4;
         for (p = 0; p < N_PROFILES; p++) {
             pf_unlock[p] = *q++; pf_done[p] = *q++;
             memcpy(pf_best[p], q, N_STAGES); q += N_STAGES;
@@ -73,16 +83,12 @@ void save_read(void) {
             pf_credits[p] = q[0] | ((uint16_t)q[1] << 8); q += 2;
             memcpy(pf_gear[p], q, N_GEAR); q += N_GEAR;
         }
-    } else {
-        memset(pf_unlock, 0, sizeof pf_unlock); memset(pf_done, 0, sizeof pf_done);
-        memset(pf_best, 0, sizeof pf_best); memset(pf_hi, 0, sizeof pf_hi);
-        memset(pf_out, 0, sizeof pf_out); memset(pf_credits, 0, sizeof pf_credits); memset(pf_gear, 0, sizeof pf_gear);
-    }
+    } else save_clear();
 }
 void save_write(void) {
     uint8_t buf[SAVE_LEN], p, *q;
-    buf[0] = 'K'; buf[1] = 'S'; buf[2] = 4;
-    q = buf + 3;
+    buf[0] = 'S'; buf[1] = 'K'; buf[2] = 'D'; buf[3] = SAVE_VER;
+    q = buf + 4;
     for (p = 0; p < N_PROFILES; p++) {
         *q++ = pf_unlock[p]; *q++ = pf_done[p];
         memcpy(q, pf_best[p], N_STAGES); q += N_STAGES;
@@ -182,6 +188,7 @@ static void title_screen(void) {
     center(0, "ANTHONY DEGEORGE", 7);
     center(1, "PRESENTS", 7);
     center(14, "KRYPTIDS IN SPACE", 7);
+    center(17, DEMO_VERSION, 7);
     screen_on(LCDC_SCREEN);
     music_play(MUS_TITLE);
     while (1) {
@@ -189,6 +196,21 @@ static void title_screen(void) {
         t++;
         if ((t & 31) == 0) center(16, "PRESS START", 7);
         if ((t & 31) == 20) txt_fill(4, 16, 12, 1, txt_tile(' '), 7, 0);
+        if ((joy & J_SELECT) && (joy_new & J_B)) {          // SELECT + B: erase all save slots
+            txt_fill(0, 16, 20, 2, txt_tile(' '), 7, 0);
+            center(16, "ERASE ALL SAVES?", 7);
+            center(17, "A: YES   B: NO", 7);
+            sfx_play(SFX_ALARM);
+            while (1) {
+                wait_vbl_done(); input_poll();
+                if (joy_new & J_A) { save_clear(); save_write(); sfx_play(SFX_BOMB); txt_fill(0, 16, 20, 2, txt_tile(' '), 7, 0); center(16, "SAVES ERASED", 7); wait_frames(90); break; }
+                if (joy_new & J_B) { sfx_play(SFX_SELECT); break; }
+            }
+            txt_fill(0, 16, 20, 2, txt_tile(' '), 7, 0);
+            center(17, DEMO_VERSION, 7);
+            t = 31;
+            continue;
+        }
         if (joy_new & (J_A | J_START)) { sfx_play(SFX_START); wait_frames(20); return; }
     }
 }
@@ -248,7 +270,7 @@ static uint8_t mission_map(void) {
     set_bkg_palette(3, 1, pal_lock);
     txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
     center(0, "MISSION SELECT", 7);
-    txt_put(1, 1, "PILOT:", 0, 6); txt_put(8, 1, pilot_names[profile], 0, 7);
+    txt_put(1, 1, pilot_names[profile], 0, 7);
     txt_put(15, 1, "$", 0, 6); put_num(16, 1, pf_credits[profile], 4, 7);
     for (s = 0; s < N_STAGES; s++) {
         y = 3 + s * 3;
