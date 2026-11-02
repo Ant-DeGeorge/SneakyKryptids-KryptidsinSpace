@@ -43,13 +43,15 @@ uint32_t bounty_pts;
 static const uint16_t pay_base[N_STAGES] = {100, 150, 200, 250};
 static const char * const out_names[4] = {"", "ESCAPED", "KILLED", "CAPTURED"};
 
-static const char * const pilot_names[N_PROFILES] = {"CADET 1", "CADET 2", "HUNTER"};
+static const char * const pilot_names[N_PROFILES] = {"CADET", "PILOT", "HUNTER"};
 static const char * const boss_names[N_STAGES] = {"SPACE KRAKEN", "THUNDERBIRD", "JERSEY DEVIL", "WENDIGO"};
 
 static const uint16_t pal_text[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(72, 224, 200), RGB8(248, 248, 248) };
 static const uint16_t pal_panel[4] = { RGB8(12, 14, 24), RGB8(44, 52, 72), RGB8(232, 48, 72), RGB8(248, 248, 248) };
 static const uint16_t pal_teal[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(32, 120, 110), RGB8(72, 224, 200) };
 static const uint16_t pal_star[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(232, 96, 24), RGB8(248, 208, 56) };
+// lock icon: the HUD lock glyph draws its body in colour 0, so give it a light colour 0
+static const uint16_t pal_lock[4] = { RGB8(150, 160, 180), RGB8(6, 8, 24), RGB8(90, 100, 120), RGB8(6, 8, 24) };
 static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52, 70), RGB8(90, 100, 120) };
 
 // ------------------------------------------------------------------ save (SRAM 0xA000)
@@ -98,7 +100,7 @@ void save_write(void) {
 // cadet: 1-5 stars from hits; hunter: 1 (D) .. 5 (S) from score
 uint8_t calc_rank(void) {
     uint8_t r;
-    if (gmode == MODE_CADET) {
+    if ((gmode != MODE_HUNTER)) {
         r = hits_taken <= 2 ? 5 : hits_taken <= 5 ? 4 : hits_taken <= 9 ? 3 : hits_taken <= 14 ? 2 : 1;
         if (continues_used && r > 1) r--;
         return r;
@@ -169,23 +171,24 @@ static void title_screen(void) {
     screen_prep();
     ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
     ld_bkg_pal(BANK_A6, 0, 6, title_art_pals);
-    ld_image(BANK_A6, 0, 1, 20, 10, title_art_map, title_art_attr, N_COMMON, 0, 0);
+    ld_image(BANK_A6, 0, 2, 20, 10, title_art_map, title_art_attr, N_COMMON, 0, 0);
     ld_bkg_data(BANK_A6, 1, 0, LOGO_NT, logo_tiles);
     ld_bkg_pal(BANK_A6, 6, 1, logo_pal);
     ld_copy(BANK_A6, buf, logo_map, LOGO_W * 2);
-    set_bkg_tiles(0, 11, LOGO_W, 2, buf);
-    VBK_REG = 1; fill_bkg_rect(0, 11, 20, 2, 6 | 0x08); VBK_REG = 0;
-    txt_fill(0, 0, 20, 1, txt_tile(' '), 7, 0);
-    txt_fill(0, 13, 20, 5, txt_tile(' '), 7, 0);
-    center(0, "KRYPTIDS IN SPACE", 7);
-    center(17, "BY ANTHONY DEGEORGE", 7);
+    set_bkg_tiles(0, 12, LOGO_W, 2, buf);
+    VBK_REG = 1; fill_bkg_rect(0, 12, 20, 2, 6 | 0x08); VBK_REG = 0;
+    txt_fill(0, 0, 20, 2, txt_tile(' '), 7, 0);
+    txt_fill(0, 14, 20, 4, txt_tile(' '), 7, 0);
+    center(0, "ANTHONY DEGEORGE", 7);
+    center(1, "PRESENTS", 7);
+    center(14, "KRYPTIDS IN SPACE", 7);
     screen_on(LCDC_SCREEN);
     music_play(MUS_TITLE);
     while (1) {
         wait_vbl_done(); input_poll();
         t++;
-        if ((t & 31) == 0) center(15, "PRESS START", 7);
-        if ((t & 31) == 20) txt_fill(4, 15, 12, 1, txt_tile(' '), 7, 0);
+        if ((t & 31) == 0) center(16, "PRESS START", 7);
+        if ((t & 31) == 20) txt_fill(4, 16, 12, 1, txt_tile(' '), 7, 0);
         if (joy_new & (J_A | J_START)) { sfx_play(SFX_START); wait_frames(20); return; }
     }
 }
@@ -206,7 +209,7 @@ static uint8_t pilot_select(void) {
     for (p = 0; p < N_PROFILES; p++) {
         y = 4 + p * 4;
         txt_put(3, y, pilot_names[p], 0, 7);
-        txt_put(12, y, p < 2 ? "EASY" : "HARD", 0, 6);
+        txt_put(12, y, p == 0 ? "EASY" : p == 1 ? "MEDIUM" : "HARD", 0, 6);
         if (p < 2) {
             put_tile(3, y + 1, T_HUD_STAR, 5);
             put_num(5, y + 1, total_stars(p), 2, 7);
@@ -226,7 +229,7 @@ static uint8_t pilot_select(void) {
         if (joy_new & (J_A | J_START)) {
             sfx_play(SFX_START);
             profile = sel;
-            gmode = sel < 2 ? MODE_CADET : MODE_HUNTER;
+            gmode = sel;
             return 1;
         }
         if (joy_new & J_B) return 0;
@@ -242,6 +245,7 @@ static uint8_t mission_map(void) {
     set_bkg_palette(6, 1, pal_teal);
     set_bkg_palette(5, 1, pal_star);
     set_bkg_palette(4, 1, pal_dim);
+    set_bkg_palette(3, 1, pal_lock);
     txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
     center(0, "MISSION SELECT", 7);
     txt_put(1, 1, "PILOT:", 0, 6); txt_put(8, 1, pilot_names[profile], 0, 7);
@@ -256,8 +260,8 @@ static uint8_t mission_map(void) {
             if (pf_hi[profile][s]) put_num(12, y + 1, pf_hi[profile][s], 7, 4);
             if (pf_out[profile][s]) { char c[2]; c[0] = " EKC"[pf_out[profile][s]]; c[1] = 0; txt_put(10, y + 1, c, 0, pf_out[profile][s] == OUT_CAPTURE ? 5 : 6); }
         } else {
-            put_tile(2, y, T_HUD_LOCK, 4);
-            txt_put(4, y, "??????", 0, 4);
+            put_tile(2, y, T_HUD_LOCK, 3);            // light lock icon (pal_lock)
+            txt_put(4, y, stage_names[s], 0, 4);            // greyed out until unlocked
         }
     }
     center(15, "BOUNTY:", 6);
@@ -472,7 +476,7 @@ static void results(uint8_t sid) {
     txt_put(1, 10, "CONTRACT PAY", 0, 6); txt_put(14, 10, "$", 0, 6); put_num(15, 10, pay, 4, 7);
     txt_put(1, 11, "BONUSES", 0, 6); txt_put(14, 11, "$", 0, 6); put_num(15, 11, bonus, 4, 7);
     txt_put(1, 12, "CREDITS", 0, 7); txt_put(14, 12, "$", 0, 6); put_num(15, 12, pf_credits[profile], 4, 7);
-    if (gmode == MODE_CADET) {
+    if ((gmode != MODE_HUNTER)) {
         for (i = 0; i < 5; i++) put_tile(5 + i * 2, 14, i < r ? T_HUD_STAR : T_HUD_STARE, 5);
     } else {
         static const char rk[] = "DCBAS";
@@ -495,7 +499,7 @@ static void ending(void) {
     set_bkg_palette(6, 1, pal_teal);
     load_scene(0);
     txt_fill(0, 9, 20, 9, txt_tile(' '), 7, 0);
-    if (gmode == MODE_CADET) {
+    if ((gmode != MODE_HUNTER)) {
         char c[20];
         strcpy(c, "GREAT FLYING,"); center(10, c, 7);
         strcpy(c, pilot_names[profile]); strcat(c, "!"); center(11, c, 6);

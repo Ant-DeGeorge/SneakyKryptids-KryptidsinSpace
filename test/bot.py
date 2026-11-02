@@ -5,7 +5,7 @@ Plays one stage (title -> pilot -> map -> stage -> boss) by reading game RAM.
 Profiles:
   pro  - looks 20 frames ahead every frame, chases pickups, bombs when cornered
   kid  - decides every ~12 frames, 30% random moves, short lookahead, mashes B
-Usage: bot.py ROM cadet|hunter pro|kid [seed] [--stage N] [--shots DIR] [--boss]
+Usage: bot.py ROM cadet|pilot|hunter pro|kid [seed] [--stage N] [--shots DIR] [--boss]
 """
 import sys, os, random, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -176,8 +176,8 @@ class Bot:
         g.tick(500)                                       # studio card plays (~5.5 s), then the title
         for k in range(3): g.s8('pf_unlock', 3, k)       # all missions open for testing
         g.press('start'); g.tick(30)                     # title -> pilot select
-        if self.mode == 'hunter':
-            g.press('down'); g.tick(4); g.press('down'); g.tick(4)
+        for k in range({'cadet': 0, 'pilot': 1, 'hunter': 2}[self.mode]):   # slot 0 CADET, 1 PILOT, 2 HUNTER
+            g.press('down'); g.tick(4)
         g.press('a'); g.tick(40)                         # -> mission map
         for k in range(4): g.press('up'); g.tick(3)
         for k in range(self.stage): g.press('down'); g.tick(4)

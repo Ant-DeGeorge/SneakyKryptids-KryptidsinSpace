@@ -2,8 +2,9 @@
 #define GAME_H
 #include <stdint.h>
 
-#define MODE_CADET  0
-#define MODE_HUNTER 1
+#define MODE_CADET  0               // CADET: forgiving, auto-fire, a few slow aimed shots
+#define MODE_PILOT  1               // PILOT: 3 hearts, aimed shot ~1.25 s
+#define MODE_HUNTER 2               // HUNTER: the original hard mode
 
 // shared game state (WRAM)
 extern uint8_t gmode;
@@ -15,7 +16,7 @@ extern uint8_t continues_used;
 extern uint16_t play_seconds;
 extern uint8_t midboss_killed;
 extern uint8_t start_cp;                   // 0 normal, 2 = Kraken practice (hold SELECT on title)
-#define N_PROFILES 3                        // CADET 1, CADET 2 (easy), HUNTER
+#define N_PROFILES 3                        // CADET (easy), PILOT (medium), HUNTER (hard); profile == gmode
 extern uint8_t profile;
 extern uint8_t pf_unlock[N_PROFILES], pf_done[N_PROFILES];
 

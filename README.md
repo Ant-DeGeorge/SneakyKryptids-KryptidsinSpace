@@ -22,22 +22,27 @@ The game opens with the Rejected By The Machines studio card (A or START skips i
 
 ## Pilots
 Studio card → title → WHO'S FLYING? → mission map → briefing → mission → debrief.
-Three save slots: two easy Cadet pilots and one Hunter. Each keeps its own missions, stars,
-high scores, credits and gear.
+Three save slots, one per difficulty: CADET (easy), PILOT (medium) and HUNTER (hard).
+Each keeps its own missions, stars, high scores, credits and gear.
 
-| | CADET 1 / CADET 2 (easy) | HUNTER (hard) |
-|---|---|---|
-| Health | 5 hearts, 3 lives | one hit = one life, 3 lives |
-| Firing | automatic | hold A |
-| Bombs | 5 | 3 |
-| Bullets | slower, fewer | aimed bursts, rings, fans |
-| Continues | unlimited ("TRY AGAIN!") | 9-second prompt, score resets |
-| Boss HP | Kraken 420, Thunderbird 560, Jersey Devil 620, Wendigo 680 | 820 / 1150 / 1250 / 1350, extra phases |
-| Rating | 1-5 stars by hits | rank D/C/B/A/S by score |
+| | CADET (easy) | PILOT (medium) | HUNTER (hard) |
+|---|---|---|---|
+| Health | 5 hearts, 3 lives | 3 hearts, 3 lives | one hit = one life, 3 lives |
+| Firing | automatic | automatic | hold A |
+| Bombs | 5 | 5 | 3 |
+| Bullets | slower, fewer, plus one slow aimed shot every ~2.5 s | as Cadet, plus a faster aimed shot every ~1.25 s | aimed bursts, rings, fans |
+| Continues | unlimited ("TRY AGAIN!") | unlimited ("TRY AGAIN!") | 9-second prompt, score resets |
+| Boss HP | Kraken 420, Thunderbird 560, Jersey Devil 620, Wendigo 680 | same as Cadet | 820 / 1150 / 1250 / 1350, extra phases |
+| Rating | 1-5 stars by hits | 1-5 stars by hits | rank D/C/B/A/S by score |
+
+All modes: you blink and can't be hit for a moment after respawning; the cockpit's bright dot
+is your hitbox; losing your last life shows GAME OVER before the continue / try-again prompt;
+mid-wave radio chatter waits (up to 4 s) for the top of the screen to clear; locked missions
+show their name greyed out with a lock icon.
 
 ## Controls
 - D-pad: fly
-- A: fire (Hunter; Cadet fires by itself)
+- A: fire (Hunter; Cadet and Pilot fire by themselves)
 - B: Kryptid Bomb (clears bullets, damages everything)
 - START: pause
 - Mission map: UP/DOWN picks an unlocked mission, A launches. **Hold SELECT while pressing A** to practice that mission's boss.
@@ -49,7 +54,7 @@ Your score in the mission decides how the boss fight ends:
 - **KILLED** (good score): contract closed. Double pay.
 - **ESCAPED** (low score): it breaks away. Base pay only.
 Mid-bosses work the same way (captured or destroyed if you beat them, gone if the timer runs out).
-Continues cost you: Hunter's bounty points reset, Cadet's are halved.
+Continues cost you: Hunter's bounty points reset, Cadet's and Pilot's are halved.
 Bonus pay: +50 for a captured mid-boss (+25 destroyed), +50 for a no-hit mission.
 
 ## Shooting bullets
@@ -101,19 +106,24 @@ Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated s
 - Regenerate data: `make script` (dialog, `tools/gen_script.py`), `make music` (`tools/gen_sound.py`),
   `make assets` (`tools/gen_assets.py`, Python 3 + Pillow + numpy). Crew portraits and the title art
   are converted from reference paintings that are not in this repo, so `make assets` needs them in `ref/`.
+  The cockpit hitbox dot (`tools/sprites.py`) and the coral Mission 1 enemy palette (`tools/stage1.py`)
+  are edited in the generator sources, so `make assets` reproduces them once `ref/` is present.
+- Studio card: `src/studio_card/*.h` are the original card export plus fixes (badge stripes removed,
+  slashes kept off the iris, REJECTED stamp, taglines typed out earlier so they hold at full brightness).
+  `sh tools/studio_card_patch/run.sh` rebuilds them from the untouched export in `tools/studio_card_patch/orig/`.
 
 ### Layout
 | Path | What |
 |---|---|
 | `src/` | game code (GBDK C). `stage.c` engine, `s1.c`–`s4.c` mission logic, `scenes.c` menus/story/saves, `core.c` interrupts and loaders |
 | `src/studio_card/` | Rejected By The Machines studio card module (owns the STAT vector; the game's raster split runs through `sc_stat_hook`) |
-| `tools/` | Python generators: sprites, scenery, bosses, music, script |
+| `tools/` | Python generators: sprites, scenery, bosses, music, script. `tools/studio_card_patch/run.sh` re-applies the card fixes to the original card export |
 | `ref/dex/` | creature sheets the enemies were redrawn from |
 | `test/` | PyBoy bots (`bot.py`, `suite.sh`) and a SameBoy harness (`test/sameboy/`) |
 
 ## Testing
-`pip install pyboy`, then `python3 test/bot.py build/sneaky_kryptid.gbc cadet|hunter kid|pro [seed] [--stage N] [--boss]`
-plays a mission; `sh test/suite.sh build/sneaky_kryptid.gbc "1 2 3 4"` runs every mission in both modes.
+`pip install pyboy`, then `python3 test/bot.py build/sneaky_kryptid.gbc cadet|pilot|hunter kid|pro [seed] [--stage N] [--boss]`
+plays a mission; `sh test/suite.sh build/sneaky_kryptid.gbc "1 2 3 4"` runs every mission in all three modes.
 PyBoy is not timing-accurate for the studio card's per-line effects; use SameBoy or Emulicious to judge it.
 
 ## Flashing a ModRetro Chromatic cart (ChroMagician)
@@ -124,4 +134,4 @@ If the cart refuses the save header, use `sneaky_kryptid_nosave.gbc` (no saves).
 ## Credits
 Design, story and characters: Anthony DeGeorge / Rejected By The Machines.
 Music is original. Built with GBDK-2020. Creature designs from the KRYPTID-DEX.
-© 2026 Anthony DeGeorge. All rights reserved.
+© 2026 Anthony DeGeorge. All rights reserved. The ROM is free to download and play for non-commercial use; see [LICENSE](LICENSE).

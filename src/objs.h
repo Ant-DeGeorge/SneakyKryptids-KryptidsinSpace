@@ -13,6 +13,8 @@
 #define SCR_BOTTOM (136 + YO)
 #define NEAR(a, b, r) ((uint8_t)((uint8_t)(a) - (uint8_t)(b) + (uint8_t)(r)) < (uint8_t)((r) * 2))
 #define HUNTER (gmode == MODE_HUNTER)
+#define MIDMODE (gmode == MODE_PILOT)
+#define MAXHEARTS (MIDMODE ? 3 : 5)
 #define COS64(a) sin64[((a) + 16) & 63]
 #define DCOS(d) dsin[((d) + 8) & 31]
 #define RAT(row0, n) ((row0) - 18 + (n))

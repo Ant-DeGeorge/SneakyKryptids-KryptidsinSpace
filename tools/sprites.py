@@ -26,7 +26,7 @@ SHIP_TOP = _mirror([
 "33222232",
 "32222333",
 "32122311",
-"32223313",
+"32223311",   # cockpit filled with colour 1: visible hitbox dot (hitbox centre = pixel 8,12)
 "32223311",
 "32222333",
 ])

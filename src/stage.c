@@ -37,7 +37,7 @@ static void hud_draw(void) {
         hud_tile(0, T_HUD_SHIP); hud_tile(1, txt_tile('x')); hud_tile(2, txt_tile('0' + (lives > 9 ? 9 : lives)));
         hud_tile(3, txt_tile(' ')); hud_tile(4, txt_tile(' '));
     } else {
-        for (i = 0; i < 5; i++) hud_tile(i, i < hearts ? T_HUD_HEART : T_HUD_HEARTE);
+        for (i = 0; i < 5; i++) hud_tile(i, i >= MAXHEARTS ? txt_tile(' ') : i < hearts ? T_HUD_HEART : T_HUD_HEARTE);
     }
     hud_tile(5, HUNTER ? txt_tile(' ') : txt_tile('0' + lives));
     hud_tile(6, T_HUD_BOMB); hud_tile(7, txt_tile('0' + bombs));
@@ -362,7 +362,7 @@ static void pickups_update(void) {
                 else wtype = cycle;
                 sfx_play(SFX_POWER);
             } else if (kind == PK_BOMB) { if (bombs < 9) bombs++; sfx_play(SFX_PICKUP); }
-            else if (kind == PK_HEART) { if (hearts < 5) hearts++; else add_score(500); sfx_play(SFX_PICKUP); }
+            else if (kind == PK_HEART) { if (hearts < MAXHEARTS) hearts++; else add_score(500); sfx_play(SFX_PICKUP); }
             else if (kind == PK_1UP) { if (lives < 9) lives++; sfx_play(SFX_ONEUP); }
             add_score(100);
             hud_dirty = 1;
@@ -403,6 +403,24 @@ static void enemies_common(void) {
             if ((t == E_EEL || t == E_SNAKE) && e_c[i] < NCH) ch_used[e_c[i]] = 0;
             e_type[i] = E_NONE;
         }
+    }
+}
+
+// CADET / PILOT: now and then a random on-screen enemy takes one aimed shot,
+// so the run never plays itself (Hunter keeps its own hand-tuned patterns).
+static uint8_t press_t;
+static void pressure_fire(void) {
+    uint8_t i, n, x, y;
+    if (HUNTER || st != ST_PLAY || !p_alive || p_inv || mb_active) return;
+    if (++press_t < (MIDMODE ? 75 : 150)) return;
+    press_t = 0;
+    n = rnd() & (MAXE - 1);
+    for (i = 0; i < MAXE; i++, n = (n + 1) & (MAXE - 1)) {
+        if (e_type[n] < E_KL || e_type[n] == E_ICE || (e_tf[e_type[n]] & (TF_MID | TF_NOHIT)) || (e_fl[n] & EF_HIDDEN)) continue;
+        x = (e_x[n] >> 8) + 8; y = (e_y[n] >> 8) + 8;
+        if (y < YO + 4 || y > py - 40 || x < XO + 4 || x > XO + 156) continue;
+        eb_fire(x, y, aim(x, y, px + 8, py + 12), MIDMODE ? 22 : 16, 0);
+        return;
     }
 }
 
@@ -626,15 +644,25 @@ static void stage_load(void) {
 // ------------------------------------------------------------------ continue prompt
 static uint8_t continue_prompt(void) {
     uint8_t t = 9, f = 0;
+    comm_reset();                                   // drop any crew line so the prompt owns the panel
     txt_fill(0, 2, 20, 4, txt_tile(' '), 5 | 0x80, 1);
     n_lcdc = LCDC_COMM; n_scx = 0; n_scy = 16; n_s1_line = 32; n_s1_lcdc = LCDC_PLAY; n_s1_scx = 0; n_s1_scy = (uint8_t)(112 - pos); n_s2_line = 0;
+    oam_clear();
+    music_play(MUS_OVER);
+    txt_put(5, 3, "GAME OVER", 1, 5 | 0x80);         // a beat to let the loss land
+    for (f = 0; f < 100; f++) {
+        wait_vbl_done();
+        if (f == 50) { txt_put(5, 3, "         ", 1, 5 | 0x80); }
+        if (f == 60) { txt_put(5, 3, "GAME OVER", 1, 5 | 0x80); }
+    }
+    f = 0;
+    txt_fill(0, 2, 20, 4, txt_tile(' '), 5 | 0x80, 1);
     if (!HUNTER) {
         txt_put(5, 3, "TRY AGAIN!", 1, 5 | 0x80);
         txt_put(3, 4, "YOU CAN DO IT", 1, 5 | 0x80);
-        wait_frames(120);
+        wait_frames(100);
         return 1;
     }
-    music_play(MUS_OVER);
     txt_put(5, 3, "CONTINUE?", 1, 5 | 0x80);
     txt_put(2, 4, "A: YES  START: NO", 1, 5 | 0x80);
     while (1) {
@@ -653,7 +681,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
     SD = &stage_defs[sid];
     stage_load();
     score = 0; hits_taken = 0; continues_used = 0; play_seconds = 0; midboss_killed = 0; kill_count = 0;
-    lives = 3 + g_gear[GEAR_HULL]; hearts = 5; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = g_gear[GEAR_CANNON];
+    lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = g_gear[GEAR_CANNON];
     bud_n = g_gear[GEAR_KENNEL] >= 2 ? 1 : 0; bud_hint_done = 0;
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     if (start_cp == 2 && wlevel < 1) wlevel = 1;              // boss practice: start powered up
@@ -697,6 +725,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
         pbullets_update();
         enemies_common();
         logic_tick();
+        pressure_fire();
         hazards_update();
         if (boss_comm) { comm_queue_add(boss_comm); boss_comm = 0; }
         if (k_hpmax) boss_bar();
@@ -710,7 +739,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
             if (st_t == 70) {
                 if (lives > 1) {
                     lives--;
-                    hearts = 5;
+                    hearts = MAXHEARTS;
                     if (HUNTER) { if (wlevel > g_gear[GEAR_CANNON]) wlevel--; }
                     if (bombs < 3 + g_gear[GEAR_BOMBS]) bombs = 3 + g_gear[GEAR_BOMBS];
                     p_alive = 1; p_inv = 150; px = 72 + XO; py = k_hpmax ? 100 + YO : 108 + YO; p_intro = 0;
@@ -720,7 +749,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
                     if (!continue_prompt()) return RES_GAMEOVER;
                     continues_used++;
                     if (HUNTER) { score = 0; bounty_pts = 0; } else bounty_pts >>= 1;   // continues cost the bounty
-                    lives = 3 + g_gear[GEAR_HULL]; hearts = 5; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];
+                    lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];
                     if (HUNTER) wlevel = g_gear[GEAR_CANNON];
                     restart_from(checkpoint);
                     continue;

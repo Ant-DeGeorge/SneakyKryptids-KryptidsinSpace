@@ -33,7 +33,7 @@ def build(sb):
     sb.checkpoint(1, sb.sections['ice0'] - 18 + 98)
     sb.checkpoint(2, sb.sections['approach0'] + 6)
 
-    sb.enemy_pals(['#000000', '#F8F8F8', '#F848A8', '#401040'],
+    sb.enemy_pals(['#000000', '#F8F8F8', '#FF7052', '#380810'],   # coral: reads against the purple nebula
                   ['#000000', '#F8E040', '#C03888', '#3A0C30'],     # krakenlings in the Kraken's colours
                   ['#000000', '#F0F8FF', '#70C8F0', '#183868'],
                   ['#000000', '#B8F050', '#3C9030', '#102008'])

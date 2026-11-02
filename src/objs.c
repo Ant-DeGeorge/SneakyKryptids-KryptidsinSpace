@@ -275,14 +275,39 @@ static void comm_start(uint8_t id) {
     comm_shown = 0; comm_t = 0; comm_on = 1; comm_cx = 0; comm_cy = 0;
     sfx_play(SFX_BLIP);
 }
+// The crew panel covers the top 32 px of the playfield, so mid-wave lines wait
+// until nothing is entering or fighting up there (or ~4 s pass). Boss fights,
+// the stage intro and outro show at once as before.
+static uint8_t comm_wait;
+static uint8_t comm_area_busy(void) {
+    uint8_t i, y;
+    if (k_hpmax || st != ST_PLAY) return 0;
+    for (i = 0; i < MAXE; i++) {
+        if (e_type[i] < E_KL) continue;
+        y = e_y[i] >> 8;
+        if (y < YO + 40 || y > 232) return 1;
+    }
+    for (i = 0; i < MAXEB; i++) if (eb_on[i] == 1 && (eb_y[i] >> 8) < YO + 36) return 1;
+    return 0;
+}
 void comm_queue_add(uint8_t id) {
-    if (!comm_on) comm_start(id);
-    else if (comm_qn < 4) comm_queue[comm_qn++] = id;
+    if (!comm_on && !comm_qn && !comm_area_busy()) comm_start(id);
+    else if (comm_qn < 4) { comm_queue[comm_qn++] = id; if (comm_qn == 1) comm_wait = 0; }
 }
 void comm_reset(void) { comm_on = 0; comm_qn = 0; }
+static void comm_next(void) {
+    uint8_t id = comm_queue[0];
+    comm_queue[0] = comm_queue[1]; comm_queue[1] = comm_queue[2]; comm_queue[2] = comm_queue[3];
+    comm_qn--;
+    comm_wait = 0;
+    comm_start(id);
+}
 void comm_update(void) {
     char c;
-    if (!comm_on) return;
+    if (!comm_on) {
+        if (comm_qn && (++comm_wait > 240 || !comm_area_busy())) comm_next();
+        return;
+    }
     comm_t++;
     if (comm_shown < comm_len && (comm_t & 1)) {
         c = comm_str[comm_shown];
@@ -294,14 +319,9 @@ void comm_update(void) {
         }
         comm_shown++;
         comm_t = 0;
-    } else if (comm_shown >= comm_len && comm_t > (HUNTER ? 100 : 150)) {
+    } else if (comm_shown >= comm_len && comm_t > (HUNTER ? 100 : MIDMODE ? 125 : 150)) {
         comm_on = 0;
-        if (comm_qn) {
-            uint8_t id = comm_queue[0];
-            comm_queue[0] = comm_queue[1]; comm_queue[1] = comm_queue[2]; comm_queue[2] = comm_queue[3];
-            comm_qn--;
-            comm_start(id);
-        }
+        comm_wait = 0;
     }
 }
 
