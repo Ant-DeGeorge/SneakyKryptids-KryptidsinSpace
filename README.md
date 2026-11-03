@@ -13,6 +13,8 @@ A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space 
 ![Stormwall Nebula](docs/stage2.png) ![Space Kraken](docs/boss1.png) ![Jersey Devil](docs/boss3.png)
 
 ## Play it
+- **In your browser:** https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/play/ (touch controls on phones,
+  keyboard on desktop; progress saves in that browser).
 - Download `sneaky_kryptid.gbc` from the [Releases](../../releases) page, or from `rom/` in this repo.
 - Emulator: SameBoy, Emulicious, BGB or mGBA in Game Boy Color mode.
 - Hardware: any flash cart that takes a 512 KB MBC5 ROM. Use `sneaky_kryptid_nosave.gbc` if
