@@ -1,4 +1,0 @@
-wasmboy.wasm.iife.js is WasmBoy 0.7.1 by Aaron Turner (torch2424), with one small patch (below).
-Source and license (GPL-3.0): https://github.com/torch2424/wasmBoy
-One change: its IndexedDB store falls back to memory when the browser blocks storage.
-It is used only to run the game in a web browser; the game itself is not part of WasmBoy.
