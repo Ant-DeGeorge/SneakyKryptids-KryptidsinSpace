@@ -5,7 +5,7 @@ rem so Python is only needed if you change art, music or the script (see README)
 setlocal enabledelayedexpansion
 if "%GBDK_HOME%"=="" set GBDK_HOME=C:\gbdk
 set LCC=%GBDK_HOME%\bin\lcc
-set SRC=src\main0.c src\core.c src\sound.c src\script_data.c src\script_scenes.c src\stage_defs.c src\objs.c src\stage.c src\s1.c src\s2.c src\s3.c src\s4.c src\cockpit.c src\scenes.c
+set SRC=src\main0.c src\core.c src\sound.c src\script_data.c src\script_scenes.c src\stage_defs.c src\objs.c src\stage.c src\s1.c src\s2.c src\s3.c src\s4.c src\cockpit.c src\scenes.c src\ending.c
 for %%f in (src\assets_b*.c) do set SRC=!SRC! %%f
 for %%f in (src\cockpit_b*.c) do set SRC=!SRC! %%f
 for %%f in (src\music\*.c) do set SRC=!SRC! %%f
