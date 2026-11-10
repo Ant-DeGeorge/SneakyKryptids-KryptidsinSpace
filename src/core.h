@@ -40,6 +40,8 @@ extern uint8_t oam_n;
 void oam_begin(void);
 void oam_add(uint8_t x, uint8_t y, uint8_t tile, uint8_t prop);   // x,y = OAM coords (screen+8, screen+16)
 void oam_end(void);
+extern uint8_t oam_band[16];                 // sprites per 16-line band (by top edge) this frame
+void oam_add_fx(uint8_t x, uint8_t y, uint8_t tile, uint8_t prop);   // optional effect: skipped if a line would pass 10 sprites
 void oam_fixed(uint8_t slot, uint8_t x, uint8_t y, uint8_t tile, uint8_t prop);
 void oam_clear(void);
 

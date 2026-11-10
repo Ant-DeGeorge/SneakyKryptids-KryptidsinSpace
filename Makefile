@@ -27,7 +27,8 @@ all: build/$(NAME).gbc build/$(NAME)_nosave.gbc
 #   make assets      (Python 3 + Pillow + numpy; portrait/title art also needs ref/IMG_50xx.png)
 #   make cockpit     (mission 5 art; Python 3 + Pillow + numpy)
 #   make script      (dialog only)   make music   (songs only)
-.PHONY: all assets script music cockpit clean
+#   make weaponfx    (weapon colours + shot/effect sprites -> src/weapon_fx.h; also prints the colour-blind check)
+.PHONY: all assets script music cockpit weaponfx clean
 assets:
 	python3 tools/gen_assets.py
 cockpit:
@@ -36,6 +37,9 @@ script:
 	python3 tools/gen_script.py
 music:
 	python3 tools/gen_sound.py
+weaponfx:
+	python3 tools/gen_weapon_fx.py
+	python3 tools/cvd_check.py
 
 build/obj/%.o: src/%.c $(HDR)
 	@mkdir -p build/obj
