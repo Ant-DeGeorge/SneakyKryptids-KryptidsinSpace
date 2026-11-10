@@ -2,6 +2,7 @@
 """Render songs to WAV/MP3 through SameBoy (accurate Game Boy Color APU) and the sound-test ROM.
 
   python3 tools/music/render.py OUTDIR [SONG ...]      (default: all songs; needs `make jukebox`)
+  python3 tools/music/render.py --album OUTDIR [SONG ...]   files named "NN Title" in game-flow order
 Looping songs play once through, then the loop starts again for a few seconds and fades out.
 """
 import os, sys, subprocess
@@ -9,7 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..', '..')
 sys.path.insert(0, HERE)
 import uge
-from compose import ORDER
+from compose import ORDER, TRACKS, TITLES
 
 ROM = os.path.join(ROOT, 'build', 'jukebox.gbc')
 HARNESS = os.path.join(ROOT, 'test', 'sameboy', 'sb_harness')
@@ -34,7 +35,7 @@ def sym(name):
     raise KeyError(name)
 
 
-def render(key, outdir):
+def render(key, outdir, name=None):
     song = uge.Song.load(os.path.join(ROOT, 'music', key.lower() + '.uge'))
     frames, loops = length_frames(song)
     tail = 300 if loops else 90
@@ -45,7 +46,7 @@ def render(key, outdir):
     subprocess.run([HARNESS, ROM, script, outdir, '.'], cwd=os.path.dirname(HARNESS), check=True,
                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     secs = (frames + tail) / 59.7275
-    base = os.path.join(outdir, key.lower())
+    base = os.path.join(outdir, name or key.lower())
     fade = f'afade=t=out:st={secs - 4:.2f}:d=4,' if loops else ''
     import wave, array
     w = wave.open(wav); pcm = array.array('h', w.readframes(w.getnframes())); w.close()
@@ -53,12 +54,21 @@ def render(key, outdir):
     gain = min(1.6, 0.93 / peak)                        # the GBC mix is quiet: lift it, but never clip
     af = fade + f'volume={gain:.3f}'
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', wav, '-af', af, base + '.wav'], check=True)
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', base + '.wav', '-codec:a', 'libmp3lame', '-b:a', '192k', base + '.mp3'], check=True)
+    tags = ['-metadata', f'title={TITLES[key]}', '-metadata', 'artist=Rejected By The Machines',
+            '-metadata', 'album=Sneaky Kryptid: Kryptids in Space']
+    if name: tags += ['-metadata', f'track={name[:2].lstrip("0")}/{len(TRACKS)}']
+    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', base + '.wav', '-codec:a', 'libmp3lame', '-b:a', '192k'] + tags + [base + '.mp3'], check=True)
     os.remove(wav); os.remove(script)
     return secs
 
 
 if __name__ == '__main__':
-    out = sys.argv[1]; os.makedirs(out, exist_ok=True)
-    for k in [a.upper() for a in sys.argv[2:]] or ORDER:
-        print(f'{k}: {render(k, os.path.abspath(out)):.1f} s')
+    args = sys.argv[1:]
+    album = args and args[0] == '--album'
+    if album: args = args[1:]
+    out = args[0]; os.makedirs(out, exist_ok=True)
+    want = [a.upper() for a in args[1:]]
+    for n, (k, title, _) in enumerate(TRACKS, 1):
+        if want and k not in want: continue
+        name = f'{n:02d} {title}' if album else None
+        print(f'{name or k}: {render(k, os.path.abspath(out), name):.1f} s')
