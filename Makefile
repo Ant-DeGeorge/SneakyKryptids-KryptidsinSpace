@@ -6,7 +6,7 @@ NAME   = sneaky_kryptid
 TITLE  = SNEAKYKRYPT
 SRC    = src/main0.c src/core.c src/sound.c src/script_data.c src/script_scenes.c src/stage_defs.c \
          src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/scenes.c \
-         $(wildcard src/assets_b*.c) $(wildcard src/cockpit_b*.c) $(wildcard src/music/*.c)
+         $(wildcard src/assets_b*.c) $(wildcard src/cockpit_b*.c) $(wildcard src/music/*.c) $(wildcard src/weapon_fx2_b*.c)
 OBJ    = $(SRC:src/%.c=build/obj/%.o)
 HDR    = $(wildcard src/*.h)
 
@@ -43,6 +43,7 @@ music:
 	python3 tools/music/build_music.py
 weaponfx:
 	python3 tools/gen_weapon_fx.py
+	python3 tools/gen_weapon_fx2.py
 	python3 tools/cvd_check.py
 
 build/obj/%.o: src/%.c $(HDR)

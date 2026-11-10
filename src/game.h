@@ -33,7 +33,10 @@ extern uint32_t bounty_pts;                // points scored this mission (decide
 #define GEAR_BOMBS  2                       // +1 bomb per level
 #define GEAR_KENNEL 3                       // 1: buddy cap 3, 2: start with a buddy
 #define GEAR_RUNES  4                       // 1: shots break big orbs
-#define N_GEAR 5
+#define GEAR_LANCE  5                       // Lance Rune: max-level twin pierces
+#define GEAR_RICO   6                       // Ricochet Rune: max-level spread bounces off the walls
+#define GEAR_CHAIN  7                       // Chain Rune: max-level wisp jumps to the next enemy
+#define N_GEAR 8
 extern uint8_t g_gear[N_GEAR];
 extern uint16_t pf_credits[N_PROFILES];
 extern uint8_t pf_gear[N_PROFILES][N_GEAR];

@@ -19,6 +19,7 @@
 #include "sound.h"
 #include "game.h"
 #include "objs.h"
+#include "weapon_fx2.h"
 
 extern uint8_t bud_n;
 extern const uint8_t boss_out_comm[];
@@ -53,6 +54,8 @@ uint8_t ck_tick, ck_pc;                          // wave script clock (32-frame 
 
 static uint8_t ck_sub, ck_cp, cp_pc[4], cp_tick[4];        // checkpoints: start, debris, push, boss
 static uint8_t p_inv, fire_cd, bolt_t, spark_t, hold_t, flash_t, shake_t, bomb_t, lock;
+static uint8_t ck_pop, ck_wpal, spark_k, spark_x, spark_y;     // weapon flair: name pop, palette shown, impact kind + spot
+static const char *ck_pop_s;
 static uint8_t was_comm, panel_bar, panel_rate, alert, alert_last, bar_last, bud_cd;
 static uint16_t star_x[6], star_y[6];            // 8.8, view coordinates
 static int16_t star_vx[6], star_vy[6];
@@ -185,11 +188,10 @@ static void orb_fire(uint8_t x, uint8_t y, uint8_t big) {
 }
 
 // ------------------------------------------------------------------ HUD + dashboard panel
-static const uint32_t p10[7] = {1000000UL, 100000UL, 10000UL, 1000UL, 100UL, 10UL, 1UL};
-static void hud_tile(uint8_t x, uint8_t t) { set_win_tile_xy(x, 1, t); }
+static uint8_t hud_buf[20];                              // the HUD row is built here and sent in one go (20 single-tile writes cost ~25 lines)
+#define hud_tile(x, t) (hud_buf[x] = (t))
 static void hud_draw(void) {
-    uint8_t i, d;
-    uint32_t s;
+    uint8_t i;
     if (HUNTER) {
         hud_tile(0, T_HUD_SHIP); hud_tile(1, txt_tile('x')); hud_tile(2, txt_tile('0' + (lives > 9 ? 9 : lives)));
         hud_tile(3, txt_tile(' ')); hud_tile(4, txt_tile(' '));
@@ -199,14 +201,11 @@ static void hud_draw(void) {
     hud_tile(5, HUNTER ? txt_tile(' ') : txt_tile('0' + lives));
     hud_tile(6, T_HUD_BOMB); hud_tile(7, txt_tile('0' + bombs));
     hud_tile(8, bud_n ? T_HUD_BUD : txt_tile(' '));
-    hud_tile(9, txt_tile('T'));
+    hud_tile(9, txt_tile(wtype == 0 ? 'T' : wtype == 1 ? 'S' : 'H'));
     for (i = 0; i < 3; i++) hud_tile(10 + i, i <= wlevel ? T_HUD_PIP : T_HUD_PIPE);
-    s = score;
-    for (i = 0; i < 7; i++) {
-        d = 0;
-        while (s >= p10[i]) { s -= p10[i]; d++; }
-        hud_tile(13 + i, txt_tile('0' + d));
-    }
+    if (ck_pop) for (i = 0; i < 7; i++) hud_tile(13 + i, txt_tile(ck_pop_s[i]));
+    else score_tiles(hud_buf + 13);
+    set_win_tiles(0, 1, 20, 1, hud_buf);
     hud_dirty = 0;
 }
 static void rim_draw(void) {
@@ -265,7 +264,11 @@ static void boss_bar_draw(void) {
     }
     if (k_hp == bar_hp && bar_last != 0xFF) return;
     bar_hp = k_hp;
-    n = (uint8_t)(((uint32_t)k_hp * 10 + k_hpmax - 1) / k_hpmax);
+    {                                                   // ceil(hp * 10 / max) without a 32-bit divide (~20 scanlines)
+        uint16_t v = k_hp * 10, acc = 0;                // hp <= 900, so hp * 10 fits
+        n = 0;
+        while (acc < v && n < 10) { acc += k_hpmax; n++; }
+    }
     if (n == bar_last) return;
     bar_last = n;
     for (i = 0; i < 10; i++) set_win_tile_xy(10 + i, 0, i < n ? T_HUD_BAR : T_HUD_BARE);
@@ -277,14 +280,14 @@ static const uint8_t * const b_attrs[3] = {ck_boss_attr0, ck_boss_attr1, ck_boss
 static void boss_row(uint8_t pose, uint8_t r) {
     bg_rows(MAP98, BOSS_COL, BOSS_ROW + r, 8, b_maps[pose] + r * 8, b_attrs[pose] + r * 8, 0, 0);
 }
-// a pose change is spread over three frames so it never costs a frame
+// a pose change is spread over four frames so it never costs a frame
 static uint8_t pose_row = 8;
 static void boss_pose(uint8_t pose) {
     if (pose == b_pose) return;
     b_pose = pose; pose_row = 0;
 }
 static void boss_pose_step(void) {
-    uint8_t n = 3;
+    uint8_t n = 2;                                      // two rows a frame (each row ~10 scanlines)
     while (pose_row < 8 && n--) boss_row(b_pose, pose_row++);
 }
 static void boss_fade(uint8_t k) { b_fade = k; ld_bkg_pal(BANK_CK, 2, 2, ck_boss_fade + k * 8); }
@@ -325,7 +328,13 @@ static void boss_damage(uint8_t dmg) {
 }
 static void caps_take(uint8_t i) {
     uint8_t kind = ck_a[i];
-    if (kind == 1) { if (wlevel < 2) wlevel++; else add_score(1000); sfx_play(SFX_POWER); }
+    if (kind == 1) {
+        uint8_t cy = (ck_t[i] >> 6) % 3;
+        ck_pop = 90;
+        if (cy == wtype) { if (wlevel < 2) wlevel++; else add_score(1000); ck_pop_s = wlevel == 2 ? "MAX!   " : "POWER! "; }
+        else { wtype = cy; ck_pop_s = cy == 0 ? "TWIN   " : cy == 1 ? "SPREAD " : "WISP   "; }
+        sfx_play(SFX_POWER);
+    }
     else if (kind == 2) { if (bombs < 9) bombs++; sfx_play(SFX_PICKUP); }
     else if (HUNTER) { if (lives < 9) lives++; sfx_play(SFX_ONEUP); }
     else { if (hearts < MAXHEARTS) hearts++; else add_score(500); sfx_play(SFX_PICKUP); }
@@ -361,7 +370,7 @@ static void o_damage(uint8_t i, uint8_t dmg) {
 static const uint8_t hit_w[3] = {5, 9, 15}, hit_h[3] = {5, 7, 11}, hit_orb[3] = {5, 7, 9};
 static uint8_t target_at(void) {
     uint8_t i, t, s, hw, hh, key, best = 0xFF, bk = 255;
-    uint8_t as = HUNTER ? 0 : MIDMODE ? 1 : 3;
+    uint8_t as = (HUNTER ? 0 : MIDMODE ? 1 : 3) + (wtype == 2 ? 8 : 0);     // wisp shots seek: a wider lock
     uint8_t cx = ck_cx + VB, cy = ck_cy + VB;
     for (i = 0; i < CK_MAXO; i++) {
         t = ck_type[i];
@@ -381,9 +390,17 @@ static void player_fire(void) {
     bolt_t = 3;
     sfx_play(SFX_SHOT);
     if (lock == 0xFF) return;
-    spark_t = 4;
-    if (lock == 0xFE) boss_damage(dmg);
-    else o_damage(lock, dmg);
+    spark_t = 6; spark_k = wtype;
+    if (lock == 0xFE) { boss_damage(dmg); spark_x = ck_cx + VB; spark_y = ck_cy + VB; return; }
+    spark_x = ck_sx[lock]; spark_y = ck_sy[lock];
+    if (wtype == 1) {                                   // spread: the burst splashes anything close by
+        uint8_t i, t;
+        for (i = 0; i < CK_MAXO; i++) {
+            t = ck_type[i];
+            if (i != lock && t >= O_UFO && t <= O_BIGORB && NEAR(ck_sx[i], spark_x, 20) && NEAR(ck_sy[i], spark_y, 16)) o_damage(i, 1);
+        }
+    }
+    if (ck_type[lock] != O_NONE) o_damage(lock, dmg);
 }
 static void use_bomb(void) {
     uint8_t i, t;
@@ -717,12 +734,21 @@ static void draw_all(void) {
     if (bolt_t) {
         f = 4 - bolt_t;                                             // 1..3 quarters of the way
         y = (uint8_t)(VB + 92 + qtr((int16_t)ck_cy - 92, f));
-        t = f == 1 ? CK_ST_BOLT : CK_ST_BOLT2;
-        spr8((uint8_t)(VB + 16 + qtr((int16_t)ck_cx - 16, f)), y, t, 2 | 8);
-        spr8((uint8_t)(VB + 144 + qtr((int16_t)ck_cx - 144, f)), y, t, 2 | 8 | 0x20);
+        if (wtype == 0) { t = f == 1 ? CK_ST_BOLT : CK_ST_BOLT2; p = 1 | 8; }
+        else { t = wtype == 1 ? ST_SHOT_SPREAD : ST_SHOT_WISP; p = 1; }
+        spr8((uint8_t)(VB + 16 + qtr((int16_t)ck_cx - 16, f)), y, t, p);
+        spr8((uint8_t)(VB + 144 + qtr((int16_t)ck_cx - 144, f)), y, t, p | 0x20);
+        if (f == 1) {                                               // muzzle flashes at the gun ports
+            t = wtype == 0 ? ST_SPARK : wtype == 1 ? FX_MUZ_SPREAD : FX_MUZ_WISP; p = wtype ? 1 | 8 : 7;
+            spr8(VB + 16, VB + 88, t, p); spr8(VB + 144, VB + 88, t, p | 0x20);
+        }
         bolt_t--;
     }
-    if (spark_t) { spark_t--; spr8(ck_cx + VB - 1 + (rnd() & 3), ck_cy + VB - 1 + (rnd() & 3), ST_SPARK, 7); }
+    if (spark_t) {                                                  // impact: twin sparks, spread star, wisp frost
+        spark_t--;
+        if (spark_k == 0) spr8(spark_x - 1 + (rnd() & 3), spark_y - 1 + (rnd() & 3), ST_SPARK, 7);
+        else spr8(spark_x, spark_y, (spark_k == 1 ? FX_IMP_STAR_A : FX_IMP_FROST_A) + (spark_t >= 3 ? 0 : 2), 1 | 8);
+    }
     // beam charge: the eyes flare
     if (ck_charge && (ck_charge & 2)) {
         spr8(boss_sx() - 5, boss_sy() - 1, CK_ST_GLOW, 6 | 8);
@@ -744,7 +770,8 @@ static void draw_all(void) {
         if (t == O_BOOM) { spr16(x, y, ST_EXPL0 + (ck_t[i] / 5) * 4, 7); continue; }
         if (t == O_CAPS) {
             if (ck_z[i] < 50 && (ck_z[i] & 4)) continue;
-            spr16(x, y, ck_a[i] == 1 ? ST_PK_T : ck_a[i] == 2 ? ST_PK_B : HUNTER ? ST_PK_1UP : ST_PK_HEART, 7);
+            c = (ck_t[i] >> 6) % 3;
+            spr16(x, y, ck_a[i] == 1 ? (c == 0 ? ST_PK_T : c == 1 ? ST_PK_S : ST_PK_H) : ck_a[i] == 2 ? ST_PK_B : HUNTER ? ST_PK_1UP : ST_PK_HEART, 7);
             continue;
         }
         s = ck_st[i];
@@ -807,7 +834,8 @@ static void ck_load(void) {
     oam_clear();
     VBK_REG = 0;
     ld_spr_data(BANK_A2, 0, N_SPR_TILES, spr_tiles);
-    VBK_REG = 1; ld_spr_data(BANK_CK, 0, CK_SPR_NT, ck_spr); VBK_REG = 0;
+    VBK_REG = 1; ld_spr_data(BANK_CK, 0, CK_SPR_NT, ck_spr); ld_spr_data(BANK_FX2, FX2_BASE, FX2_NT, fx2_tiles); VBK_REG = 0;
+    ck_wpal = 0xFF;
     ld_spr_pal(BANK_A2, 0, 3, obj_pals);
     ld_spr_pal(BANK_A2, 7, 1, obj_pals + 28);
     ld_spr_pal(BANK_CK, 3, 4, ck_objpal);
@@ -835,7 +863,7 @@ static void restart_from(uint8_t cp) {
     ck_cp = cp; ck_pc = cp_pc[cp]; ck_tick = cp_tick[cp]; ck_sub = 0;
     if (cp == 3) { ck_pc = 0; while (waves[ck_pc].type != W_END) ck_pc++; ck_tick = waves[ck_pc].t; }
     parx = 0; pary = 0;
-    ck_cx = 80; ck_cy = 52; p_inv = 90; fire_cd = 20; bolt_t = 0; spark_t = 0; flash_t = 0; shake_t = 0; bomb_t = 0; lock = 0xFF;
+    ck_cx = 80; ck_cy = 52; p_inv = 90; fire_cd = 20; bolt_t = 0; spark_t = 0; ck_pop = 0; flash_t = 0; shake_t = 0; bomb_t = 0; lock = 0xFF;
     alert = cp == 0 ? 2 : 0; bar_last = 0xFF; bud_cd = 60;
     for (i = 0; i < 6; i++) { star_new(i); star_x[i] += star_vx[i] * (int16_t)(i * 6); star_y[i] += star_vy[i] * (int16_t)(i * 6); }
     st = ST_PLAY; st_t = 0;
@@ -952,6 +980,8 @@ uint8_t cockpit_run(void) BANKED {
             if (st_t >= 150) { oam_clear(); return RES_CLEAR; }
         }
         // dashboard: HUD, then the bounty panel whenever the crew is not on the comm
+        if (ck_wpal != wtype) { ck_wpal = wtype; ld_spr_pal(BANK_FX2, 1, 1, fx2_wpn_pals + wtype * 4); }
+        if (ck_pop && !--ck_pop) hud_dirty = 1;
         if (hud_dirty) hud_draw();
         if (comm_on != was_comm) { was_comm = comm_on; if (!comm_on) panel_draw(); }
         if (!comm_on) {

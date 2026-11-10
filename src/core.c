@@ -6,6 +6,7 @@
 #include "assets.h"
 #include "sound.h"
 #include "objs.h"
+#include "game.h"
 
 // The studio card (src/studio_card) owns the STAT vector at 0x48; our split
 // handler runs through its hook instead of GBDK's add_LCD dispatcher.
@@ -124,6 +125,21 @@ uint8_t txt_tile(char c) {
     uint8_t t, b = _current_bank;
     SWITCH_ROM(BANK_A2); t = ascii_map[(uint8_t)c & 0x7F]; SWITCH_ROM(b);
     return t;
+}
+// the score as 7 digit tiles; constant compares and 16-bit math for the low digits keep it cheap
+// (the old 32-bit table loop cost ~20 scanlines in a busy frame)
+void score_tiles(uint8_t *o) {
+    uint32_t s = score;
+    uint16_t v;
+    uint8_t d, z = txt_tile('0');
+    d = z; while (s >= 1000000UL) { s -= 1000000UL; d++; } o[0] = d;
+    d = z; while (s >= 100000UL) { s -= 100000UL; d++; } o[1] = d;
+    d = z; while (s >= 10000UL) { s -= 10000UL; d++; } o[2] = d;
+    v = (uint16_t)s;
+    d = z; while (v >= 1000) { v -= 1000; d++; } o[3] = d;
+    d = z; while (v >= 100) { v -= 100; d++; } o[4] = d;
+    d = z; while (v >= 10) { v -= 10; d++; } o[5] = d;
+    o[6] = z + (uint8_t)v;
 }
 void txt_put(uint8_t x, uint8_t y, const char *s, uint8_t win, uint8_t attr) {
     uint8_t n = 0, t;
