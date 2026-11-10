@@ -142,31 +142,50 @@ void txt_fill(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t tile, uint8_t 
 // ------------------------------------------------------------------ OAM
 uint8_t oam_n;
 static uint8_t oam_rot;
-static uint8_t oy[36], ox[36], ot[36], op[36];
-void oam_begin(void) { oam_n = 0; }
+static uint8_t obuf[36 * 4], *ow;            // staged entries: y, x, tile, prop (OAM layout)
+// Sprites per 16-line band, by the band their top edge is in (fixed slots 0-3 are added by the
+// caller). A line in band B is covered only by sprites starting in band B or B-1, so
+// cnt[B-1] + cnt[B] bounds every line in band B. oam_add_fx uses it to draw an optional effect
+// (muzzle flash, hit spark, ring) only where no scanline would go past the hardware's 10.
+uint8_t oam_band[16];
+void oam_begin(void) { oam_n = 0; ow = obuf; memset(oam_band, 0, sizeof oam_band); }
 void oam_add(uint8_t x, uint8_t y, uint8_t tile, uint8_t prop) {
+    uint8_t *w;
     if (oam_n >= 36) return;
-    oy[oam_n] = y; ox[oam_n] = x; ot[oam_n] = tile; op[oam_n] = prop; oam_n++;
+    oam_band[y >> 4]++;
+    w = ow; *w++ = y; *w++ = x; *w++ = tile; *w++ = prop; ow = w;
+    oam_n++;
 }
+void oam_add_fx(uint8_t x, uint8_t y, uint8_t tile, uint8_t prop) {
+    uint8_t b = y >> 4, c = oam_band[b];
+    if (b && (uint8_t)(oam_band[b - 1] + c) > 9) return;
+    if (b < 15 && (uint8_t)(c + oam_band[b + 1]) > 9) return;
+    oam_add(x, y, tile, prop);
+}
+// Same result as before (entry i lands in rotating slot (rot + i) % 36, the rest hidden),
+// done with two block copies instead of per-field stores.
 void oam_end(void) {
-    uint8_t i, s;
+    uint8_t i, s, first;
+    uint8_t *p;
     if (oam_n) {
         oam_rot += 7;
         if (oam_rot >= 36) oam_rot -= 36;
     }
     s = oam_rot;
-    for (i = 0; i < 36; i++) shadow_OAM[4 + i].y = 0;
-    for (i = 0; i < oam_n; i++) {
-        OAM_item_t *o = &shadow_OAM[4 + s];
-        o->y = oy[i]; o->x = ox[i]; o->tile = ot[i]; o->prop = op[i];
-        if (++s >= 36) s = 0;
+    p = &shadow_OAM[4].y;
+    for (i = 36; i; i--) { *p = 0; p += 4; }
+    first = 36 - s;
+    if (oam_n <= first) memcpy(&shadow_OAM[4 + s], obuf, (uint16_t)oam_n << 2);
+    else {
+        memcpy(&shadow_OAM[4 + s], obuf, (uint16_t)first << 2);
+        memcpy(&shadow_OAM[4], obuf + ((uint16_t)first << 2), (uint16_t)(oam_n - first) << 2);
     }
 }
 void oam_fixed(uint8_t slot, uint8_t x, uint8_t y, uint8_t tile, uint8_t prop) {
     OAM_item_t *o = &shadow_OAM[slot];
     o->y = y; o->x = x; o->tile = tile; o->prop = prop;
 }
-void oam_clear(void) { uint8_t i; for (i = 0; i < 40; i++) shadow_OAM[i].y = 0; oam_n = 0; }
+void oam_clear(void) { uint8_t i; for (i = 0; i < 40; i++) shadow_OAM[i].y = 0; oam_n = 0; ow = obuf; }
 
 // ------------------------------------------------------------------ input / misc
 uint8_t joy, joy_prev, joy_new;
