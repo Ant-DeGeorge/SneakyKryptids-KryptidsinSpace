@@ -203,29 +203,64 @@ static void put_rating(uint8_t x, uint8_t y, uint8_t prof, uint8_t sid) {
 }
 
 // ------------------------------------------------------------------ title
+static uint16_t fade_buf[4 * 8];
+static uint8_t title_seen;
+// scale palettes to level lv (0 black .. 8 full) and load them
+static void pal_fade(uint8_t first, uint8_t n, const uint16_t *src, uint8_t lv) {
+    uint8_t i, r, g, b;
+    for (i = 0; i < n * 4; i++) {
+        uint16_t c = src[i];
+        r = ((c & 31) * lv) >> 3; g = (((c >> 5) & 31) * lv) >> 3; b = (((c >> 10) & 31) * lv) >> 3;
+        fade_buf[i] = r | ((uint16_t)g << 5) | ((uint16_t)b << 10);
+    }
+    wait_vbl_done();
+    set_bkg_palette(first, n, fade_buf);
+}
+static uint8_t title_wait(uint8_t n) {        // A/START skips the intro
+    while (n--) { wait_vbl_done(); input_poll(); if (joy_new & (J_A | J_START)) return 1; }
+    return 0;
+}
 static void title_screen(void) {
-    uint8_t t = 0, buf[40];
+    uint8_t t = 0, buf[40], lv, skip = 0;
+    static uint16_t art_pals[4 * 7];
+    music_play(MUS_TITLE);
+    if (!title_seen) {
+        // AGD PRESENTS on its own, fading up out of black
+        title_seen = 1;
+        screen_prep();
+        txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
+        pal_fade(7, 1, pal_text, 0);
+        center(8, "AGD PRESENTS", 7);
+        screen_on(LCDC_SCREEN);
+        for (lv = 1; lv <= 8 && !skip; lv++) skip = title_wait(6);
+        pal_fade(7, 1, pal_text, 8);
+        if (!skip) skip = title_wait(80);
+        for (lv = 8; lv && !skip; lv--) { pal_fade(7, 1, pal_text, lv - 1); skip = title_wait(3); }
+    }
     screen_prep();
     ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
-    ld_bkg_pal(BANK_A6, 0, 6, title_art_pals);
+    ld_copy(BANK_A6, art_pals, title_art_pals, 6 * 8);
+    ld_copy(BANK_A6, art_pals + 24, logo_pal, 8);
+    pal_fade(0, 7, art_pals, skip ? 8 : 0);
     ld_image(BANK_A6, 0, 2, 20, 10, title_art_map, title_art_attr, N_COMMON, 0, 0);
     ld_bkg_data(BANK_A6, 1, 0, LOGO_NT, logo_tiles);
-    ld_bkg_pal(BANK_A6, 6, 1, logo_pal);
     ld_copy(BANK_A6, buf, logo_map, LOGO_W * 2);
     set_bkg_tiles(0, 12, LOGO_W, 2, buf);
     VBK_REG = 1; fill_bkg_rect(0, 12, 20, 2, 6 | 0x08); VBK_REG = 0;
     txt_fill(0, 0, 20, 2, txt_tile(' '), 7, 0);
     txt_fill(0, 14, 20, 4, txt_tile(' '), 7, 0);
-    center(0, "ANTHONY DEGEORGE", 7);
-    center(1, "PRESENTS", 7);
+    center(0, "AGD PRESENTS", 7);
+    screen_on(LCDC_SCREEN);
+    // the art and logo fade in under AGD PRESENTS
+    for (lv = 1; lv <= 8 && !skip; lv++) { pal_fade(0, 7, art_pals, lv); skip = title_wait(6); }
+    pal_fade(0, 7, art_pals, 8);
 #ifdef FLATWOODS_DEMO
     center(14, "FLATWOODS DRIFT", 7);
 #else
     center(14, "KRYPTIDS IN SPACE", 7);
 #endif
     center(17, DEMO_VERSION, 7);
-    screen_on(LCDC_SCREEN);
-    music_play(MUS_TITLE);
+    if (skip) title_wait(15);                  // don't let the skip press also start the game
     while (1) {
         wait_vbl_done(); input_poll();
         t++;
@@ -597,26 +632,7 @@ static void results(uint8_t sid) {
 }
 
 static void ending(void) {
-    screen_prep();
-    set_bkg_palette(7, 1, pal_text);
-    set_bkg_palette(6, 1, pal_teal);
-    load_scene(0);
-    txt_fill(0, 9, 20, 9, txt_tile(' '), 7, 0);
-    if ((gmode != MODE_HUNTER)) {
-        char c[20];
-        strcpy(c, "GREAT FLYING,"); center(10, c, 7);
-        strcpy(c, pilot_names[profile]); strcat(c, "!"); center(11, c, 6);
-        center(13, "MONSTER HUNTER!", 7);
-    } else {
-        center(10, "NICE SHOOTING,", 7);
-        center(11, "HUNTER.", 6);
-        center(13, "FIVE BOUNTIES IN.", 7);
-    }
-    center(16, "TO BE CONTINUED...", 7);
-    screen_on(LCDC_SCREEN);
-    music_play(MUS_END);
-    wait_frames(90);
-    wait_button(1500);
+    ending_run();
     screen_prep();
     set_bkg_palette(6, 1, pal_teal);
     txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
@@ -663,6 +679,10 @@ void game_main(void) BANKED {
     profile = 0;
     while (1) {
         title_screen();
+#ifdef TEST_ENDING
+        ending();                       // test ROM only: poke pf_out/pf_best/profile/gmode at the title
+        continue;
+#endif
 #ifdef FLATWOODS_DEMO
         // standalone gun-cam demo: pilot select -> briefing -> Flatwoods Drift -> debrief, and again
         while (pilot_select()) {

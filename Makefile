@@ -5,7 +5,7 @@ LCC = $(GBDK_HOME)/bin/lcc
 NAME   = sneaky_kryptid
 TITLE  = SNEAKYKRYPT
 SRC    = src/main0.c src/core.c src/sound.c src/script_data.c src/script_scenes.c src/stage_defs.c \
-         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/scenes.c \
+         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/scenes.c src/ending.c \
          $(wildcard src/assets_b*.c) $(wildcard src/cockpit_b*.c) $(wildcard src/music/*.c) $(wildcard src/weapon_fx2_b*.c)
 OBJ    = $(SRC:src/%.c=build/obj/%.o)
 HDR    = $(wildcard src/*.h)
@@ -91,3 +91,12 @@ clean:
 
 # lcc keeps its intermediate files next to each other: parallel jobs (make -j) corrupt objects
 .NOTPARALLEL:
+
+# test ROM: START on the title goes straight to the ending (poke pf_out/pf_best/profile/gmode first)
+.PHONY: endtest
+endtest: build/endtest.gbc
+build/obj/scenes_endtest.o: src/scenes.c $(HDR)
+	@mkdir -p build/obj
+	$(LCC) $(CFLAGS) -Wf-DTEST_ENDING -c -o $@ $<
+build/endtest.gbc: $(OBJ) $(CARD_O) build/obj/scenes_endtest.o
+	$(LCC) $(CFLAGS) -Wm-ya1 -Wm-yt0x1B -o $@ $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_endtest.o $(CARD_O)
