@@ -6,7 +6,8 @@ Channel text is a list of tokens, each taking one or more rows:
   -:4         hold whatever is sounding for 4 rows
   @3          switch to instrument 3 (no row)
   D5:8/437    note with effect 4 37 (vibrato). Arpeggio (0xy) and vibrato (4xy) repeat on every
-              row of the note; other effects go on its first row only.
+              row of the note; other effects go on its first row only, unless starred:
+  C6:8/*204   slide down (2xx) on every row of the note (also 1xx up, 3xx portamento glide)
   |           bar line (ignored; checked: every bar must be 16 rows when bars=16 is given)
 Drum text (channel 4) uses one letter per row: k kick, s snare, h hat, o open hat, . empty.
 """
@@ -81,9 +82,9 @@ class Score:
                 bar_start = len(rows); continue
             if tok.startswith('@'):
                 instr = int(tok[1:]); continue
-            m = re.fullmatch(r'([^:/]+)(?::(\d+))?(?:/([0-9A-Fa-f]{3}))?', tok)
+            m = re.fullmatch(r'([^:/]+)(?::(\d+))?(?:/(\*?)([0-9A-Fa-f]{3}))?', tok)
             if not m: raise ValueError(f'bad token {tok!r}')
-            n, d, fx = m.group(1), int(m.group(2) or 1), m.group(3)
+            n, d, star, fx = m.group(1), int(m.group(2) or 1), m.group(3), m.group(4)
             fxc, fxp = (int(fx[0], 16), int(fx[1:], 16)) if fx else (0, 0)
             first = uge.Cell()
             if n == 'R':
@@ -94,14 +95,14 @@ class Score:
             rows.append(first)
             for _ in range(d - 1):
                 c = uge.Cell()
-                if fx and fxc in (0x0, 0x4): c.fx, c.param = fxc, fxp
+                if fx and (star or fxc in (0x0, 0x4)): c.fx, c.param = fxc, fxp
                 rows.append(c)
         if bars and (len(rows) - bar_start) % bars: raise ValueError(f'ch{ch}: last bar has {len(rows) - bar_start} rows')
         setattr(self, f'_ins{ch}', instr)
 
-    def drum(self, text):
+    def drum(self, text, bars=16):
         rows = self.rows[4]
-        if len(text.replace(' ', '').replace('|', '')) % 16:
+        if len(text.replace(' ', '').replace('|', '')) % bars:
             raise ValueError(f'drum part is {len(text.replace(" ", ""))} rows, not whole bars: {text[:40]}...')
         for ch in text:
             if ch in ' |': continue

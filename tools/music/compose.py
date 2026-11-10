@@ -4,9 +4,9 @@
 Writes music/<song>.uge for every song (hUGETracker 1.0 files). Songs listed in music/HAND_EDITED
 were changed in hUGETracker and are left alone. tools/music/build_music.py turns the .uge files into C.
 
-New hUGEDriver arrangements: TITLE ("Bounty Call"), MAP ("Star Chart").
-Every other song is the v1.1 tune carried over note for note (lead on ch2, bass on ch3) until
-it gets its own arrangement.
+New hUGEDriver arrangements: TITLE ("Bounty Call"), MAP ("Star Chart"), and every mission's stage
+and boss theme (tools/music/levels.py). BRIEF, WARN, CLEAR, OVER and END are still the v1.1 tunes
+carried over note for note (lead on ch2, bass on ch3) until they get their own arrangement.
 """
 import os, sys, math
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -196,6 +196,8 @@ def star_chart():
 
 
 NEW = {'TITLE': title, 'MAP': star_chart}
+import levels
+NEW.update(levels.SONGS)
 
 
 def main(only=None):
