@@ -85,8 +85,9 @@ work the cannons from the cockpit.
   the crosshair turns gold when something is under it.
 - You cannot dodge. Green orbs fired at the ship grow as they close in and blink just before
   they land: shoot them down first. Rocks that flash red are on a collision course.
-- Red saucers take more hits and fire pairs. Shoot capsules to collect them (T weapon level,
-  B bomb, heart or 1UP).
+- Red saucers take more hits and fire pairs. Shoot capsules to collect them: the weapon capsule
+  cycles T / S / H like the other missions (same letter = level up), or B bomb, heart or 1UP.
+  In the gun cam S bursts splash nearby targets and H wisps lock on from further away.
 - The dashboard shows the bounty meter and the outcome the run is heading for
   (ESCAPE, KILL or CAPTURE), so you can see what a missed wave costs.
 - **Flatwoods Monster:** orb volleys, saucer escorts and big orbs (three hits, one with Rune
@@ -110,6 +111,14 @@ Credits are saved per pilot. Gear stays bought.
 | Buddy Bay | room for 3 buddies | start with one | 200 / 400 |
 | Rune Rounds | shots break big orbs | | 300 |
 
+Press LEFT/RIGHT for the second tab, **Weapon Runes**. Each one wakes up when that weapon is at
+max level (3 pips):
+| Rune | What it does | Cost |
+|---|---|---|
+| Lance Rune | Twin's centre shot becomes a lance that pierces every enemy and small bullet in its path | 250 |
+| Ricochet Rune | Spread's outer stars bounce off the side walls once | 250 |
+| Chain Rune | a Homing wisp that hits jumps on to the nearest other enemy | 300 |
+
 ## Buddies
 Each mission has a sleeping baby cryptid: kraken spawn, impundulu chick, pukwudgie, tatzelwurm pup.
 Fly into it and it joins as a wingman that copies your moves and fires with you (up to 2, 3 with
@@ -121,6 +130,12 @@ Capsules cycle T → S → H; grab the letter you want. Same letter again = leve
 - **S** Spread (3 → 5 way)
 - **H** Homing wisps (1 → 3)
 - **B** bomb, **heart** (Cadet), **1** extra life (Hunter). Hunter extends at 30k and 80k.
+
+Weapon flair: each weapon has its own colours (the exhaust burns in them too), muzzle flash and
+impact (sparks, star bursts, frost puffs). The ship kicks when it fires and flashes when it
+changes weapon, and the weapon's name pops up over the score. Kills throw shards, buddies fire
+their own shots (ink, bolts, arrows, frost), capsules spin and glint, and the bomb is Forge's
+rune circle.
 
 ## Missions
 1. **Rimeveil Lane**: krakenlings (mini Krakens), gremlin skiffs, ice ring, mid-boss Nubs' scrap gunship, hauler convoy, wrecks → **Space Kraken** (a blinking marker shows tentacle slams).

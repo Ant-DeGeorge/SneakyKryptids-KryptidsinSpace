@@ -1,6 +1,6 @@
 @echo off
 rem Kryptids in Space: The Sneaky Kryptid - Windows build (needs GBDK-2020 4.5.0 at C:\gbdk)
-rem Generated sources (src\assets*.c, src\music\*.c, script_data.c, stage_defs.c) are included,
+rem Generated sources (src\assets*.c, src\music\*.c, src\weapon_fx*, script_data.c, stage_defs.c) are included,
 rem so Python is only needed if you change art, music or the script (see README).
 setlocal enabledelayedexpansion
 if "%GBDK_HOME%"=="" set GBDK_HOME=C:\gbdk
@@ -9,6 +9,7 @@ set SRC=src\main0.c src\core.c src\sound.c src\script_data.c src\script_scenes.c
 for %%f in (src\assets_b*.c) do set SRC=!SRC! %%f
 for %%f in (src\cockpit_b*.c) do set SRC=!SRC! %%f
 for %%f in (src\music\*.c) do set SRC=!SRC! %%f
+for %%f in (src\weapon_fx2_b*.c) do set SRC=!SRC! %%f
 set SRC=!SRC! src\hUGE\hUGEDriver.o
 set CF=-Wf--opt-code-size -Wl-m -Wl-j -Wm-yC -Wm-yn"SNEAKYKRYPT" -Wm-yo32 -autobank -Isrc -Isrc\hUGE
 if not exist build\card mkdir build\card
