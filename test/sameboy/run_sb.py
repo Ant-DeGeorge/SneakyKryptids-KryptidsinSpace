@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SameBoy (accurate CGB) scripted run: run_sb.py ROM stage(1-4) boss|start frames outdir"""
+"""SameBoy (accurate CGB) scripted run: run_sb.py ROM stage(1-5) boss|start frames outdir"""
 import sys, os, re, subprocess
 from PIL import Image
 rom, stage, kind, frames, out = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4]), sys.argv[5]
@@ -8,10 +8,10 @@ noi = os.path.splitext(rom)[0] + ".noi"
 sym = {m.group(1): int(m.group(2), 16) for m in (re.match(r"DEF _(\S+) 0x([0-9A-Fa-f]+)", l) for l in open(noi)) if m}
 L = []
 def press(f, k, n=3): L.append(f"{f} press {k}"); L.append(f"{f + n} release {k}")
-f = 100; press(f, "START"); f += 40
-for p in range(3): L.append(f"{f} poke {sym['pf_unlock'] + p:x}=3")
+f = 600; press(f, "START"); f += 40          # the studio card plays first
+for p in range(3): L.append(f"{f} poke {sym['pf_unlock'] + p:x}=4")
 f += 10; press(f, "A"); f += 60
-for k in range(4 - stage): press(f, "UP"); f += 8
+for k in range(5 - stage): press(f, "UP"); f += 8
 if kind == "boss":
     L.append(f"{f} press SELECT"); press(f + 2, "A"); L.append(f"{f + 6} release SELECT"); f += 40
 else:

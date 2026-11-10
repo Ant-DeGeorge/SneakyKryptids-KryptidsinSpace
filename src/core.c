@@ -182,7 +182,9 @@ uint8_t rnd(void) {
     return x ^ frame_count;
 }
 void wait_frames(uint8_t n) { while (n--) wait_vbl_done(); }
-void screen_off(void) { wait_vbl_done(); DISPLAY_OFF; n_lcdc = LCDC_REG; }
+// Also drops the BG-map-select bit: a stage can end with the 9C00 map showing at the top of the
+// frame (comm box, gun-cam canopy), and GBDK's set_bkg_* writers follow that bit.
+void screen_off(void) { wait_vbl_done(); DISPLAY_OFF; LCDC_REG &= ~LCDCF_BG9C00; n_lcdc = LCDC_REG; }
 void screen_on(uint8_t lcdc) { n_lcdc = lcdc; LCDC_REG = lcdc; }
 void clear_bkg(uint8_t tile, uint8_t attr) {
     fill_bkg_rect(0, 0, 32, 32, tile);

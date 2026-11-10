@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flatwoods Drift</title>
+<meta name="description" content="Play the Sneaky Kryptid: Kryptids in Space Game Boy Color demo in your browser.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Barlow+Semi+Condensed:wght@400;600&display=swap">
+<style>
+/* Layout: one column; the handheld (gunmetal hull, teal circuit glow like the ship) is the page, mission notes below. */
+:root{
+  --void:#060818; --panel:#0e1426; --hull:#3a414c; --hull-hi:#5a6470; --hull-lo:#1c2027;
+  --ink:#e8eef4; --mute:#97a3b4; --teal:#48e0c8; --flame:#f8a040; --kraken:#e05aa0;
+  --display:"Pixelify Sans","Courier New",monospace; --body:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--void);color:var(--ink)}
+body{font-family:var(--body);font-size:16px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;
+  background-image:radial-gradient(1px 1px at 14% 12%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 78% 6%,#fff6 50%,transparent 51%),radial-gradient(1.5px 1.5px at 90% 38%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 26% 70%,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 60% 92%,#fff7 50%,transparent 51%)}
+.wrap{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{text-align:center}
+.eyebrow{font-family:var(--display);font-size:13px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,8.5vw,40px);line-height:1;margin:6px 0 4px;color:var(--ink);text-shadow:0 0 18px #48e0c855,3px 3px 0 #12161c;text-wrap:balance}
+.sub{color:var(--mute);font-size:15px}
+.shell{background:linear-gradient(165deg,var(--hull-hi),var(--hull) 45%,var(--hull-lo));border-radius:16px 16px 44px 16px;padding:16px 16px 22px;box-shadow:inset 0 2px 0 #ffffff30,inset 0 -6px 14px #0007,0 18px 40px #000a;position:relative}
+.shell::before{content:"";position:absolute;left:18px;right:60px;top:8px;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:.7}
+.bezel{background:#12161c;border-radius:10px 10px 24px 10px;padding:12px 14px 8px}
+.screenbox{position:relative;aspect-ratio:10/9;max-width:100%;background:#000;border-radius:2px;overflow:hidden}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.poster[hidden],.err[hidden]{display:none}
+.poster{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:radial-gradient(circle at 50% 40%,#1e2a58,#060818);color:var(--ink);cursor:pointer;border:0;width:100%;font:inherit}
+.poster:focus-visible{outline:3px solid var(--teal);outline-offset:-3px}
+.play{font-family:var(--display);font-size:26px;color:var(--flame)}
+.hint{font-size:14px;color:var(--mute)}
+.brand{font-family:var(--display);font-size:12px;color:var(--mute);margin-top:6px;letter-spacing:.12em}
+.pad{display:flex;justify-content:space-between;align-items:center;margin-top:20px;user-select:none;-webkit-user-select:none;touch-action:none;gap:12px}
+.stick{position:relative;width:132px;height:132px;border-radius:50%;background:radial-gradient(circle,#2a303a 0 30%,#1a1e25 31% 100%);box-shadow:inset 0 3px 8px #0009;touch-action:none;flex:none}
+.stick .arm{position:absolute;background:#2a303a;border-radius:6px}
+.stick .h{left:14px;right:14px;top:50%;height:38px;transform:translateY(-50%)}
+.stick .v{top:14px;bottom:14px;left:50%;width:38px;transform:translateX(-50%)}
+.stick .dot{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px;border-radius:50%;background:var(--teal);opacity:.0;transition:opacity .1s}
+.stick.on .dot{opacity:.8}
+.ab{display:flex;gap:14px;transform:rotate(-20deg)}
+.ab button{width:60px;height:60px;border-radius:50%;background:#b8336f;color:#fff;border:0;font-family:var(--display);font-size:18px;box-shadow:0 4px 0 #6e1a40;touch-action:none}
+.ab button.on,.ss button.on{filter:brightness(1.35);transform:translateY(2px)}
+.ss{display:flex;justify-content:center;gap:24px;margin-top:18px}
+.ss button{background:#262b34;color:#c9d4e0;border:0;border-radius:12px;padding:7px 16px;font-family:var(--display);font-size:12px;letter-spacing:.08em;touch-action:none}
+button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.keys{color:var(--mute);font-size:14px;text-align:center}
+.err{color:#ff9a9a;font-size:15px;text-align:center}
+section{background:var(--panel);border:1px solid #1f2a44;border-radius:10px;padding:16px 18px}
+h2{font-family:var(--display);font-size:16px;letter-spacing:.06em;color:var(--teal);margin:0 0 10px;text-transform:uppercase}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+dt{font-family:var(--display);font-size:14px;color:var(--flame);padding-top:2px}
+dd{margin:0;min-width:0}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:5px 6px;border-bottom:1px solid #1f2a44;vertical-align:top}
+th{font-family:var(--display);font-weight:500;color:var(--mute);font-size:13px}
+td.k{color:var(--kraken)}
+.save{font-size:14px;color:var(--mute);text-align:center}
+.save b{color:var(--teal);font-weight:600}
+ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+footer{color:var(--mute);font-size:13px;text-align:center}
+footer a{color:var(--teal)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Rejected By The Machines · Gun Cam Demo</div>
+    <h1>Flatwoods Drift</h1>
+    <div class="sub">A Sneaky Kryptid gun-cam mission · Game Boy Color</div>
+  </header>
+
+  <div class="shell">
+    <div class="bezel">
+      <div class="screenbox">
+        <canvas id="screen" width="160" height="144"></canvas>
+        <button class="poster" id="poster" type="button" aria-label="Start the game">
+          <span class="play">▶ PLAY</span>
+          <span class="hint">Sound on. Tap or press Enter.</span>
+        </button>
+      </div>
+      <div class="brand">SNEAKY KRYPTID · COLOR</div>
+    </div>
+    <div class="pad">
+      <div class="stick" id="stick" aria-label="D-pad: drag in any direction">
+        <div class="arm h"></div><div class="arm v"></div><div class="dot" id="dot"></div>
+      </div>
+      <div class="ab">
+        <button data-k="z" aria-label="B, bomb">B</button>
+        <button data-k="x" aria-label="A, fire">A</button>
+      </div>
+    </div>
+    <div class="ss">
+      <button data-k="Shift" aria-label="Select">SELECT</button>
+      <button data-k="Enter" aria-label="Start">START</button>
+    </div>
+  </div>
+  <div class="keys">Keyboard: arrows fly · X = A (fire) · Z = B (bomb) · Enter = START · Shift = SELECT</div>
+  <div class="save" id="save">Progress saves in <b>this browser</b> as you play.</div>
+  <div class="err" id="err" hidden></div>
+
+  <section>
+    <h2>Pick your pilot</h2>
+    <table>
+      <tr><th></th><th>Cadet</th><th>Pilot</th><th>Hunter</th></tr>
+      <tr><td>Health</td><td>5 hearts</td><td>3 hearts</td><td>One hit</td></tr>
+      <tr><td>Fire</td><td>Auto</td><td>Auto</td><td>Hold A</td></tr>
+      <tr><td>Bombs</td><td>5</td><td>5</td><td>3</td></tr>
+      <tr><td>Continues</td><td>Unlimited</td><td>Unlimited</td><td>9-second prompt</td></tr>
+      <tr><td class="k">Orbs</td><td>Slow, wide aim</td><td>Faster</td><td>Fastest, exact aim</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Controls</h2>
+    <dl>
+      <dt>D-PAD</dt><dd>Aim the crosshair (drag on the pad). Hold a direction and it speeds up.</dd>
+      <dt>A</dt><dd>Fire where the crosshair points. Cadet and Pilot fire on their own; Hunter holds A.</dd>
+      <dt>B</dt><dd>Kryptid Bomb: clears every orb on screen, hurts everything</dd>
+      <dt>START</dt><dd>Pause</dd>
+      <dt>SELECT</dt><dd>Hold it and press A on the pilot screen to go straight to the Flatwoods Monster. On the title, hold it and press B to erase saves.</dd>
+    </dl>
+  </section>
+
+  <section>
+    <h2>The mission</h2>
+    <ol>
+      <li>The Monster's saucers jam the helm. Static flies the ship; you work the cannons from the cockpit.</li>
+      <li>You can't dodge. Green orbs grow as they close in and blink before they land: shoot them down first.</li>
+      <li>Red saucers take more hits and fire pairs. Rocks flashing red are on a collision course.</li>
+      <li>Shoot capsules to collect them: T weapon level, B bomb, heart or 1UP.</li>
+      <li>When the Flatwoods Monster's eyes flare, keep hitting it to break the beam and stagger it.</li>
+      <li>The dashboard shows where your bounty is heading: score high to <b>capture</b> it, a good run <b>kills</b> it, a weak one lets it <b>escape</b>.</li>
+    </ol>
+  </section>
+
+  <footer>A game by Anthony DeGeorge · Rejected By The Machines. Free to play; not for resale.<br>
+  Play the full five-mission game <a href="../play/">here</a>, or get the ROMs on <a href="https://github.com/Ant-DeGeorge/SneakyKryptids-KryptidsinSpace">GitHub</a>.<br>
+  Browser play is powered by <a href="https://github.com/torch2424/wasmBoy">WasmBoy</a> (GPL-3.0).</footer>
+</div>
+
+<script>
+/* Some embedded/sandboxed views block browser storage. Give the emulator a working
+   (memory-only) stand-in so the game still runs; progress just won't be kept there. */
+window.__noStore=false;
+try{window.localStorage.getItem('sk');}catch(e){
+  window.__noStore=true;
+  var mem={};
+  try{Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:function(k){return k in mem?mem[k]:null},setItem:function(k,v){mem[k]=String(v)},removeItem:function(k){delete mem[k]}}})}catch(e2){}
+}
+try{if(!window.indexedDB)window.__noStore=true;}catch(e){window.__noStore=true;try{Object.defineProperty(window,'indexedDB',{configurable:true,value:undefined})}catch(e2){}}
+</script>
+<script src="../play/vendor/wasmboy.wasm.iife.js"></script>
+<script>
+(function(){
+  var poster=document.getElementById('poster'), canvas=document.getElementById('screen'), err=document.getElementById('err'), saveEl=document.getElementById('save');
+  var started=false, WB=null;
+    function fail(m){err.hidden=false;err.textContent=m;poster.hidden=false}
+  /* The cart's battery RAM (save slots) is copied into WasmBoy's own IndexedDB entry for this
+     cartridge every 5 s (only when it changed) and when the tab is hidden; WasmBoy loads it back
+     into the cartridge on loadROM, so progress survives closing the tab. */
+  var saving=false, ramLoc=null, lastRam='';
+  function idb(){return new Promise(function(ok,no){if(window.__noStore)return no(new Error('no storage'));var r=indexedDB.open('wasmboy',1);r.onupgradeneeded=function(){r.result.createObjectStore('keyval')};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}})}
+  async function persist(){
+    if(!WB||!started||saving) return;
+    saving=true;
+    try{
+      if(ramLoc===null) ramLoc=await WB._getWasmConstant('CARTRIDGE_RAM_LOCATION');
+      var ram=new Uint8Array(await WB._getWasmMemorySection(ramLoc,ramLoc+0x2000));
+      var sig=Array.prototype.join.call(ram.subarray(0x400,0x480),',');
+      if(sig!==lastRam){
+        await WB.saveLoadedCartridge();               /* makes sure this cartridge has an entry */
+        var db=await idb();
+        await new Promise(function(ok,no){
+          var tx=db.transaction('keyval','readwrite'), st=tx.objectStore('keyval'), cur=st.openCursor();
+          cur.onsuccess=function(){var c=cur.result;if(!c)return;var v=c.value||{};v.cartridgeRam=ram;c.update(v);c.continue()};
+          tx.oncomplete=ok; tx.onerror=function(){no(tx.error)};
+        });
+        db.close(); lastRam=sig;
+      }
+    }catch(e){saveEl.textContent='Progress could not be saved in this browser (private mode or storage blocked).'}
+    saving=false;
+  }
+  async function start(){
+    if(started) return; started=true;
+    poster.hidden=true;
+    try{
+      WB=window.WasmBoy&&(window.WasmBoy.WasmBoy||window.WasmBoy);
+      await WB.config({isGbcEnabled:true,isAudioEnabled:true,headless:false,
+        frameSkip:0,audioBatchProcessing:true,graphicsBatchProcessing:false,
+        timersBatchProcessing:false,graphicsDisableScanlineRendering:false,
+        audioAccumulateSamples:true,tileRendering:true,tileCaching:true,
+        enableAudioDebugging:false,gameboyFrameRate:60,maxNumberOfAutoSaveStates:-1,isGbcColorizationEnabled:false});
+      await WB.setCanvas(canvas);
+      await WB.loadROM('flatwoods_drift.gbc');
+      await WB.play();
+      window.__wb=WB;
+      if(window.__noStore) saveEl.textContent='Saving is off in this view: progress lasts until you close the page.';
+      else setInterval(persist,5000);
+    }catch(e){started=false;fail('The emulator could not start here: '+(e&&e.message||e)+'. Try another browser, or download the ROM from GitHub.')}
+  }
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')persist()});
+  window.addEventListener('pagehide',persist);
+  poster.addEventListener('click',start);
+  document.addEventListener('keydown',function(e){if(!started&&e.key==='Enter'){start()}});
+  var codes={ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,x:88,z:90,Enter:13,Shift:16};
+  var down={};
+  function fire(type,k){
+    if(type==='keydown'){if(down[k])return;down[k]=1}else{if(!down[k])return;delete down[k]}
+    var e=new KeyboardEvent(type,{key:k,code:k.length===1?'Key'+k.toUpperCase():k,bubbles:true,cancelable:true});
+    Object.defineProperty(e,'keyCode',{get:function(){return codes[k]}});
+    Object.defineProperty(e,'which',{get:function(){return codes[k]}});
+    document.dispatchEvent(e);
+  }
+  document.querySelectorAll('[data-k]').forEach(function(b){
+    var k=b.dataset.k;
+    function dn(ev){ev.preventDefault();if(!started)start();b.classList.add('on');fire('keydown',k)}
+    function up(ev){ev.preventDefault();b.classList.remove('on');fire('keyup',k)}
+    b.addEventListener('pointerdown',dn);
+    b.addEventListener('pointerup',up);b.addEventListener('pointerleave',up);b.addEventListener('pointercancel',up);
+  });
+  /* analog-style d-pad: drag anywhere on the pad, 8 directions */
+  var stick=document.getElementById('stick'), dot=document.getElementById('dot'), sp=null;
+  var DIRS=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+  function setDirs(want){DIRS.forEach(function(k){if(want.indexOf(k)>-1)fire('keydown',k);else fire('keyup',k)})}
+  function track(ev){
+    var r=stick.getBoundingClientRect(),dx=ev.clientX-(r.left+r.width/2),dy=ev.clientY-(r.top+r.height/2);
+    var m=Math.hypot(dx,dy),lim=r.width/2-12;
+    dot.style.transform='translate('+(m>lim?dx/m*lim:dx)+'px,'+(m>lim?dy/m*lim:dy)+'px)';
+    var w=[];
+    if(m>12){var a=Math.atan2(dy,dx)*180/Math.PI;
+      if(a>-157.5&&a<-22.5)w.push('ArrowUp');
+      if(a>22.5&&a<157.5)w.push('ArrowDown');
+      if(a>112.5||a<-112.5)w.push('ArrowLeft');
+      if(a>-67.5&&a<67.5)w.push('ArrowRight');}
+    setDirs(w);
+  }
+  stick.addEventListener('pointerdown',function(ev){ev.preventDefault();if(!started)start();sp=ev.pointerId;stick.setPointerCapture(sp);stick.classList.add('on');track(ev)});
+  stick.addEventListener('pointermove',function(ev){if(ev.pointerId===sp){ev.preventDefault();track(ev)}});
+  function rel(ev){if(ev.pointerId!==sp)return;sp=null;stick.classList.remove('on');dot.style.transform='';setDirs([])}
+  stick.addEventListener('pointerup',rel);stick.addEventListener('pointercancel',rel);
+  window.addEventListener('keydown',function(e){if(started&&[37,38,39,40,32].indexOf(e.keyCode)>-1)e.preventDefault()},{passive:false});
+})();
+</script>
+</body>
+</html>

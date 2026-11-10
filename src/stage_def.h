@@ -3,7 +3,8 @@
 #define STAGE_DEF_H
 #include <stdint.h>
 
-#define N_STAGES 4
+#define N_STAGES 4            // scrolling stages (stage_defs)
+#define N_MISSIONS 5          // missions on the map: the four stages + the gun-cam mission
 #define ROWS_PER_BANK 409
 
 typedef struct {

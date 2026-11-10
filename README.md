@@ -1,18 +1,26 @@
 # Sneaky Kryptid: Kryptids in Space — Game Boy Color demo
 
 A vertical space shooter for the Game Boy Color. You fly the Sneaky Kryptid, a bounty-hunter
-ship, on four cryptid contracts: the Space Kraken, the Thunderbird, the Jersey Devil and the
-Wendigo. Fly clean and score high to bring the bounty in alive.
+ship, on five cryptid contracts: the Space Kraken, the Thunderbird, the Jersey Devil, the
+Wendigo and the Flatwoods Monster. Fly clean and score high to bring the bounty in alive.
 
-**Demo v1.0.** Four full missions, three difficulties, saves, upgrades. Runs on real hardware
+**Demo v1.1.** Five missions (four scrolling stages and a first-person gun-cam mission), three
+difficulties, saves, upgrades. Runs on real hardware
 (tested on a ModRetro Chromatic; original GBC and GBA hardware should work too) and any Game Boy Color emulator.
 
 A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space / Kryptid Prime Empire.
 
 ![Studio card](docs/studio_card.png) ![Title](docs/title.png) ![Mission select](docs/map.png)
 ![Stormwall Nebula](docs/stage2.png) ![Space Kraken](docs/boss1.png) ![Jersey Devil](docs/boss3.png)
+![Gun cam](docs/stage5.png) ![Flatwoods Monster](docs/boss5.png)
 
 ## Play it
+**New: Flatwoods Drift, the gun-cam demo.** Mission 5 on its own: Rejected By The Machines card, title, pick a
+pilot, fly it. Play in the browser at https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/flatwoods/
+or flash `rom/flatwoods_drift.gbc` (`rom/flatwoods_drift_nosave.gbc` for carts without save RAM).
+It keeps its own save (signature `SKF` at 0xA400), so it never touches a Sneaky Kryptid save.
+
+**The full game:**
 - **In your browser:** https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/play/ (touch controls on phones,
   keyboard on desktop; progress saves in that browser).
 - Download `sneaky_kryptid.gbc` from the [Releases](../../releases) page, or from `rom/` in this repo.
@@ -22,14 +30,15 @@ A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space 
 
 The game opens with the Rejected By The Machines studio card (A or START skips it).
 
-**Version:** Demo v1.0 (shown on the title screen).
+**Version:** Demo v1.1 (shown on the title screen).
 
 ### Saves
 - Progress saves to the cart automatically: three slots (CADET, PILOT, HUNTER) with missions,
   stars, high scores, credits and gear.
 - **Erase all saves:** on the title screen hold **SELECT** and press **B**, then **A** to confirm.
-- The demo uses its own save block (signature `SKD`, version 1). Saves left on a cart by other
-  builds of the game are ignored and left untouched.
+- The demo uses its own save block (signature `SKD`, version 2). A Demo v1.0 save is upgraded
+  the first time v1.1 boots: everything is kept and mission 5 starts empty. Saves left on a
+  cart by other builds of the game are ignored and left untouched.
 
 ## Pilots
 Studio card → title → WHO'S FLYING? → mission map → briefing → mission → debrief.
@@ -43,7 +52,7 @@ Each keeps its own missions, stars, high scores, credits and gear.
 | Bombs | 5 | 5 | 3 |
 | Bullets | slower, fewer, plus one slow aimed shot every ~2.5 s | as Cadet, plus a faster aimed shot every ~1.25 s | aimed bursts, rings, fans |
 | Continues | unlimited ("TRY AGAIN!") | unlimited ("TRY AGAIN!") | 9-second prompt, score resets |
-| Boss HP | Kraken 420, Thunderbird 560, Jersey Devil 620, Wendigo 680 | same as Cadet | 820 / 1150 / 1250 / 1350, extra phases |
+| Boss HP | Kraken 420, Thunderbird 560, Jersey Devil 620, Wendigo 680, Flatwoods 800 | same as Cadet (Flatwoods 900) | 820 / 1150 / 1250 / 1350 / 720, extra phases |
 | Rating | 1-5 stars by hits | 1-5 stars by hits | rank D/C/B/A/S by score |
 
 All modes: you blink and can't be hit for a moment after respawning; the cockpit's bright dot
@@ -58,6 +67,7 @@ show their name greyed out with a lock icon.
 - START: pause
 - Mission map: UP/DOWN picks an unlocked mission, A launches. **Hold SELECT while pressing A** to practice that mission's boss.
 - Cutscenes: A next line, B or START skips
+- Mission 5 (gun cam): D-pad moves the crosshair, A fires (Hunter; Cadet and Pilot fire by themselves), B bomb
 
 ## Bounties: capture, kill or escape
 Your score in the mission decides how the boss fight ends:
@@ -67,6 +77,24 @@ Your score in the mission decides how the boss fight ends:
 Mid-bosses work the same way (captured or destroyed if you beat them, gone if the timer runs out).
 Continues cost you: Hunter's bounty points reset, Cadet's and Pilot's are halved.
 Bonus pay: +50 for a captured mid-boss (+25 destroyed), +50 for a no-hit mission.
+
+## Mission 5: the gun cam
+Flatwoods Drift is a change of pace: the Monster's saucers jam the helm, so Static flies and you
+work the cannons from the cockpit.
+- The D-pad moves a crosshair (it speeds up while held). Shots land instantly where it points;
+  the crosshair turns gold when something is under it.
+- You cannot dodge. Green orbs fired at the ship grow as they close in and blink just before
+  they land: shoot them down first. Rocks that flash red are on a collision course.
+- Red saucers take more hits and fire pairs. Shoot capsules to collect them (T weapon level,
+  B bomb, heart or 1UP).
+- The dashboard shows the bounty meter and the outcome the run is heading for
+  (ESCAPE, KILL or CAPTURE), so you can see what a missed wave costs.
+- **Flatwoods Monster:** orb volleys, saucer escorts and big orbs (three hits, one with Rune
+  Rounds). When its eyes flare it is charging a beam: land enough hits before the charge ends
+  to stagger it, or take the hit.
+- Lives, hearts, bombs, continues and gear work as in the other missions. Buddy Bay level 2
+  puts a buddy on the second gun, who picks off an orb now and then. No mid-boss here.
+- Checkpoints: start, debris field, the swarm, the boss.
 
 ## Shooting bullets
 Your shots knock small enemy bullets out of the air (+10 each). Big orbs soak shots unless
@@ -100,10 +128,12 @@ Capsules cycle T → S → H; grab the letter you want. Same letter again = leve
 3. **Barrens Belt**: Pukwudgies (some climb out of the pines below; a WARN blinks first), Devil's eggs that burst, will-o'-the-wisps (shoot when lit), mid-boss **Nubs Mk II** → **Jersey Devil** (fire sweep, stomp rows with a gap, screech rings, vanish).
 4. **Frostbite Moon**: bolted-down mine turrets, frost bats, Tatzelwurms (hit the cat face), ice-storm wind, mid-boss **Beast of Bray Road** (leaps between perches) → **Wendigo** (claw grabs with a marker, ice shard fans, howl rings with whiteout, bat summons, blizzard).
 
+5. **Flatwoods Drift** (gun cam): scout saucers, a debris field, the swarm → **Flatwoods Monster** (orb volleys, escorts, big orbs, the eye beam you break by shooting it).
+
 Creature art is redrawn from the KRYPTID-DEX sheets (ref/dex).
 
 Every mission has checkpoints at the start, the mid-boss and the boss approach.
-Clearing a mission unlocks the next; clearing mission 4 plays the ending.
+Clearing a mission unlocks the next; clearing mission 5 plays the ending.
 
 ## Story / crew
 Crew: YETI (captain), FORGE (armorer, rune master), SUTURE (medic), ZANNAH (contract mistress), STATIC (navigator/pilot). Names live in `tools/gen_script.py`.
@@ -114,7 +144,14 @@ Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated s
 (art, music, dialog) are committed, so Python is only needed to change them.
 - Linux/macOS/WSL: `make GBDK_HOME=/path/to/gbdk` → `build/sneaky_kryptid.gbc` and `build/sneaky_kryptid_nosave.gbc`
 - Windows: `build.bat` (expects GBDK at `C:\gbdk`, or set `GBDK_HOME`)
+- `make flatwoods` → `build/flatwoods_drift.gbc` and `build/flatwoods_drift_nosave.gbc`, the standalone gun-cam demo
+  (same sources built with `-DFLATWOODS_DEMO`: no mission map or armory, cart title FLATWOODS).
+- `make unlocked` → `build/sneaky_kryptid_unlocked.gbc`, a test build with every mission selectable from the
+  start (title shows DEMO V1.1 UNLOCKED; same save format).
+- Do not build with `make -j`: lcc keeps its intermediate files side by side and parallel jobs
+  produce broken objects (the Makefile sets `.NOTPARALLEL`).
 - Regenerate data: `make script` (dialog, `tools/gen_script.py`), `make music` (`tools/gen_sound.py`),
+  `make cockpit` (mission 5 art, `tools/gen_cockpit.py`, Python 3 + Pillow + numpy),
   `make assets` (`tools/gen_assets.py`, Python 3 + Pillow + numpy). Crew portraits and the title art
   are converted from reference paintings that are not in this repo, so `make assets` needs them in `ref/`.
   The cockpit hitbox dot (`tools/sprites.py`) and the coral Mission 1 enemy palette (`tools/stage1.py`)
@@ -126,7 +163,7 @@ Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated s
 ### Layout
 | Path | What |
 |---|---|
-| `src/` | game code (GBDK C). `stage.c` engine, `s1.c`–`s4.c` mission logic, `scenes.c` menus/story/saves, `core.c` interrupts and loaders |
+| `src/` | game code (GBDK C). `stage.c` engine, `s1.c`–`s4.c` mission logic, `cockpit.c` mission 5 (gun cam, its own small engine), `scenes.c` menus/story/saves, `core.c` interrupts and loaders |
 | `src/studio_card/` | Rejected By The Machines studio card module (owns the STAT vector; the game's raster split runs through `sc_stat_hook`) |
 | `tools/` | Python generators: sprites, scenery, bosses, music, script. `tools/studio_card_patch/run.sh` re-applies the card fixes to the original card export |
 | `ref/dex/` | creature sheets the enemies were redrawn from |
@@ -134,7 +171,8 @@ Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated s
 
 ## Testing
 `pip install pyboy`, then `python3 test/bot.py build/sneaky_kryptid.gbc cadet|pilot|hunter kid|pro [seed] [--stage N] [--boss]`
-plays a mission; `sh test/suite.sh build/sneaky_kryptid.gbc "1 2 3 4"` runs every mission in all three modes.
+plays a mission (1-4); `python3 test/bot_cockpit.py build/sneaky_kryptid.gbc cadet|pilot|hunter kid|pro [seed] [--boss]`
+plays mission 5; `test/bot_flatwoods.py` plays the standalone demo; `sh test/suite.sh build/sneaky_kryptid.gbc "1 2 3 4 5"` runs every mission in all three modes.
 PyBoy is not timing-accurate for the studio card's per-line effects; use SameBoy or Emulicious to judge it.
 
 ## Flashing a ModRetro Chromatic cart (ChroMagician)

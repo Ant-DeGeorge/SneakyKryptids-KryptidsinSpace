@@ -4,10 +4,11 @@ LCC = $(GBDK_HOME)/bin/lcc
 
 NAME   = sneaky_kryptid
 TITLE  = SNEAKYKRYPT
-SRC    = src/main0.c src/core.c src/sound.c src/sound_data.c src/script_data.c src/stage_defs.c \
-         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/scenes.c \
-         $(wildcard src/assets_b*.c)
-GEN    = src/assets.h src/sound_data.c src/songs.h src/script_data.c src/script_ids.h src/stage_defs.c
+SRC    = src/main0.c src/core.c src/sound.c src/sound_data.c src/script_data.c src/script_scenes.c src/stage_defs.c \
+         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/scenes.c \
+         $(wildcard src/assets_b*.c) $(wildcard src/cockpit_b*.c)
+OBJ    = $(SRC:src/%.c=build/obj/%.o)
+HDR    = $(wildcard src/*.h)
 
 # -Wm-yC CGB only; -Wm-yo32 thirty-two 16 KB ROM banks (512 KB)
 CFLAGS = -Wf--opt-code-size -Wa-l -Wl-m -Wl-j -Wm-yC -Wm-yn"$(TITLE)" -Wm-yo32 -autobank -Isrc
@@ -21,29 +22,57 @@ build/card/%.o: src/studio_card/%.c src/studio_card/studio_card.h
 
 all: build/$(NAME).gbc build/$(NAME)_nosave.gbc
 
-# Generated sources (src/assets*, sound_data.c, script_data.c, stage_defs.c) are committed,
+# Generated sources (src/assets*, cockpit_b*, sound_data.c, script_*.c, stage_defs.c) are committed,
 # so a normal build needs only GBDK. Regenerate after editing art/music/script:
 #   make assets      (Python 3 + Pillow + numpy; portrait/title art also needs ref/IMG_50xx.png)
+#   make cockpit     (mission 5 art; Python 3 + Pillow + numpy)
 #   make script      (dialog only)   make music   (songs only)
-.PHONY: all assets script music clean
+.PHONY: all assets script music cockpit clean
 assets:
 	python3 tools/gen_assets.py
+cockpit:
+	python3 tools/gen_cockpit.py
 script:
 	python3 tools/gen_script.py
 music:
 	python3 tools/gen_sound.py
 
+build/obj/%.o: src/%.c $(HDR)
+	@mkdir -p build/obj
+	$(LCC) $(CFLAGS) -c -o $@ $<
+
 # MBC5 + RAM + BATTERY (0x1B): keeps high scores
-build/$(NAME).gbc: $(SRC) $(CARD_O) src/core.h src/game.h src/sound.h src/objs.h src/stage_def.h
-	mkdir -p build
-	$(LCC) $(CFLAGS) -Wm-ya1 -Wm-yt0x1B -o $@ $(SRC) $(CARD_O)
+build/$(NAME).gbc: $(OBJ) $(CARD_O)
+	$(LCC) $(CFLAGS) -Wm-ya1 -Wm-yt0x1B -o $@ $(OBJ) $(CARD_O)
 
 # plain MBC5 (0x19): same game, no save
-build/$(NAME)_nosave.gbc: $(SRC) $(CARD_O) src/core.h src/game.h src/sound.h src/objs.h src/stage_def.h
-	mkdir -p build
-	$(LCC) $(CFLAGS) -Wm-yt0x19 -o $@ $(SRC) $(CARD_O)
+build/$(NAME)_nosave.gbc: $(OBJ) $(CARD_O)
+	$(LCC) $(CFLAGS) -Wm-yt0x19 -o $@ $(OBJ) $(CARD_O)
+
+# test build: every mission selectable from the start (same save format as the demo)
+.PHONY: unlocked
+unlocked: build/$(NAME)_unlocked.gbc
+build/obj/scenes_unlocked.o: src/scenes.c $(HDR)
+	@mkdir -p build/obj
+	$(LCC) $(CFLAGS) -Wf-DUNLOCK_ALL -c -o $@ $<
+build/$(NAME)_unlocked.gbc: $(OBJ) $(CARD_O) build/obj/scenes_unlocked.o
+	$(LCC) $(CFLAGS) -Wm-ya1 -Wm-yt0x1B -o $@ $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_unlocked.o $(CARD_O)
+
+# Flatwoods Drift on its own: the gun-cam mission as a standalone demo (title -> pilot -> mission 5)
+.PHONY: flatwoods
+flatwoods: build/flatwoods_drift.gbc build/flatwoods_drift_nosave.gbc
+build/obj/scenes_flatwoods.o: src/scenes.c $(HDR)
+	@mkdir -p build/obj
+	$(LCC) $(CFLAGS) -Wf-DFLATWOODS_DEMO -c -o $@ $<
+FW_OBJ = $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_flatwoods.o $(CARD_O)
+FW_CF  = $(filter-out -Wm-yn"$(TITLE)",$(CFLAGS)) -Wm-yn"FLATWOODS"
+build/flatwoods_drift.gbc: $(OBJ) $(CARD_O) build/obj/scenes_flatwoods.o
+	$(LCC) $(FW_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(FW_OBJ)
+build/flatwoods_drift_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_flatwoods.o
+	$(LCC) $(FW_CF) -Wm-yt0x19 -o $@ $(FW_OBJ)
 
 clean:
 	rm -rf build src/*.o src/*.lst src/*.asm src/*.sym src/studio_card/*.lst
 
-.PHONY: all clean
+# lcc keeps its intermediate files next to each other: parallel jobs (make -j) corrupt objects
+.NOTPARALLEL:

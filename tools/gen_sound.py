@@ -179,10 +179,28 @@ map_mel = track(mp, T)
 map_bas = track("C3:4 G2:4 F2:4 C3:4  D3:4 F2:4 G2:4 G2:4  A2:4 E2:4 F2:4 C3:4  G2:4 G2:4 C3:4 C3:4", T)
 songs['MAP'] = (map_mel, map_bas, 0x63, 1)
 
+# ---------------------------------------------------------------- STAGE 5: "Gun Cam" (F# minor, pulsing)
+T = 6
+s5a = "F#4 C#5 F#4 C#5 A4 C#5 F#4 C#5  E4 B4 E4 B4 G#4 B4 E4 B4  D4 A4 D4 A4 F#4 A4 D4 A4  C#4 G#4 C#5 G#4 F4:2 G#4:2"
+s5b = "F#5:3 E5 C#5:2 A4:2  B4:3 C#5 D5:2 B4:2  A4:2 F#4:2 A4 B4 C#5 A4  G#4:4 C#5:2 F5:2"
+s5c = "C#5 C#5 R C#5 D5 C#5 B4 A4  B4 B4 R B4 C#5 B4 A4 G#4  A4 A4 R A4 B4 A4 G#4 F#4  G#4:2 F4:2 G#4:2 C#5:2"
+stage5_mel = track(" ".join([s5a, s5b, s5a, s5c]), T)
+stage5_bas = stacc(" ".join([octs("F#2 E2 D2 C#2"), octs("F#2 E2 D2 C#2"), octs("F#2 E2 D2 C#2"), octs("D2 E2 F#2 C#2")]), T)
+songs['STAGE5'] = (stage5_mel, stage5_bas, 0x72, 1)
+
+# ---------------------------------------------------------------- FLATWOODS MONSTER (C# tritone crawl, then a chase)
+T = 5
+fwa = "C#4 G4 C#4 G4 D4 G4 C#4 G4  C#4 G#4 C#4 G#4 D4 G#4 C#4 A4  C#5 C5 B4 A#4 A4 G#4 G4 F#4  F4:2 R F4 E4 F4 G#4:2"
+fwb = "E5:3 D#5 D5:2 C#5:2  G5:3 F#5 F5:2 E5:2  C#5 E5 G5 E5 C#5 E5 A#4 C#5  G#4:4 C5:4"
+fwc = "C#5:2 R C#5 C5 C#5 E5 C#5  D5:2 R D5 C#5 D5 F5 D5  G5 F#5 F5 E5 D#5 D5 C#5 C5  C#5:4 G#4:4"
+fw_mel = track(" ".join([fwa, fwa, fwb, fwc]), T)
+fw_bas = stacc(" ".join([octs("C#2 C#2 D2 C#2"), octs("C#2 C#2 D2 C#2"), octs("A1 A#1 F#1 G#1"), octs("C#2 D2 D#2 G#1")]), T)
+songs['FLATWOODS'] = (fw_mel, fw_bas, 0x82, 1)
+
 for _k, (_m, _b, _e, _l) in songs.items():
     _lm, _lb = sum(_m[1::2]), sum(_b[1::2])
     if _lm != _lb: print('LENGTH MISMATCH', _k, _lm, _lb)
-ORDER = ['TITLE', 'STAGE', 'BOSS', 'BRIEF', 'WARN', 'CLEAR', 'OVER', 'END', 'STAGE2', 'TBIRD', 'STAGE3', 'JDEVIL', 'MAP', 'STAGE4', 'WENDIGO']
+ORDER = ['TITLE', 'STAGE', 'BOSS', 'BRIEF', 'WARN', 'CLEAR', 'OVER', 'END', 'STAGE2', 'TBIRD', 'STAGE3', 'JDEVIL', 'MAP', 'STAGE4', 'WENDIGO', 'STAGE5', 'FLATWOODS']
 
 def carr(name, data, typ="uint8_t"):
     return f"const {typ} {name}[] = {{{','.join(map(str, data))}}};"

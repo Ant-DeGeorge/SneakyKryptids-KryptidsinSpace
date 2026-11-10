@@ -68,6 +68,18 @@
 #define CM4_BFLEE 64
 #define CM4_BKILL 65
 #define CM4_BCAP 66
-#define CM_BUDHINT 67
-#define CM_BUDGOT 68
+#define CM5_HELM 67
+#define CM5_ORBS 68
+#define CM5_DEBRIS 69
+#define CM5_ELITE 70
+#define CM5_PUSH 71
+#define CM5_BOSS 72
+#define CM5_BEAM 73
+#define CM5_STAGGER 74
+#define CM5_HURT 75
+#define CM5_BFLEE 76
+#define CM5_BKILL 77
+#define CM5_BCAP 78
+#define CM_BUDHINT 79
+#define CM_BUDGOT 80
 #endif
