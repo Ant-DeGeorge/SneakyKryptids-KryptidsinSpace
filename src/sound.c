@@ -1,21 +1,17 @@
-// Sound engine (ROM0): music on ch2 (square melody) + ch3 (wave bass);
-// sound effects on ch1 (square + sweep) and ch4 (noise).
-// Derived from the Spooky Claw engine.
+// Sound engine (ROM0). Music: hUGEDriver (all four channels, songs from hUGETracker, see
+// tools/music). Sound effects run on ch1 (square + sweep) and ch4 (noise): while one plays, the
+// driver is told to leave that channel alone, and it gets the channel back when the effect ends.
 #include <gb/gb.h>
 #include <gb/hardware.h>
 #include "sound.h"
 #include "songs.h"
-#define MUSIC_BANK 8
+#include "hUGE/hUGEDriver.h"
 
-extern const uint16_t sq_freq[], wave_freq[];
-extern const uint8_t * const song_mel[];
-extern const uint8_t * const song_bas[];
-extern const uint8_t song_env[];
+extern const hUGESong_t * const music_songs[];
+extern const uint8_t music_banks[];
 
-typedef struct { const uint8_t *start, *pos; uint8_t timer; uint8_t on; } Track;
-static Track mel, bas;
-static uint8_t mel_env = 0x63;
-static uint8_t cur_song = 0xFF;
+static uint8_t cur_song = 0xFF, cur_bank, playing;
+static uint8_t sfx_ch_busy;                 // bit 0: ch1 taken by an effect, bit 3: ch4
 
 typedef struct { uint8_t dur, ch, r0, r1, r2, r3, r4; } Step;
 #define LO(f) ((uint8_t)((f) & 0xFF))
@@ -57,7 +53,19 @@ static const uint8_t sfx_prio_tab[] = {0,0,0,1,2,2,1,2,2,2, 2,0,0,2,1,2,1,1,1};
 static const Step *sfx_pos;
 static uint8_t sfx_timer, sfx_prio;
 
+static void sfx_take(uint8_t ch) {
+    uint8_t bit = ch == 1 ? 0x01 : 0x08;
+    if (sfx_ch_busy & bit) return;
+    sfx_ch_busy |= bit;
+    if (playing) hUGE_mute_channel(ch == 1 ? HT_CH1 : HT_CH4, HT_CH_MUTE);
+}
+static void sfx_release(void) {
+    if (sfx_ch_busy & 0x01) { NR12_REG = 0; NR14_REG = 0x80; if (playing) hUGE_mute_channel(HT_CH1, HT_CH_PLAY); }
+    if (sfx_ch_busy & 0x08) { NR42_REG = 0; NR44_REG = 0x80; if (playing) hUGE_mute_channel(HT_CH4, HT_CH_PLAY); }
+    sfx_ch_busy = 0;
+}
 static void write_step(const Step *s) {
+    sfx_take(s->ch);
     if (s->ch == 1) { NR10_REG = s->r0; NR11_REG = s->r1; NR12_REG = s->r2; NR13_REG = s->r3; NR14_REG = s->r4; }
     else { NR41_REG = s->r1; NR42_REG = s->r2; NR43_REG = s->r3; NR44_REG = s->r4; }
 }
@@ -68,75 +76,52 @@ void sfx_play(uint8_t id) {
     sfx_pos = sfx_table[id]; sfx_prio = prio; sfx_timer = 0;
 }
 
-static const uint8_t wave[16] = {0x01,0x23,0x56,0x89,0xBC,0xEE,0xFF,0xFF,0xEE,0xCB,0x98,0x65,0x32,0x10,0x00,0x00};
-
 void sound_init(void) {
-    uint8_t i;
     NR52_REG = 0x80; NR51_REG = 0xFF; NR50_REG = 0x77;
-    NR30_REG = 0x00;
-    for (i = 0; i < 16; i++) (*(volatile uint8_t *)(0xFF30 + i)) = wave[i];
-    NR30_REG = 0x80;
-    mel.on = bas.on = 0; sfx_pos = 0;
+    playing = 0; sfx_pos = 0; sfx_ch_busy = 0;
 }
-
-static void start_track(Track *t, const uint8_t *d) { t->start = t->pos = d; t->timer = 0; t->on = 1; }
 
 void music_play(uint8_t song) {
     uint8_t b;
-    if (song == cur_song && mel.on) return;
-    music_stop();
+    if (song == cur_song && playing) return;
     __critical {
-        b = _current_bank; SWITCH_ROM(MUSIC_BANK);
-        cur_song = song;
-        start_track(&mel, song_mel[song]);
-        start_track(&bas, song_bas[song]);
-        mel_env = song_env[song];
+        playing = 0;
+        cur_song = song; cur_bank = music_banks[song];
+        b = _current_bank; SWITCH_ROM(cur_bank);
+        hUGE_init(music_songs[song]);
         SWITCH_ROM(b);
+        NR50_REG = 0x77; NR51_REG = 0xFF;                  // songs may change volume and panning
+        if (sfx_ch_busy & 0x01) hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+        if (sfx_ch_busy & 0x08) hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+        playing = 1;
     }
 }
 
 void music_stop(void) {
-    mel.on = bas.on = 0; cur_song = 0xFF;
-    NR22_REG = 0x00; NR24_REG = 0x80;
-    NR32_REG = 0x00;
-}
-
-static void step_track(Track *t, uint8_t ch) {
-    uint8_t n;
-    if (!t->on) return;
-    if (t->timer) { t->timer--; if (t->timer) return; }
-    n = t->pos[0];
-    if (n == 0xFF) {
-        if (t->pos[1]) t->pos = t->start;
-        else { t->on = 0; if (ch == 2) { NR22_REG = 0; NR24_REG = 0x80; } else NR32_REG = 0; return; }
-        n = t->pos[0];
-    }
-    t->timer = t->pos[1];
-    t->pos += 2;
-    if (ch == 2) {
-        if (n) { uint16_t f = sq_freq[n];
-            NR21_REG = 0x80; NR22_REG = mel_env; NR23_REG = (uint8_t)f; NR24_REG = 0x80 | (uint8_t)(f >> 8);
-        } else { NR22_REG = 0x00; NR24_REG = 0x80; }
-    } else {
-        if (n) { uint16_t f = wave_freq[n];
-            NR30_REG = 0x80; NR32_REG = 0x40; NR33_REG = (uint8_t)f; NR34_REG = 0x80 | (uint8_t)(f >> 8);
-        } else NR32_REG = 0x00;
+    __critical {
+        playing = 0; cur_song = 0xFF;
+        if (!(sfx_ch_busy & 0x01)) { NR12_REG = 0; NR14_REG = 0x80; }
+        NR22_REG = 0; NR24_REG = 0x80;
+        NR30_REG = 0;
+        if (!(sfx_ch_busy & 0x08)) { NR42_REG = 0; NR44_REG = 0x80; }
+        NR30_REG = 0x80;
     }
 }
 
-uint8_t music_playing(void) { return mel.on; }
+uint8_t music_playing(void) { return playing; }
 
-// called from the VBlank interrupt: music data is banked, so switch in and restore
+// called from the VBlank interrupt: song data is banked, so switch in and restore
 void sound_update(void) {
-    uint8_t b = _current_bank;
-    SWITCH_ROM(MUSIC_BANK);
-    step_track(&mel, 2);
-    step_track(&bas, 3);
-    SWITCH_ROM(b);
+    if (playing) {
+        uint8_t b = _current_bank;
+        SWITCH_ROM(cur_bank);
+        hUGE_dosound();
+        SWITCH_ROM(b);
+    }
     if (sfx_pos) {
         if (sfx_timer) sfx_timer--;
         if (!sfx_timer) {
-            if (sfx_pos->dur == 0) sfx_pos = 0;
+            if (sfx_pos->dur == 0) { sfx_pos = 0; sfx_release(); }
             else { write_step(sfx_pos); sfx_timer = sfx_pos->dur; sfx_pos++; }
         }
     }
