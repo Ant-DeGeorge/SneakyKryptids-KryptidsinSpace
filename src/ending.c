@@ -1,9 +1,6 @@
 // Ending, after the last mission: a clean tally screen, the crew roasting your flying
 // (rank + bounty outcomes decide the lines), then the watcher: glowing eyes of the kin of
 // a boss you sealed in the hold, promising your time will come. Autobanked.
-// Build with -DKID_SAFE for the family build (no $&!? grawlix); -DFAMILY_BUILD for the
-// 4-mission family code base (N_STAGES, MODE_HUNTER = 1); -DFAMILY_NAMES reads the slot
-// names from pilot_names.h, which only exists in the family source.
 #pragma bank 255
 #include <gb/gb.h>
 #include <gb/cgb.h>
@@ -17,11 +14,7 @@
 #include "ending_eyes.h"
 
 #define BANK_A6 6
-#ifdef FAMILY_BUILD
-#define N_BOUNTY N_STAGES
-#else
 #define N_BOUNTY N_MISSIONS
-#endif
 
 extern uint8_t pf_best[N_PROFILES][N_BOUNTY];
 extern uint32_t pf_hi[N_PROFILES][N_BOUNTY];
@@ -56,22 +49,14 @@ static const uint16_t e_pal_dim[4]   = { RGB8(0, 0, 0), RGB8(0, 0, 0), RGB8(60, 
 // ------------------------------------------------------------------ crew banter (12 cols x 6 rows)
 // tier: 3 top flying .. 0 rough (average best rating over all missions)
 static const char * const yeti_line[4] = {
-#ifdef KID_SAFE
-    "WHO TAUGHT\nYOU TO FLY?\nSTATIC, WAS\nTHIS YOU?",
-#else
     "WHAT THE\n$&!? WAS\nTHAT FLYING?\nSTATIC, IS\nTHIS ON YOU?",
-#endif
     "WE LIVED.\nTHAT'S WHAT\nI'M PUTTING\nON THE\nREPORT.",
     "SOLID WORK.\nTHE HULL\nONLY HAS A\nFEW NEW\nHOLES.",
     "NOT BAD.\nI'D HIRE YOU\nAGAIN. DON'T\nLET IT GO TO\nYOUR HEAD.",
 };
 static const char * const static_line[4] = {
     "DON'T LOOK\nAT ME. I WAS\nSCREAMING\nTHE WHOLE\nTIME.",
-#ifdef KID_SAFE
-    "NEXT TIME\nTRY FLYING\nWITH YOUR\nEYES OPEN.",
-#else
     "NEXT TIME,\nOPEN YOUR\n$&!? EYES\nWHEN YOU\nFLY.",
-#endif
     "I COUNTED\nTHE NEAR\nMISSES. I\nRAN OUT OF\nFINGERS.",
     "I TAUGHT\nTHEM ALL OF\nTHAT. YOU'RE\nWELCOME.",
 };
@@ -79,13 +64,8 @@ static const char * const static_line[4] = {
 static const char * const zannah_line[4] = {
     "ALL OF THEM\nIN THE HOLD.\nFULL PAY.\nI'D KISS YOU\n...I WON'T.",
     "SOME CAGED,\nSOME DEAD.\nCLIENTS PAY\nDOUBLE FOR\nBREATHING.",
-#ifdef KID_SAFE
-    "DEAD ONES\nPAY HALF,\nGENIUS. DO\nYOU HATE\nMONEY?",
-    "ONE GOT\nAWAY. THAT\nWAS MY\nMONEY. MY\nMONEY!",
-#else
     "DEAD ONES\nPAY HALF,\nGENIUS. DO\nYOU HATE\n$&!? MONEY?",
     "ONE GOT\nAWAY. THAT'S\nMY $&!?\nMONEY OUT\nTHERE.",
-#endif
 };
 static const char * const forge_line[2] = {
     "MY RUNES ARE\nHUMMING.\nSOMETHING'S\nCALLING TO\nWHAT'S IN\nTHE HOLD...",
@@ -182,11 +162,7 @@ static void tally(void) {
     txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
     e_center(1, "CONTRACTS CLOSED", 6);
     {
-#ifdef FAMILY_NAMES
-#include "pilot_names.h"
-#else
         static const char * const pn[N_PROFILES] = {"CADET", "PILOT", "HUNTER"};
-#endif
         e_center(3, pn[profile], 7);
     }
     if (gmode != MODE_HUNTER) {
