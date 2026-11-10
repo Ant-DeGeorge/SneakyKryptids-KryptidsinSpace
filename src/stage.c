@@ -11,6 +11,7 @@
 #include "sound.h"
 #include "game.h"
 #include "objs.h"
+#include "weapon_fx.h"
 
 extern const uint8_t comm_buddy_hint, comm_buddy_got;
 
@@ -22,6 +23,42 @@ static uint8_t bomb_t, flash_t;
 static uint8_t pb_on[MAXPB], pb_x[MAXPB], pb_y[MAXPB], pb_type[MAXPB], pb_dmg[MAXPB], pb_tgt[MAXPB];
 static int8_t pb_vx[MAXPB], pb_vy[MAXPB];
 static uint8_t hud_row;
+
+// ------------------------------------------------------------------ weapon flair
+// Each weapon has its own colour-blind-safe OBJ palette 2 (shots, buddies, muzzle, hits):
+// cool hues only (enemy bullets own the warm ones), told apart by brightness + shape too.
+// Max level adds a slow, low-contrast shimmer. Bombs and power-ups get a ring burst;
+// the bomb flash is a soft single fade instead of a hard white frame.
+#define NHS 4
+static uint8_t hs_t[NHS], hs_x[NHS], hs_y[NHS], hs_i;    // hit sparks (ring buffer)
+static uint8_t pb_was[MAXPB];                            // shot drawn last frame (a shot that vanished in the field hit something)
+static uint8_t mz_t;                                     // muzzle flash frames left
+static uint8_t ring_t, ring_in;                          // bomb (out) / power-up (in) ring
+static uint8_t bfx_t;                                    // bomb palette fade
+static uint8_t wpal_cur;
+#define hit_spark(x, y) { hs_i = (hs_i + 1) & (NHS - 1); hs_t[hs_i] = 8; hs_x[hs_i] = (x); hs_y[hs_i] = (y); }
+#define fx_add oam_add_fx
+static void wpal_update(void) {
+    static const uint8_t step[4] = {0, 1, 2, 1};
+    uint8_t w = (wtype > 2 ? 0 : wtype) * 3 + (wlevel >= 2 ? step[(frame_count >> 3) & 3] : 0);
+    if (w == wpal_cur) return;
+    wpal_cur = w;
+    set_sprite_palette(2, 1, wpn_pals + (uint16_t)w * 4);
+}
+// soft bomb flash: BG palette 0 eased from a pale blue tint back to normal (one fade, no strobe)
+static void bomb_fade(uint8_t k) {
+    uint16_t vp[4], c;
+    uint8_t i, r, g, b;
+    ld_copy(BANK_A2, vp, bg_pal_lib + (uint16_t)cur_bp[0] * 4, 8);
+    for (i = 0; i < 4; i++) {
+        c = vp[i]; r = c & 31; g = (c >> 5) & 31; b = (c >> 10) & 31;
+        if (r < 22) r += (uint8_t)(((22 - r) * k) >> 3);        // toward pale blue #B0D0F8,
+        if (g < 26) g += (uint8_t)(((26 - g) * k) >> 3);        // dimmer than the old white
+        b += (uint8_t)(((31 - b) * k) >> 3);
+        vp[i] = r | ((uint16_t)g << 5) | ((uint16_t)b << 10);
+    }
+    set_bkg_palette(0, 1, vp);
+}
 
 // buddies: friendly baby cryptids that trail the ship and shoot
 uint8_t bud_n;
@@ -111,10 +148,11 @@ static void player_fire(void) {
     if (p_fire_cd) { p_fire_cd--; return; }
     switch (wtype) {
     case 0:
-        pb_spawn(x, y, 0, -6, 0, wlevel ? 3 : 2);
+        pb_spawn(x, y, 0, -6, wlevel ? 3 : 0, wlevel ? 3 : 2);
         if (wlevel == 2) { pb_spawn(x - 7, y + 6, 0, -6, 0, 2); pb_spawn(x + 7, y + 6, 0, -6, 0, 2); }
         p_fire_cd = wlevel == 1 ? 5 : 6;
         sfx_play(SFX_SHOT);
+        mz_t = 4;
         break;
     case 1:
         pb_spawn(x, y, 0, -5, 1, 2);
@@ -123,6 +161,7 @@ static void player_fire(void) {
         else { pb_spawn(x - 2, y, -1, -5, 1, 2); pb_spawn(x + 2, y, 1, -5, 1, 2); pb_spawn(x - 4, y, -2, -5, 1, 2); pb_spawn(x + 4, y, 2, -5, 1, 2); }
         p_fire_cd = 9;
         sfx_play(SFX_SHOT2);
+        mz_t = 4;
         break;
     default:
         n = nearest_target(x + 4);
@@ -132,6 +171,7 @@ static void player_fire(void) {
         for (i = 0; i < MAXPB; i++) if (pb_on[i] && pb_type[i] == 2 && pb_tgt[i] == 0xFF) pb_tgt[i] = n;
         p_fire_cd = 10;
         sfx_play(SFX_SHOT);
+        mz_t = 4;
         break;
     }
 }
@@ -140,7 +180,7 @@ static void use_bomb(void) {
     uint8_t i;
     if (!bombs || bomb_t) return;
     bombs--; hud_dirty = 1;
-    bomb_t = 60; flash_t = 8;
+    bomb_t = 60; bfx_t = 9; ring_t = 28; ring_in = 0; k_shake = 8;
     if (p_inv < 90) p_inv = 90;
     sfx_play(SFX_BOMB);
     for (i = 0; i < MAXEB; i++) eb_on[i] = 0;
@@ -361,6 +401,7 @@ static void pickups_update(void) {
                 if (cycle == wtype) { if (wlevel < 2) wlevel++; else add_score(1000); }
                 else wtype = cycle;
                 sfx_play(SFX_POWER);
+                if (!ring_t) { ring_t = 16; ring_in = 1; }
             } else if (kind == PK_BOMB) { if (bombs < 9) bombs++; sfx_play(SFX_PICKUP); }
             else if (kind == PK_HEART) { if (hearts < MAXHEARTS) hearts++; else add_score(500); sfx_play(SFX_PICKUP); }
             else if (kind == PK_1UP) { if (lives < 9) lives++; sfx_play(SFX_ONEUP); }
@@ -443,6 +484,10 @@ static void player_hit(void) {
 
 // ------------------------------------------------------------------ rendering
 static uint8_t flame_t;
+// player shot tile / attributes by [type * 2 + animation phase]; type 3 = twin heavy lance
+static const uint8_t shot_t[8] = {ST_SHOT_TWIN, ST_SHOT_TWIN, ST_SHOT_SPREAD, ST_SHOT_SPREADB,
+                                  ST_SHOT_WISP, ST_SHOT_WISP, ST_SHOT_TWIN2, ST_SHOT_TWIN2};
+static const uint8_t shot_p[8] = {2, 2, 2, 2, 2, 2 | 0x20, 2, 2};
 static void draw_player(void) {
     uint8_t ox, oy, vis;
     vis = p_alive && !(p_inv && (p_inv & 4) && !p_intro);
@@ -458,6 +503,7 @@ static void draw_player(void) {
 static void draw_all(void) {
     uint8_t i, x, y, t, p, f, s, c;
     oam_begin();
+    if (p_alive) { oam_band[(uint8_t)(py - 16) >> 4] += 2; oam_band[py >> 4] += 2; }   // the ship's fixed slots
     // boss parts (tentacles, tail)
     if (k_hpmax) {
         if (k_state == 21 && bounty_out == OUT_CAPTURE && outro_t < 112) {     // rune net closing in
@@ -554,10 +600,43 @@ static void draw_all(void) {
         if (eb_on[i] > 1) { if (eb_on[i] & 2) oam_add((eb_x[i] >> 8) - 8, (eb_y[i] >> 8) - 16 - 2, ST_SPARK, 7); continue; }
         oam_add((eb_x[i] >> 8) - 8, (eb_y[i] >> 8) - 16, eb_big[i] ? ST_EB_INK : ST_EB_ORB, 3);
     }
+    f = (frame_count >> 2) & 1;
     for (i = 0; i < MAXPB; i++) {
-        if (!pb_on[i]) continue;
-        t = pb_type[i] == 0 ? ST_SHOT_TWIN : pb_type[i] == 1 ? ST_SHOT_SPREAD : ST_SHOT_WISP;
-        oam_add(pb_x[i] - 8, pb_y[i] - 16, t, 2);
+        if (!pb_on[i]) {
+            if (pb_was[i]) {                 // gone since last frame without leaving the field: it hit
+                pb_was[i] = 0;
+                if (pb_y[i] >= 20 && pb_y[i] <= 200 && pb_x[i] >= 6 && pb_x[i] <= 172) hit_spark(pb_x[i], pb_y[i]);
+            }
+            continue;
+        }
+        pb_was[i] = 1;
+        c = (uint8_t)(pb_type[i] << 1) | ((f ^ i) & 1);          // spread stars spin, wisp tails wiggle
+        oam_add(pb_x[i] - 8, pb_y[i] - 16, shot_t[c], shot_p[c]);
+    }
+    // weapon flair: added last and only on lighter frames (a busy frame is the one that would
+    // run long and slow the game down); each sprite also has to fit the scanline budget
+    c = oam_n < 24;
+    for (i = 0; i < NHS; i++) {
+        if (!hs_t[i]) continue;
+        hs_t[i]--;
+        if (c) fx_add(hs_x[i] - 8, hs_y[i] - 16 - 2, hs_t[i] >= 4 ? ST_HIT : ST_SPARK, (hs_t[i] & 2) ? 2 : 2 | 0x20);
+    }
+    if (mz_t) {
+        mz_t--;
+        if (c && p_alive && mz_t) fx_add(px + 4 - 8, py - 6 - 16 + 2, mz_t >= 2 ? ST_MUZZLE : ST_SPARK, 2);
+    }
+    if (ring_t) {      // 8-point ring: bomb blast grows out, power-up pulls in
+        uint8_t r, d, cx = px + 8 - 4 - 8, cy = py + 10 - 4 - 16;
+        ring_t--;
+        r = ring_in ? (ring_t << 1) + 4 : (uint8_t)((28 - ring_t) * 3);
+        d = r - (r >> 2) - (r >> 4);                     // ~0.7 r for the diagonals
+        t = (ring_t & 4) ? ST_HIT : ST_SPARK; p = ring_in ? 2 : 7;
+        if (p_alive || !ring_in) {
+            fx_add(cx, cy - r, t, p); fx_add(cx, cy + r, t, p);
+            fx_add(cx - r, cy, t, p); fx_add(cx + r, cy, t, p);
+            fx_add(cx - d, cy - d, t, p); fx_add(cx + d, cy - d, t, p);
+            fx_add(cx - d, cy + d, t, p); fx_add(cx + d, cy + d, t, p);
+        }
     }
     oam_end();
 }
@@ -617,7 +696,8 @@ static void restart_from(uint8_t cp) {
     scroll_on = 1;
     st = ST_PLAY; st_t = 0;
     player_reset_pos();
-    bomb_t = 0; flash_t = 0;
+    bomb_t = 0; flash_t = 0; bfx_t = 0; ring_t = 0; mz_t = 0; hs_i = 0;
+    memset(hs_t, 0, sizeof hs_t); memset(pb_was, 0, sizeof pb_was);
     hud_init(0);
     raster();
     music_play(cp == 2 ? MUS_WARN : SD->mus_stage);
@@ -633,6 +713,9 @@ static void stage_load(void) {
     ld_spr_pal(BANK_A2, 0, 3, obj_pals);
     ld_spr_pal(BANK_A2, 7, 1, obj_pals + 28);
     ld_spr_pal(SD->dbank, 3, 4, SD->objpal);
+    set_sprite_data(ST_SHOT_TWIN, 6, fx_shot_tiles);          // weapon flair art (bank 1)
+    set_sprite_data(FX_FIRST, 8, fx_new_tiles);
+    wpal_cur = 0xFF;
     ld_bkg_data(BANK_A2, 0, 0, N_COMMON, common_tiles);
     ld_bkg_data(SD->dbank, 0, N_COMMON, SD->n_scen0, SD->scen0);
     if (SD->n_scen1) ld_bkg_data(SD->dbank, 1, 0, SD->n_scen1, SD->scen1);
@@ -693,7 +776,12 @@ uint8_t stage_run(uint8_t sid) BANKED {
             flash_t--;
             if (flash_t) ld_bkg_pal(BANK_A2, 0, 1, white_pal);
             else set_pal_slot(0, cur_bp[0]);
+        } else if (bfx_t) {
+            bfx_t--;
+            if (bfx_t) bomb_fade(bfx_t > 5 ? 5 : bfx_t);
+            else set_pal_slot(0, cur_bp[0]);
         }
+        wpal_update();
         if (k_hpmax) {
             if (k_hitflash) { if (!was_flash) set_pal_slot(6, SD->hit_bp); was_flash = 1; }
             else if (was_flash) { set_pal_slot(6, SD->boss_bp6); was_flash = 0; }
