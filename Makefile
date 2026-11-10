@@ -30,7 +30,8 @@ all: build/$(NAME).gbc build/$(NAME)_nosave.gbc
 #   make cockpit     (mission 5 art; Python 3 + Pillow + numpy)
 #   make script      (dialog only)
 #   make music       (songs: music/*.uge from tools/music/compose.py, then C for hUGEDriver)
-.PHONY: all assets script music cockpit clean
+#   make weaponfx    (weapon colours + shot/effect sprites -> src/weapon_fx.h; also prints the colour-blind check)
+.PHONY: all assets script music cockpit weaponfx clean
 assets:
 	python3 tools/gen_assets.py
 cockpit:
@@ -40,6 +41,9 @@ script:
 music:
 	python3 tools/music/compose.py
 	python3 tools/music/build_music.py
+weaponfx:
+	python3 tools/gen_weapon_fx.py
+	python3 tools/cvd_check.py
 
 build/obj/%.o: src/%.c $(HDR)
 	@mkdir -p $(dir $@)
