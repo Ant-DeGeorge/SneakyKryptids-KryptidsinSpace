@@ -39,11 +39,13 @@ def render(key, outdir, name=None):
     song = uge.Song.load(os.path.join(ROOT, 'music', key.lower() + '.uge'))
     frames, loops = length_frames(song)
     tail = 300 if loops else 90
-    wav = os.path.join(outdir, key.lower() + '.raw.wav')
-    script = os.path.join(outdir, key.lower() + '.sb.txt')
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix='render_')              # the harness script splits on spaces: keep its paths space-free
+    wav = os.path.join(tmp, key.lower() + '.raw.wav')
+    script = os.path.join(tmp, key.lower() + '.sb.txt')
     with open(script, 'w') as f:
         f.write(f'30 poke {sym("_jb_req"):x}={ORDER.index(key):x}\n31 wav {wav}\n{31 + frames + tail} end\n')
-    subprocess.run([HARNESS, ROM, script, outdir, '.'], cwd=os.path.dirname(HARNESS), check=True,
+    subprocess.run([HARNESS, ROM, script, tmp, '.'], cwd=os.path.dirname(HARNESS), check=True,
                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     secs = (frames + tail) / 59.7275
     base = os.path.join(outdir, name or key.lower())
@@ -58,7 +60,7 @@ def render(key, outdir, name=None):
             '-metadata', 'album=Sneaky Kryptid: Kryptids in Space']
     if name: tags += ['-metadata', f'track={name[:2].lstrip("0")}/{len(TRACKS)}']
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', base + '.wav', '-codec:a', 'libmp3lame', '-b:a', '192k'] + tags + [base + '.mp3'], check=True)
-    os.remove(wav); os.remove(script)
+    os.remove(wav); os.remove(script); os.rmdir(tmp)
     return secs
 
 
