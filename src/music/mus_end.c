@@ -1,4 +1,4 @@
-#pragma bank 29
+#pragma bank 28
 
 // generated from a hUGETracker .uge by tools/music/uge2c.py
 #include "hUGEDriver.h"
@@ -224,5 +224,5 @@ static const unsigned char waves[] = {
     1,35,86,137,188,238,255,255,238,203,152,101,50,16,0,0,
 };
 
-const void __at(29) __bank_mus_end;
+const void __at(28) __bank_mus_end;
 const hUGESong_t mus_end = {8, &order_cnt, order1, order2, order3,order4, duty_instruments, wave_instruments, noise_instruments, NULL, waves};

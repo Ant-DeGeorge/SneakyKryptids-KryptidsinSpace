@@ -47,7 +47,11 @@ def render(key, outdir):
     secs = (frames + tail) / 59.7275
     base = os.path.join(outdir, key.lower())
     fade = f'afade=t=out:st={secs - 4:.2f}:d=4,' if loops else ''
-    af = fade + 'volume=1.6'                            # the GBC mix is quiet: lift it, keep headroom
+    import wave, array
+    w = wave.open(wav); pcm = array.array('h', w.readframes(w.getnframes())); w.close()
+    peak = max(1, max(pcm), -min(pcm)) / 32768
+    gain = min(1.6, 0.93 / peak)                        # the GBC mix is quiet: lift it, but never clip
+    af = fade + f'volume={gain:.3f}'
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', wav, '-af', af, base + '.wav'], check=True)
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', base + '.wav', '-codec:a', 'libmp3lame', '-b:a', '192k', base + '.mp3'], check=True)
     os.remove(wav); os.remove(script)
