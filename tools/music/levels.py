@@ -3,16 +3,13 @@
 Every theme quotes the title hook from "Bounty Call": root, down a fourth, root, step, step, step, root
 (D5 A4 D5 E5 F5 E5 D5), recast in each mission's key and style.
 
-  STAGE     "Long Haul"       Rimeveil Lane    G mixolydian boogie, space-trucker train beat, 150 BPM
-  BOSS      "Bounty Engaged"  mid-bosses + Kraken, D minor, 150 BPM
+  STAGE, BOSS, STAGE5, FLATWOODS: aggressive EDM, see edm.py (round 2 notes from the user)
   STAGE2    "Static Charge"   Stormwall Nebula E minor, 16th synth arps, saw bass, 150 BPM
   TBIRD     "Thunderhead"     Thunderbird      B minor, gallop bass, thunder crashes, 179 BPM
   STAGE3    "Wisp Hollow"     Barrens Belt     A minor 6/8 spooky folk jig, drone fiddle
   JDEVIL    "Leeds Point"     Jersey Devil     G harmonic minor 6/8 tarantella, 120 BPM (dotted)
   STAGE4    "Glass Moon"      Frostbite Moon   F# minor, glass bells, 112 BPM
   WENDIGO   "Hunger Howl"     Wendigo          C minor, icy 16ths, half-step bass, howls, 150 BPM
-  STAGE5    "Close Encounter" Flatwoods Drift  whole-tone theremin glides, augmented arps, 128 BPM
-  FLATWOODS "Braxton Glow"    Flatwoods boss   C minor + whole-tone runs, siren intro, 179 BPM
 """
 import math, re
 from score import Score, midi, NAMES
@@ -94,9 +91,11 @@ def bassline(chords, offsets, step=2, lo='E1', bar_rows=16, fifth=None):
         for k in range(n):
             o = offsets[k % len(offsets)]
             if o == 'R': out.append(f'R:{step}'); continue
+            fx = ''
+            if isinstance(o, tuple): o, fx = o[0], '/' + o[1]
             if o == 'f': o = iv[2]
             if o == 'F': o = iv[2] - 12 if root + iv[2] - 12 >= midi('C1') else iv[2]
-            out.append(f'{nm(root + o)}:{step}')
+            out.append(f'{nm(root + o)}:{step}{fx}')
     return ' '.join(out)
 
 def echo(sc, ch, text, delay, semis=0, instr=None, bars=16):
@@ -115,95 +114,6 @@ def kit(sc, soft=False):
     sc.noise(4, 'Open hat', vol=5, decay=3, metallic=True)
     sc.noise(5, 'Crash', vol=11 + v, decay=5)
     sc.drums = {'k': (1, 22), 's': (2, 41), 'h': (3, 60), 'o': (4, 57), 'c': (5, 33), 't': (2, 30), 'r': (2, 47)}
-
-
-# ================================================================ 1. STAGE: "Long Haul" (Rimeveil Lane)
-def long_haul():
-    sc = Score('Long Haul', 6)                       # 150 BPM
-    sc.duty(1, 'Chop 25% pluck', duty=1, vol=8, decay=1)
-    sc.duty(2, 'Twang 25%', duty=1, vol=12, decay=0)
-    sc.duty(3, 'Slapback', duty=1, vol=5, decay=2)
-    sc.duty(4, 'Air horn', duty=2, vol=12, decay=0)
-    sc.duty(5, 'Twang 50% bright', duty=2, vol=12, decay=0)
-    sc.wave(1, 'Boogie bass', 0, level=1)
-    sc.waveform(0, W_PUNCH)
-    kit(sc)
-    BOOGIE = [0, 4, 7, 9, 10, 9, 7, 4]
-
-    # intro (4 bars): air horn, the boogie rolls in, pickup lick
-    sc.play(1, '@4 C5:6/030 R:2 C5:6/030 R:2 | R:16 | @1 ' + arp('G | G', pulse=4, lo='G3'))
-    sc.play(2, 'R:16 | R:16 | R:16 | @2 R:8 D4:2 E4:2 F4:2 F#4:2')
-    sc.play(3, 'R:16 | @1 ' + bassline('G | G | G', BOOGIE, lo='E1'))
-    sc.drum('................ h.h.h.h.h.h.h.h. k.hhs.hhk.hhs.hh k.hhs.hhs.s.ssss')
-
-    A_ch = 'G | G | C | G | D | C | G | D'
-    A_lead = ('@2 G4:4 D4:2 G4:2 A4:2 B4:2 A4:2 G4:2 | Bb4:2 B4:6/422 R:2 D5:2 B4:2 G4:2 | C5:4 E5:2 C5:2 G4:4 E4:2 G4:2 | D5:12/423 B4:2 A4:2 | '
-              'A4:4 D5:2 A4:2 F#4:2 A4:2 D5:2 E5:2 | F5:2 E5:2 C5:4 E5:4 G5:4 | G5:4 F5:2 D5:2 B4:4 G4:4 | A4:8/423 D4:2 F#4:2 A4:2 C5:2')
-    B_ch = 'C | C | G | G | Am | D | Em:2 C:2 | D'
-    B_lead = ('@5 E5:6 D5:2 C5:4 G4:4 | A4:2 C5:2 E5:2 G5:6/422 E5:4 | D5:6 B4:2 G4:4 B4:4 | D5:12/423 R:4 | '
-              'C5:4 E5:2 A5:2 G5:4 E5:4 | F#5:4 A5:2 F#5:2 D5:4 A4:4 | B4:2 E5:2 G5:4 C5:2 E5:2 G5:4 | A5:8/423 F#5:4 D5:4')
-    chop = lambda ch: ' '.join(f'R:2 {t}' for t in arp(ch, pulse=2, lo='G3').split()[1::2])
-    beat, fill = 'k.hhs.hhk.hhs.hh', 'k.hhs.hhs.s.ssss'
-
-    sc.mark('A')
-    sc.play(1, '@1 ' + chop(A_ch))
-    sc.play(2, A_lead)
-    sc.play(3, '@1 ' + bassline(A_ch, BOOGIE, lo='E1'))
-    sc.drum('c.hhs.hh' + 'k.hhs.hh' + beat * 6 + fill)
-
-    sc.play(1, '@1 ' + chop(B_ch))
-    sc.play(2, B_lead)
-    sc.play(3, '@1 ' + bassline(B_ch, BOOGIE, lo='E1'))
-    sc.drum('c.hhs.hhk.hhs.hh' + beat * 2 + 'k.hhs.hhk.k.s.hh' + beat * 3 + 'k.s.s.s.ssssssss')
-
-    # A' : twin lead — ch1 slapback an octave down, 3 rows late
-    sc.play(2, A_lead)
-    echo(sc, 1, A_lead, 3, semis=-12, instr=3)
-    sc.play(3, '@1 ' + bassline(A_ch, BOOGIE, lo='E1'))
-    sc.drum('c.hhs.hh' + 'k.hhs.hh' + beat * 6 + fill)
-
-    # highway break (4 bars): bass and drums, horn, lick back into A
-    sc.play(1, '@4 C5:6/030 R:2 C5:6/030 R:2 | R:16 | @1 ' + chop('C | D'))
-    sc.play(2, '@2 R:16 | G4:2 Bb4:2 B4:2 D5:2 R:2 D5:2 B4:2 G4:2 | E5:4 D5:2 C5:2 G4:8/423 | R:8 D4:2 E4:2 F4:2 F#4:2')
-    sc.play(3, '@1 ' + bassline('G | G | C | D', BOOGIE, lo='E1'))
-    sc.drum('k.h.k.h.k.h.k.h. k.hhs.hhk.hhs.hh ' + beat + ' k.s.s.ssssssoooo')
-    return sc.build(loop_to='A')
-
-
-# ================================================================ 2. BOSS: "Bounty Engaged" (mid-bosses, Space Kraken)
-def bounty_engaged():
-    sc = Score('Bounty Engaged', 6)                  # 150 BPM
-    sc.duty(1, 'Lead 50%', duty=2, vol=13, decay=0)
-    sc.duty(2, 'Arp 12.5% pluck', duty=0, vol=9, decay=1)
-    sc.duty(3, 'Alarm', duty=1, vol=11, decay=0)
-    sc.duty(4, 'Lead 25% bright', duty=1, vol=13, decay=0)
-    sc.wave(1, 'Bass punch', 0, level=1)
-    sc.waveform(0, W_PUNCH)
-    kit(sc)
-    OST = [0, 0, 12, 0, 1, 0, -2, 0]                 # D D D' D Eb D C D: menace
-
-    sc.play(1, '@3 ' + ' '.join(['G#5:2 D5:2'] * 4) + ' | ' + ' '.join(['G#5:2 D5:2'] * 4) + ' | @2 ' + arp('Dm | A', pulse=2, lo='A3'))
-    sc.play(2, '@3 R:16 | R:16 | @1 D5:4 R:4 D5:4 R:4 | A4:4 C#5:4 E5:4 A5:4')
-    sc.play(3, '@1 ' + bassline('Dm | Dm | Dm | A', OST, lo='A1'))
-    sc.drum('k...k...k...k... k...k...k...kkkk k.h.s.h.k.h.s.h. k.s.k.s.ssssssss')
-
-    A_ch = 'Dm | Dm | Bb | C | Dm | Dm | Gm | A'
-    A_lead = ('@1 D5:8/422 A4:4 D5:4 | E5:4 F5:4 E5:4 D5:4 | F5:6 G5:2 F5:4 D5:4 | E5:6 F5:2 G5:8/433 | '
-              'A5:8/422 F5:4 A5:4 | Bb5:4 A5:4 G5:4 F5:4 | G5:6 A5:2 Bb5:4 D6:4 | C#6:8/433 A5:4 E5:4')
-    B_ch = 'Bb | C | A | Dm | Bb | C | Eb | A'
-    B_lead = ('@4 D6:2 C6:2 Bb5:2 A5:2 Bb5:4 F5:4 | E5:2 F5:2 G5:2 A5:2 G5:4 E5:4 | C#5:2 E5:2 A5:2 C#6:2 E6:4 C#6:4 | D6:8/433 A5:4 F5:4 | '
-              'D5:2 F5:2 Bb5:2 D6:2 C6:4 Bb5:4 | G5:2 E5:2 C5:2 E5:2 G5:4 C6:4 | Bb5:4 G5:4 Eb5:4 G5:4 | A5:4 G#5:2 A5:2 C#6:4 E6:4')
-    beat, fill = 'k.h.s.hkk.h.s.h.', 'k.h.s.h.s.s.ssss'
-    sc.mark('A')
-    sc.play(1, '@2 ' + arp(A_ch, pulse=2, lo='A3'))
-    sc.play(2, A_lead)
-    sc.play(3, '@1 ' + bassline(A_ch, OST, lo='A1'))
-    sc.drum('c.h.s.hk' + 'k.h.s.h.' + beat * 6 + fill)
-    sc.play(1, '@2 ' + arp(B_ch, pulse=4, lo='A3'))
-    sc.play(2, B_lead)
-    sc.play(3, '@1 ' + bassline(B_ch, [0, 12, 0, 12, 0, 12, 0, 12], lo='A1'))
-    sc.drum('c.h.s.hkk.hhs.hk' + 'k.hhs.hkk.hhs.hk' * 2 + 'k.hhs.hks.s.ssss' + 'c.hhs.hkk.hhs.hk' + 'k.hhs.hkk.hhs.hk' * 2 + 'k.s.s.s.ssssssss')
-    return sc.build(loop_to='A')
 
 
 # ================================================================ 3. STAGE2: "Static Charge" (Stormwall Nebula)
@@ -447,78 +357,7 @@ def hunger_howl():
     return sc.build(loop_to='A')
 
 
-# ================================================================ 9. STAGE5: "Close Encounter" (Flatwoods Drift)
-def close_encounter():
-    sc = Score('Close Encounter', 7)                 # 128 BPM
-    sc.duty(1, 'Saucer arp 12.5%', duty=0, vol=8, decay=0)
-    sc.duty(2, 'Theremin 50%', duty=2, vol=11, decay=0)
-    sc.duty(3, 'Beep', duty=1, vol=9, decay=1)
-    sc.wave(1, 'Space bass', 0, level=1)
-    sc.waveform(0, W_ROUND)
-    kit(sc, soft=True)
-    BASS = [0, 'R', 0, 12, 'R', 0, 12, 'R']
-
-    sc.play(1, '@3 C6:2 R:2 F#6:2 R:2 C6:2 R:2 F#6:2 R:2 | R:16 | @1 ' + arp('Caug | Ebaug', pulse=1, lo='C4'))
-    sc.play(2, '@2 R:16 | C4:16/*310 | C5:16/*306 | D#5:8/*304 G5:8/446')
-    sc.play(3, 'R:16 | R:16 | @1 ' + bassline('C | Eb', BASS, lo='E1'))
-    sc.drum('................ ................ k..h..s.k.hh..s. k..h..s.s.s.ssss')
-
-    A_ch = 'Caug | Ebaug | Caug | Ebaug | Ab | Bb | Caug | Ebaug'
-    A_lead = ('@2 C5:4/445 F#4:2 C5:2 D5:2 E5:2 D5:2 C5:2 | B5:8/*306 G5:8/446 | E5:4 G#5:4 C6:8/446 | D#6:8/*304 B5:4 G5:4 | '
-              'C6:4 D#6:4 G#5:8/446 | D6:4 F6:4 A#5:8/446 | C6:4 G#5:4 E5:4 C5:4 | D#5:16/*302')
-    B_ch = 'E | C | E | C | Ab | E | Caug | Ebaug'
-    B_lead = ('@2 G#5:12/446 B5:4 | G5:12/*304 E5:4 | E6:8/446 D#6:4 B5:4 | C6:16/446 | '
-              'D#6:8/*304 C6:8/446 | B5:8/*304 G#5:8/446 | E5:4 G#5:4 C6:4 E6:4 | D#6:16/448')
-    beat = 'k..h..s.k.hh..s.'
-    sc.mark('A')
-    sc.play(1, '@1 ' + arp(A_ch, pulse=1, lo='C4'))
-    sc.play(2, A_lead)
-    sc.play(3, '@1 ' + bassline(A_ch, BASS, lo='E1'))
-    sc.drum(beat * 7 + 'k..h..s.s.s.ssss')
-    sc.play(1, '@3 ' + broken(B_ch, [3, 1, 2, 0], step=4, lo='C5'))
-    sc.play(2, B_lead)
-    sc.play(3, '@1 ' + bassline(B_ch, [0, 0, 12, 0], step=4, lo='E1'))
-    sc.drum(('k.......s.......' + 'k..h..s.k..h..s.') * 3 + 'k.......s....... k..h..s.s.ssssss')
-    return sc.build(loop_to='A')
-
-
-# ================================================================ 10. FLATWOODS: "Braxton Glow" (Flatwoods Monster)
-def braxton_glow():
-    sc = Score('Braxton Glow', 5)                    # 179 BPM
-    sc.duty(1, 'Arp 12.5%', duty=0, vol=9, decay=1)
-    sc.duty(2, 'Lead 50% alien', duty=2, vol=13, decay=0)
-    sc.duty(3, 'Siren', duty=1, vol=12, decay=0)
-    sc.duty(4, 'Lead 25% runs', duty=1, vol=13, decay=0)
-    sc.wave(1, 'Bass punch', 0, level=1)
-    sc.waveform(0, W_PUNCH)
-    kit(sc)
-    GALLOP = [0, 0, 12, 0, 0, 12, 0, 12]
-
-    sc.play(1, 'R:16 | R:16 | @1 ' + arp('Caug | Ebaug', pulse=1, lo='C4'))
-    sc.play(2, '@3 C5:8/*110 C6:8/*210 | C5:8/*110 C6:8/*210 | @2 C5:4 F#4:2 C5:2 D5:2 Eb5:2 D5:2 C5:2 | B4:16/448')
-    sc.play(3, 'R:16 | R:16 | @1 ' + bassline('Cm | Ebaug', GALLOP, lo='G1'))
-    sc.drum('k...k...k...k... k...k...k...kkkk c.h.s.hkk.h.s.hk k.s.k.s.ssssssss')
-
-    A_ch = 'Cm | Cm | Ab | Bb | Cm | Cm | F# | Ebaug'
-    A_lead = ('@2 C5:4 F#4:2 C5:2 D5:2 Eb5:2 D5:2 C5:2 | G5:6 F#5:2 G5:4 Eb5:4 | Ab5:4 C6:4 Eb6:4 C6:4 | D6:8/433 Bb5:4 F5:4 | '
-              'C6:4 F#5:2 C6:2 D6:2 Eb6:2 D6:2 C6:2 | G6:8/433 Eb6:4 C6:4 | F#5:4 A#5:4 C#6:4 F#6:4 | G6:4 D#6:4 B5:4 G5:4')
-    B_ch = 'Caug | Ebaug | Caug | Ebaug | Ab | Bb | Caug | Ebaug'
-    B_lead = ('@4 C5:1 D5:1 E5:1 F#5:1 G#5:1 A#5:1 C6:2 A#5:2 G#5:2 E5:4 | D#5:1 F5:1 G5:1 A5:1 B5:1 C#6:1 D#6:2 B5:2 G5:2 D#5:4 | '
-              'E6:8/448 C6:8/448 | D#6:8/448 B5:8/448 | Ab5:2 C6:2 Eb6:2 Ab6:2 G6:4 Eb6:4 | Bb5:2 D6:2 F6:2 Bb6:2 A6:4 F6:4 | '
-              'C6:4 G#5:4 E5:4 C5:4 | B4:4 D#5:4 G5:4 B5:4')
-    beat = 'k.h.s.hkk.h.s.hk'
-    sc.mark('A')
-    sc.play(1, '@1 ' + arp(A_ch, pulse=2, lo='C4'))
-    sc.play(2, A_lead)
-    sc.play(3, '@1 ' + bassline(A_ch, GALLOP, lo='G1'))
-    sc.drum('c.h.s.hkk.h.s.hk' + beat * 3 + 'c.h.s.hkk.h.s.hk' + beat * 2 + 'k.h.s.hks.s.ssss')
-    sc.play(1, '@1 ' + arp(B_ch, pulse=1, lo='C4'))
-    sc.play(2, B_lead)
-    sc.play(3, '@1 ' + bassline(B_ch, [0, 0, 12, 0], step=1, lo='G1'))
-    sc.drum('c.hhs.hkk.hhs.hk' * 2 + 'c.......c.......' * 2 + 'c.hhs.hkk.hhs.hk' * 3 + 'k.s.k.s.ssssssss')
-    return sc.build(loop_to='A')
-
-
-SONGS = {'STAGE': long_haul, 'BOSS': bounty_engaged, 'STAGE2': static_charge, 'TBIRD': thunderhead,
-         'STAGE3': wisp_hollow, 'JDEVIL': leeds_point, 'STAGE4': glass_moon, 'WENDIGO': hunger_howl,
-         'STAGE5': close_encounter, 'FLATWOODS': braxton_glow}
+SONGS = {'STAGE2': static_charge, 'TBIRD': thunderhead, 'STAGE3': wisp_hollow, 'JDEVIL': leeds_point,
+         'STAGE4': glass_moon, 'WENDIGO': hunger_howl}
+import edm
+SONGS.update(edm.SONGS)
