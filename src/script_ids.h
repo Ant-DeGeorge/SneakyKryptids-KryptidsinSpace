@@ -80,6 +80,16 @@
 #define CM5_BFLEE 76
 #define CM5_BKILL 77
 #define CM5_BCAP 78
-#define CM_BUDHINT 79
-#define CM_BUDGOT 80
+#define CM6_EMP 79
+#define CM6_GRAZE 80
+#define CM6_MISSILE 81
+#define CM6_ROCKS 82
+#define CM6_LASER 83
+#define CM6_DIVE 84
+#define CM6_HEAT 85
+#define CM6_POD 86
+#define CM6_GOTPOD 87
+#define CM6_CLEAR 88
+#define CM_BUDHINT 89
+#define CM_BUDGOT 90
 #endif

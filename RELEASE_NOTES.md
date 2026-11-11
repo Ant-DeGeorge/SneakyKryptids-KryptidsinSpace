@@ -6,6 +6,20 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - `sneaky_kryptid.gbc` — the demo, with saves (use this one)
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
 
+## Coming in v1.2 (branch `escape-run`, not released yet)
+- **Mission 6, Escape Run:** Nubs's whole gang ambushes the ship, an EMP kills the guns, and you
+  run for the planet below. No shooting: dodge bullet curtains, homing missiles, asteroid walls
+  and warned laser columns across three phases (chase, gauntlet, atmosphere dive).
+- **Graze and dash:** near misses fill the BOOST meter; A dashes through danger when it is full
+  (Cadet dodges by itself). B is a shield pulse that clears nearby shots.
+- **The steal:** a good run lets you grab the gang's brig pod, which counts as the capture and
+  brings a new face into the debrief: Graul, a werewolf bounty hunter.
+- New title intro (AGD PRESENTS) and a new ending after mission 6: career tally, the crew's
+  verdict on your flying, and the eyes of something that wants its kin back.
+- Colour-blind-safe hazards (warm and bright against a cool player side, with shape and blink
+  warnings) and no full-screen flashes in the new mission.
+- Saves from v1.0 and v1.1 are upgraded on boot (save version 4); mission 6 unlocks after Flatwoods Drift.
+
 ## New in v1.1
 - **Mission 5, Flatwoods Drift:** a first-person gun-cam mission. The helm is jammed, so you
   aim a crosshair from the cockpit, shoot down what is fired at the ship, and face the
@@ -31,7 +45,7 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - Rescue sleeping baby cryptids to fly as wingmen.
 
 ## Controls
-D-pad fly (mission 5: aim) · A fire (Hunter) · B bomb · START pause / armory · SELECT+A on the map: boss practice ·
+D-pad fly (mission 5: aim) · A fire (Hunter; mission 6: dash) · B bomb (mission 6: shield pulse) · START pause / armory · SELECT+A on the map: boss practice ·
 SELECT+B on the title: erase saves.
 
 ## Known limits

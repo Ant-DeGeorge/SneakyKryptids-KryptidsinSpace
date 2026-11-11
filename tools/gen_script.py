@@ -16,11 +16,12 @@ NAMES = {
     'forge':  "FORGE",
     'doc':    "SUTURE",
     'vex':    "ZANNAH",
+    'graul':  "GRAUL",
 }
-CREW = ['cap', 'static', 'forge', 'doc', 'vex']   # portrait order in assets
+CREW = ['cap', 'static', 'forge', 'doc', 'vex', 'graul']   # portrait order (graul: cutscenes only, art from gen_escape.py)
 
 # scene ids (see scenes.c load_scene)
-SC_SHIP, SC_STATION, SC_KRAKEN, SC_TBIRD, SC_JDEVIL, SC_STORM, SC_BARRENS, SC_WENDIGO, SC_FROST, SC_FLAT = range(10)
+SC_SHIP, SC_STATION, SC_KRAKEN, SC_TBIRD, SC_JDEVIL, SC_STORM, SC_BARRENS, SC_WENDIGO, SC_FROST, SC_FLAT, SC_CRASH = range(11)
 
 INTRO = [
   [ # 1 Rimeveil Lane
@@ -67,6 +68,15 @@ INTRO = [
     (SC_SHIP,    'static', 0, "ITS SAUCERS JAM OUR HELM. I CAN HOLD HER STEADY. THAT'S ALL."),
     (SC_SHIP,    'forge',  1, "THEN USE THE GUN CAM. YOU AIM, SHE SHOOTS."),
     (SC_SHIP,    'cap',    1, "FINE. STATIC FLIES. I'LL TAKE THE GUNS."),
+  ],
+  [ # 6 Escape Run (no guns: dodge, graze, dive)
+    (SC_SHIP,    'vex',    1, "FIVE CONTRACTS CLOSED. NEXT STOP, PAYDAY."),
+    (SC_SHIP,    'static', 0, "CONTACT. BIG ONE. IT'S THE SCRAPJAW."),
+    (SC_SHIP,    'cap',    0, "NUBS. AND THIS TIME HE BROUGHT THE WHOLE GANG."),
+    (SC_SHIP,    'forge',  0, "EMP! CANNONS ARE DEAD. RUNES ARE DEAD."),
+    (SC_SHIP,    'doc',    0, "PLANET BELOW US. THICK AIR. THAT HULK CAN'T FOLLOW."),
+    (SC_SHIP,    'static', 1, "NO GUNS, SO FLY CLOSE. NEAR MISSES CHARGE THE BOOST."),
+    (SC_SHIP,    'cap',    1, "THEN WE RUN. NOSE DOWN. DIVE, DIVE, DIVE!"),
   ],
 ]
 # debriefs by outcome: [stage][0 escaped, 1 killed, 2 captured]
@@ -136,6 +146,21 @@ OUTRO = [
       (SC_SHIP,    'vex',    1, "TRIPLE PAY! FROM AN ACCOUNT THAT DOESN'T EXIST!"),
       (SC_SHIP,    'static', 0, "CAPTAIN. IT'S TRANSMITTING. FROM INSIDE THE HOLD."),
       (SC_SHIP,    'cap',    0, "TO WHO?") ],
+  ],
+  [ # 6 (0 got away, 1 unused, 2 got away with the brig pod: Graul and the gang's ledger)
+    [ (SC_CRASH,   'static', 0, "WE'RE DOWN. MOSTLY IN ONE PIECE."),
+      (SC_CRASH,   'vex',    0, "NOBODY PAYS US FOR RUNNING. I CHECKED."),
+      (SC_CRASH,   'forge',  0, "GUNS BACK IN A DAY. MAYBE TWO."),
+      (SC_CRASH,   'cap',    0, "NUBS WON'T LAND HERE. NEITHER SHOULD WE HAVE.") ],
+    [ (SC_CRASH,   'static', 0, "WE'RE DOWN. MOSTLY IN ONE PIECE."),
+      (SC_CRASH,   'cap',    0, "NUBS WON'T LAND HERE. NEITHER SHOULD WE HAVE.") ],
+    [ (SC_CRASH,   'static', 1, "WE'RE DOWN. AND WE BROUGHT A SOUVENIR."),
+      (SC_SHIP,    'forge',  0, "THEIR BRIG POD. SOMETHING BIG IS IN IT."),
+      (SC_SHIP,    'graul',  0, "GRAUL. BOUNTY HUNTER. NUBS CAGED ME FOR MY MARKS."),
+      (SC_SHIP,    'graul',  1, "SO I TOOK HIS LEDGER ON THE WAY OUT."),
+      (SC_SHIP,    'vex',    1, "EVERY JOB THE GANG WAS CHASING? THOSE ARE OURS NOW."),
+      (SC_CRASH,   'graul',  0, "I OWE YOU A HUNT. THIS ROCK HAS PLENTY TO HUNT."),
+      (SC_CRASH,   'cap',    1, "WELCOME ABOARD, WOLF. WATCH THE TREE LINE.") ],
   ],
 ]
 # in-flight comms: (id, speaker, text)   15 cols x 3 rows
@@ -224,14 +249,26 @@ COMMS = [
     ('CM5_BKILL',   'cap',    "FLATWOODS MONSTER DOWN. GOOD GUNNING."),
     ('CM5_BCAP',    'forge',  "RUNE NET HOLDS! THE MONSTER IS OURS!"),
 
+    ('CM6_EMP',     'static', "EMP HIT! GUNS ARE DEAD! JUST FLY!"),
+    ('CM6_GRAZE',   'forge',  "SKIM THEIR SHOTS TO CHARGE BOOST!"),
+    ('CM6_MISSILE', 'cap',    "MISSILES! TURN HARD, THEY MISS!"),
+    ('CM6_ROCKS',   'doc',    "ASTEROID BELT! AIM FOR THE ARROWS!"),
+    ('CM6_LASER',   'forge',  "BLINKING LINES? LASERS! GET CLEAR!"),
+    ('CM6_DIVE',    'cap',    "THERE'S THE PLANET! FULL BURN!"),
+    ('CM6_HEAT',    'static', "HULL'S GLOWING! SHE'LL HOLD. I HOPE."),
+    ('CM6_POD',     'forge',  "THEIR BRIG POD TORE LOOSE! GRAB IT!"),
+    ('CM6_GOTPOD',  'vex',    "GOT IT! FINDERS KEEPERS, NUBS!"),
+    ('CM6_CLEAR',   'static', "THEY'RE PULLING UP! TOO HEAVY!"),
+
     ('CM_BUDHINT',  'doc',    "A SLEEPING BABY CRYPTID! FLY INTO IT!"),
     ('CM_BUDGOT',   'vex',    "NEW BUDDY ON BOARD! NO SALARY!"),
 ]
 # per stage: mid-boss (fled, killed, captured) and boss (fled, killed, captured) comms
 MID_COMM = [['CM1_GOTAWAY', 'CM1_MIDKILL', 'CM1_MIDCAP'], ['CM2_MMGONE', 'CM2_MIDKILL', 'CM2_MIDCAP'],
             ['CM3_NUBSGONE', 'CM3_MIDKILL', 'CM3_MIDCAP'], ['CM4_BEASTGONE', 'CM4_MIDKILL', 'CM4_MIDCAP'],
-            ['CM5_HURT', 'CM5_HURT', 'CM5_HURT']]            # mission 5 has no mid-boss
-BOSS_COMM = [[f'CM{s}_BFLEE', f'CM{s}_BKILL', f'CM{s}_BCAP'] for s in range(1, 6)]
+            ['CM5_HURT', 'CM5_HURT', 'CM5_HURT'],            # mission 5 has no mid-boss
+            ['CM6_CLEAR', 'CM6_CLEAR', 'CM6_CLEAR']]         # nor has mission 6
+BOSS_COMM = [[f'CM{s}_BFLEE', f'CM{s}_BKILL', f'CM{s}_BCAP'] for s in range(1, 6)] + [['CM6_CLEAR', 'CM6_CLEAR', 'CM6_GOTPOD']]
 
 
 def wrap(txt, w, rows):

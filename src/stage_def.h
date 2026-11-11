@@ -4,7 +4,9 @@
 #include <stdint.h>
 
 #define N_STAGES 4            // scrolling stages (stage_defs)
-#define N_MISSIONS 5          // missions on the map: the four stages + the gun-cam mission
+#define N_MISSIONS 6          // missions on the map: the four stages, the gun-cam mission and the escape run
+#define FLAT_SID 4            // mission index of Flatwoods Drift (gun cam)
+#define ESC_SID 5             // mission index of Escape Run
 #define ROWS_PER_BANK 409
 
 typedef struct {

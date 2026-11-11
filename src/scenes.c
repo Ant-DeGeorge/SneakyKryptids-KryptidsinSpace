@@ -8,6 +8,7 @@
 #include "core.h"
 #include "assets.h"
 #include "cockpit_data.h"
+#include "escape_data.h"
 #include "sound.h"
 #include "game.h"
 #include "stage_def.h"
@@ -41,12 +42,12 @@ uint8_t pf_gear[N_PROFILES][N_GEAR];
 uint8_t g_gear[N_GEAR];
 uint8_t bounty_out, mid_out;
 uint32_t bounty_pts;
-static const uint16_t pay_base[N_MISSIONS] = {100, 150, 200, 250, 300};
+static const uint16_t pay_base[N_MISSIONS] = {100, 150, 200, 250, 300, 350};
 static const char * const out_names[4] = {"", "ESCAPED", "KILLED", "CAPTURED"};
 
 static const char * const pilot_names[N_PROFILES] = {"CADET", "PILOT", "HUNTER"};
-static const char * const boss_names[N_MISSIONS] = {"SPACE KRAKEN", "THUNDERBIRD", "JERSEY DEVIL", "WENDIGO", "FLATWOODS MONSTER"};
-static const char * const mission_names[N_MISSIONS] = {"RIMEVEIL LANE", "STORMWALL NEBULA", "BARRENS BELT", "FROSTBITE MOON", "FLATWOODS DRIFT"};
+static const char * const boss_names[N_MISSIONS] = {"SPACE KRAKEN", "THUNDERBIRD", "JERSEY DEVIL", "WENDIGO", "FLATWOODS MONSTER", "NUBS'S GANG"};
+static const char * const mission_names[N_MISSIONS] = {"RIMEVEIL LANE", "STORMWALL NEBULA", "BARRENS BELT", "FROSTBITE MOON", "FLATWOODS DRIFT", "ESCAPE RUN"};
 
 static const uint16_t pal_text[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(72, 224, 200), RGB8(248, 248, 248) };
 static const uint16_t pal_panel[4] = { RGB8(12, 14, 24), RGB8(44, 52, 72), RGB8(232, 48, 72), RGB8(248, 248, 248) };
@@ -65,24 +66,32 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #ifdef FLATWOODS_DEMO
 #define SAVE ((uint8_t *)0xA400)
 #define SAVE_SIG 'F'
-#define SAVE_VER 2
+#define SAVE_VER 3
 #else
 #define SAVE ((uint8_t *)0xA200)
 #define SAVE_SIG 'D'
-#define SAVE_VER 3
+#define SAVE_VER 4
 #endif
 #ifdef FLATWOODS_DEMO
 #define DEMO_VERSION "GUN CAM DEMO V1.0"
 #elif defined(UNLOCK_ALL)
-#define DEMO_VERSION "DEMO V1.1 UNLOCKED"
+#define DEMO_VERSION "DEMO V1.2 UNLOCKED"
 #else
-#define DEMO_VERSION "DEMO V1.1"
+#define DEMO_VERSION "DEMO V1.2"
 #endif
 #define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
-#define SAVE_LEN (4 + N_PROFILES * PF_LEN(N_MISSIONS, N_GEAR) + 1)
+#define SV_LEN(n, g) (4 + N_PROFILES * PF_LEN(n, g) + 1)
+#define SAVE_LEN SV_LEN(N_MISSIONS, N_GEAR)
 #define OLD_GEAR 5                                           // saves before the weapon runes held five gear slots
-#define SAVE_LEN_OLD (4 + N_PROFILES * PF_LEN(N_MISSIONS, OLD_GEAR) + 1)
-#define SAVE_LEN_V1 (4 + N_PROFILES * PF_LEN(4, OLD_GEAR) + 1)   // version 1: four missions
+// Older layouts, newest first: {version, missions, gear slots}. A save in one of them is read,
+// the new fields start empty, and it is written back in the current layout.
+static const uint8_t old_fmt[][3] = {
+#ifdef FLATWOODS_DEMO
+    {2, 5, N_GEAR}, {1, 5, OLD_GEAR},
+#else
+    {3, 5, N_GEAR}, {2, 5, OLD_GEAR}, {1, 4, OLD_GEAR},      // v1.1 + runes, v1.1, v1.0
+#endif
+};
 static uint8_t sum8(uint8_t *p, uint8_t n) { uint8_t s = 0x5A; while (n--) s += *p++; return s; }
 static void save_clear(void) {
     memset(pf_unlock, 0, sizeof pf_unlock); memset(pf_done, 0, sizeof pf_done);
@@ -107,13 +116,18 @@ void save_read(void) {
     DISABLE_RAM;
     save_clear();
     if (buf[0] != 'S' || buf[1] != 'K' || buf[2] != SAVE_SIG) return;
-    if (buf[3] == SAVE_VER && buf[SAVE_LEN - 1] == sum8(buf, SAVE_LEN - 1)) save_parse(buf + 4, N_MISSIONS, N_GEAR);
-    else if (buf[3] == SAVE_VER - 1 && buf[SAVE_LEN_OLD - 1] == sum8(buf, SAVE_LEN_OLD - 1)) {
-        save_parse(buf + 4, N_MISSIONS, OLD_GEAR);           // save from before the weapon runes: keep it, runes start unbought
-        save_write();
-    } else if (SAVE_SIG == 'D' && buf[3] == 1 && buf[SAVE_LEN_V1 - 1] == sum8(buf, SAVE_LEN_V1 - 1)) {
-        save_parse(buf + 4, 4, OLD_GEAR);                    // v1.0 save: keep it, mission 5 starts empty
-        save_write();
+    if (buf[3] == SAVE_VER) {
+        if (buf[SAVE_LEN - 1] == sum8(buf, SAVE_LEN - 1)) save_parse(buf + 4, N_MISSIONS, N_GEAR);
+        return;
+    }
+    {
+        uint8_t i, n;
+        for (i = 0; i < sizeof old_fmt / 3; i++) {
+            if (buf[3] != old_fmt[i][0]) continue;
+            n = SV_LEN(old_fmt[i][1], old_fmt[i][2]);
+            if (buf[n - 1] == sum8(buf, n - 1)) { save_parse(buf + 4, old_fmt[i][1], old_fmt[i][2]); save_write(); }
+            return;
+        }
     }
 }
 void save_write(void) {
@@ -214,7 +228,7 @@ static void pal_fade(uint8_t first, uint8_t n, const uint16_t *src, uint8_t lv) 
         fade_buf[i] = r | ((uint16_t)g << 5) | ((uint16_t)b << 10);
     }
     wait_vbl_done();
-    set_bkg_palette(first, n, fade_buf);
+    ld_bkg_pal(BANK_A2, first, n, fade_buf);      // RAM source; HBlank-safe writer (the LCD is on)
 }
 static uint8_t title_wait(uint8_t n) {        // A/START skips the intro
     while (n--) { wait_vbl_done(); input_poll(); if (joy_new & (J_A | J_START)) return 1; }
@@ -305,12 +319,12 @@ static uint8_t pilot_select(void) {
 #ifdef FLATWOODS_DEMO
         if (p < 2) {
             uint8_t i;
-            for (i = 0; i < 5; i++) put_tile(3 + i, y + 1, i < pf_best[p][N_MISSIONS - 1] ? T_HUD_STAR : T_HUD_STARE, 5);
+            for (i = 0; i < 5; i++) put_tile(3 + i, y + 1, i < pf_best[p][FLAT_SID] ? T_HUD_STAR : T_HUD_STARE, 5);
         } else {
             txt_put(3, y + 1, "HI", 0, 6);
-            put_num(6, y + 1, pf_hi[2][N_MISSIONS - 1], 7, 7);
+            put_num(6, y + 1, pf_hi[2][FLAT_SID], 7, 7);
         }
-        if (pf_out[p][N_MISSIONS - 1]) txt_put(10, y + 1, out_names[pf_out[p][N_MISSIONS - 1]], 0, 6);   // best outcome
+        if (pf_out[p][FLAT_SID]) txt_put(10, y + 1, out_names[pf_out[p][FLAT_SID]], 0, 6);   // best outcome
         continue;
 #endif
         if (p < 2) {
@@ -379,7 +393,7 @@ static uint8_t mission_map(void) {
             txt_put(4, y, mission_names[s], 0, 4);            // greyed out until unlocked
         }
     }
-    center(14, "BOUNTY:", 6);
+    center(15, "BOUNTY:", 6);
     center(17, "A:GO  START:ARMORY", 6);
     screen_on(LCDC_SCREEN);
     music_play(MUS_MAP);
@@ -390,8 +404,8 @@ static uint8_t mission_map(void) {
         if ((joy_new & J_DOWN) && sel < top) { sel++; sfx_play(SFX_SELECT); }
         if (s != sel) {
             s = sel;
-            txt_fill(0, 15, 20, 1, txt_tile(' '), 7, 0);
-            center(15, boss_names[sel], 7);
+            txt_fill(0, 16, 20, 1, txt_tile(' '), 7, 0);
+            center(16, boss_names[sel], 7);
         }
         // the Sneaky Kryptid parks next to the chosen mission
         oam_fixed(1, 0 * 8 + 8, (3 + sel * 2) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP, 0);
@@ -493,14 +507,15 @@ extern const uint8_t por_cap_a_map[], por_cap_b_map[], por_static_a_map[], por_s
     por_doc_a_map[], por_doc_b_map[], por_vex_a_map[], por_vex_b_map[];
 extern const uint8_t por_cap_a_attr[], por_cap_b_attr[], por_static_a_attr[], por_static_b_attr[], por_forge_a_attr[], por_forge_b_attr[],
     por_doc_a_attr[], por_doc_b_attr[], por_vex_a_attr[], por_vex_b_attr[];
-static const uint8_t * const por_tiles[10] = {por_cap_a_tiles, por_cap_b_tiles, por_static_a_tiles, por_static_b_tiles, por_forge_a_tiles, por_forge_b_tiles, por_doc_a_tiles, por_doc_b_tiles, por_vex_a_tiles, por_vex_b_tiles};
-static const uint16_t * const por_pals[10] = {por_cap_a_pals, por_cap_b_pals, por_static_a_pals, por_static_b_pals, por_forge_a_pals, por_forge_b_pals, por_doc_a_pals, por_doc_b_pals, por_vex_a_pals, por_vex_b_pals};
-static const uint8_t * const por_map[10] = {por_cap_a_map, por_cap_b_map, por_static_a_map, por_static_b_map, por_forge_a_map, por_forge_b_map, por_doc_a_map, por_doc_b_map, por_vex_a_map, por_vex_b_map};
-static const uint8_t * const por_attr[10] = {por_cap_a_attr, por_cap_b_attr, por_static_a_attr, por_static_b_attr, por_forge_a_attr, por_forge_b_attr, por_doc_a_attr, por_doc_b_attr, por_vex_a_attr, por_vex_b_attr};
-static const uint8_t por_nt[10] = {POR_CAP_A_NT, POR_CAP_B_NT, POR_STATIC_A_NT, POR_STATIC_B_NT, POR_FORGE_A_NT, POR_FORGE_B_NT, POR_DOC_A_NT, POR_DOC_B_NT, POR_VEX_A_NT, POR_VEX_B_NT};
+static const uint8_t * const por_tiles[12] = {por_cap_a_tiles, por_cap_b_tiles, por_static_a_tiles, por_static_b_tiles, por_forge_a_tiles, por_forge_b_tiles, por_doc_a_tiles, por_doc_b_tiles, por_vex_a_tiles, por_vex_b_tiles, por_graul_a_tiles, por_graul_b_tiles};
+static const uint16_t * const por_pals[12] = {por_cap_a_pals, por_cap_b_pals, por_static_a_pals, por_static_b_pals, por_forge_a_pals, por_forge_b_pals, por_doc_a_pals, por_doc_b_pals, por_vex_a_pals, por_vex_b_pals, por_graul_a_pals, por_graul_b_pals};
+static const uint8_t * const por_map[12] = {por_cap_a_map, por_cap_b_map, por_static_a_map, por_static_b_map, por_forge_a_map, por_forge_b_map, por_doc_a_map, por_doc_b_map, por_vex_a_map, por_vex_b_map, por_graul_a_map, por_graul_b_map};
+static const uint8_t * const por_attr[12] = {por_cap_a_attr, por_cap_b_attr, por_static_a_attr, por_static_b_attr, por_forge_a_attr, por_forge_b_attr, por_doc_a_attr, por_doc_b_attr, por_vex_a_attr, por_vex_b_attr, por_graul_a_attr, por_graul_b_attr};
+static const uint8_t por_nt[12] = {POR_CAP_A_NT, POR_CAP_B_NT, POR_STATIC_A_NT, POR_STATIC_B_NT, POR_FORGE_A_NT, POR_FORGE_B_NT, POR_DOC_A_NT, POR_DOC_B_NT, POR_VEX_A_NT, POR_VEX_B_NT, POR_GRAUL_A_NT, POR_GRAUL_B_NT};
 
+#define POR_BANK(p) ((p) >= 10 ? BANK(escape_art) : BANK_A3)     // Graul's portraits ship with the escape art
 typedef struct { uint8_t bank, nt; const uint8_t *tiles; const uint16_t *pals; const uint8_t *map, *attr; } Scene;
-static const Scene scenes[10] = {
+static Scene scenes[11] = {
     {BANK_A6, SCENE_SHIP_NT, scene_ship_tiles, scene_ship_pals, scene_ship_map, scene_ship_attr},
     {BANK_A6, SCENE_STATION_NT, scene_station_tiles, scene_station_pals, scene_station_map, scene_station_attr},
     {BANK_A6, SCENE_KRAKEN_NT, scene_kraken_tiles, scene_kraken_pals, scene_kraken_map, scene_kraken_attr},
@@ -511,9 +526,11 @@ static const Scene scenes[10] = {
     {24, SCENE_WENDIGO_NT, scene_wendigo_tiles, scene_wendigo_pals, scene_wendigo_map, scene_wendigo_attr},
     {24, SCENE_FROST_NT, scene_frost_tiles, scene_frost_pals, scene_frost_map, scene_frost_attr},
     {BANK_CK2, SCENE_FLAT_NT, scene_flat_tiles, scene_flat_pals, scene_flat_map, scene_flat_attr},
+    {0, SCENE_CRASH_NT, scene_crash_tiles, scene_crash_pals, scene_crash_map, scene_crash_attr},   // bank filled in at run time (autobanked)
 };
 static void load_scene(uint8_t sc) {
     const Scene *s = &scenes[sc];
+    scenes[10].bank = BANK(escape_art);
     ld_bkg_data(s->bank, 0, N_COMMON, s->nt, s->tiles);
     ld_bkg_pal(s->bank, 0, 3, s->pals);
     ld_image(s->bank, 0, 0, 20, 9, s->map, s->attr, N_COMMON, 0, 0);
@@ -533,9 +550,9 @@ static void cutscene(const uint8_t *meta, const char * const *text, uint8_t coun
             if (cur_scene != 0xFF) screen_off();
             load_scene(sc); cur_scene = sc;
         }
-        ld_bkg_data(BANK_A3, 1, 0, por_nt[por], por_tiles[por]);
-        ld_bkg_pal(BANK_A3, 3, 4, por_pals[por]);
-        ld_image(BANK_A3, 1, 11, 6, 6, por_map[por], por_attr[por], 0, 0x08, 0);
+        ld_bkg_data(POR_BANK(por), 1, 0, por_nt[por], por_tiles[por]);
+        ld_bkg_pal(POR_BANK(por), 3, 4, por_pals[por]);
+        ld_image(POR_BANK(por), 1, 11, 6, 6, por_map[por], por_attr[por], 0, 0x08, 0);
         txt_fill(8, 10, 12, 7, txt_tile(' '), 7, 0);
         txt_fill(1, 10, 7, 1, txt_tile(' '), 7, 0);
         txt_put(1, 10, crew_names[por >> 1], 0, 7);
@@ -598,9 +615,10 @@ static void results(uint8_t sid) {
     { char c[20]; strcpy(c, "MISSION 1 COMPLETE"); c[8] = '1' + sid; center(0, c, 7); }
 #endif
     center(1, mission_names[sid], 6);
-    { const char *nm = sid == N_MISSIONS - 1 ? "FLATWOODS" : boss_names[sid];
+    { const char *nm = sid == FLAT_SID ? "FLATWOODS" : boss_names[sid];
       txt_put(1, 3, "TARGET", 0, 6); txt_put(19 - strlen(nm), 3, nm, 0, 7); }
-    txt_put(1, 4, "STATUS", 0, 6); txt_put(19 - strlen(out_names[bounty_out]), 4, out_names[bounty_out], 0, bounty_out == OUT_CAPTURE ? 6 : 7);
+    { const char *os = sid == ESC_SID ? (bounty_out == OUT_CAPTURE ? "ROBBED" : "OUTRUN") : out_names[bounty_out];   // nothing to capture on the escape run
+      txt_put(1, 4, "STATUS", 0, 6); txt_put(19 - strlen(os), 4, os, 0, bounty_out == OUT_CAPTURE ? 6 : 7); }
     txt_put(1, 6, "SCORE", 0, 7); put_num(12, 6, score, 7, 7);
     txt_put(1, 7, "HITS", 0, 7); put_num(16, 7, hits_taken, 3, 7);
     txt_put(1, 8, "TIME", 0, 7);
@@ -686,7 +704,7 @@ void game_main(void) BANKED {
 #ifdef FLATWOODS_DEMO
         // standalone gun-cam demo: pilot select -> briefing -> Flatwoods Drift -> debrief, and again
         while (pilot_select()) {
-            sid = N_MISSIONS - 1;
+            sid = FLAT_SID;
             if (!start_cp) cutscene(intro_meta[sid], intro_text[sid], intro_count[sid]);
             res = cockpit_run();
             if (res == RES_CLEAR) {
@@ -702,7 +720,7 @@ void game_main(void) BANKED {
                 if (sid == 0xFE) { armory(); continue; }
                 memcpy(g_gear, pf_gear[profile], N_GEAR);
                 if (!start_cp) cutscene(intro_meta[sid], intro_text[sid], intro_count[sid]);
-                res = sid == N_MISSIONS - 1 ? cockpit_run() : stage_run(sid);
+                res = sid == ESC_SID ? escape_run() : sid == FLAT_SID ? cockpit_run() : stage_run(sid);
                 if (res == RES_CLEAR) {
                     { uint8_t o = (bounty_out ? bounty_out : 1) - 1;
                       cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
