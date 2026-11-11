@@ -3,9 +3,10 @@
 A vertical space shooter for the Game Boy Color. You fly the Sneaky Kryptid, a bounty-hunter
 ship, on five cryptid contracts: the Space Kraken, the Thunderbird, the Jersey Devil, the
 Wendigo and the Flatwoods Monster. Fly clean and score high to bring the bounty in alive.
+Then a rival gang shows up, the guns go dead, and the sixth mission is a run for your life.
 
-**Demo v1.1.** Five missions (four scrolling stages and a first-person gun-cam mission), three
-difficulties, saves, upgrades. Runs on real hardware
+**Demo v1.2.** Six missions (four scrolling stages, a first-person gun-cam
+mission and a no-guns escape run), three difficulties, saves, upgrades. Runs on real hardware
 (tested on a ModRetro Chromatic; original GBC and GBA hardware should work too) and any Game Boy Color emulator.
 
 A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space / Kryptid Prime Empire.
@@ -13,6 +14,7 @@ A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space 
 ![Studio card](docs/studio_card.png) ![Title](docs/title.png) ![Mission select](docs/map.png)
 ![Stormwall Nebula](docs/stage2.png) ![Space Kraken](docs/boss1.png) ![Jersey Devil](docs/boss3.png)
 ![Gun cam](docs/stage5.png) ![Flatwoods Monster](docs/boss5.png)
+![Escape Run: the chase](docs/escape_chase.png) ![Escape Run: the gauntlet](docs/escape_gauntlet.png) ![Escape Run: the dive](docs/escape_dive.png) ![Escape Run: atmosphere](docs/escape_atmo.png)
 
 ## Play it
 **New: Flatwoods Drift, the gun-cam demo.** Mission 5 on its own: Rejected By The Machines card, title, pick a
@@ -30,14 +32,15 @@ It keeps its own save (signature `SKF` at 0xA400), so it never touches a Sneaky 
 
 The game opens with the Rejected By The Machines studio card (A or START skips it).
 
-**Version:** Demo v1.1 (shown on the title screen).
+**Version:** Demo v1.2 (shown on the title screen).
 
 ### Saves
 - Progress saves to the cart automatically: three slots (CADET, PILOT, HUNTER) with missions,
   stars, high scores, credits and gear.
 - **Erase all saves:** on the title screen hold **SELECT** and press **B**, then **A** to confirm.
-- The demo uses its own save block (signature `SKD`, version 2). A Demo v1.0 save is upgraded
-  the first time v1.1 boots: everything is kept and mission 5 starts empty. Saves left on a
+- The demo uses its own save block (signature `SKD`, version 4). Older saves (v1.0, v1.1 and the
+  weapon-rune builds) are upgraded the first time this build boots: everything is kept and the
+  new mission starts empty. The Flatwoods demo's block (`SKF`) is upgraded the same way. Saves left on a
   cart by other builds of the game are ignored and left untouched.
 
 ## Pilots
@@ -68,6 +71,7 @@ show their name greyed out with a lock icon.
 - Mission map: UP/DOWN picks an unlocked mission, A launches. **Hold SELECT while pressing A** to practice that mission's boss.
 - Cutscenes: A next line, B or START skips
 - Mission 5 (gun cam): D-pad moves the crosshair, A fires (Hunter; Cadet and Pilot fire by themselves), B bomb
+- Mission 6 (escape run): D-pad flies, **A dashes** when the BOOST meter is full, **B is the shield pulse** (your bomb stock)
 
 ## Bounties: capture, kill or escape
 Your score in the mission decides how the boss fight ends:
@@ -96,6 +100,32 @@ work the cannons from the cockpit.
 - Lives, hearts, bombs, continues and gear work as in the other missions. Buddy Bay level 2
   puts a buddy on the second gun, who picks off an orb now and then. No mid-boss here.
 - Checkpoints: start, debris field, the swarm, the boss.
+
+## Mission 6: the escape run
+Nubs is back with his whole gang and their flagship, the Scrapjaw. An EMP kills the cannons, so
+there is no shooting in this mission at all: you run for the planet below and dodge everything.
+- The ship points **down** the screen and the Scrapjaw chases from the top, sliding in and out.
+  The bar on the right of the status line is the distance left to the planet.
+- **Graze for BOOST.** A shot or missile that passes close without hitting fills the four BOOST
+  pips (and scores). When they are full the HUD shows an A: press **A** to dash in the direction
+  you hold, passing through anything for a moment. On Cadet a full meter also dodges a hit by itself.
+- **B: shield pulse.** Uses the bomb stock; clears nearby shots and missiles.
+- **Three phases.** The chase: bullet curtains with a gap, aimed fans, homing missiles (turn hard
+  and they overshoot) and loose rocks. The gauntlet: asteroid walls with gaps (arrows at the bottom
+  mark the next gap) and laser columns. The dive: everything at once, faster, through the upper
+  atmosphere, until the Scrapjaw has to pull up.
+- **Warnings come first.** A laser shows a thin blinking line and a marker for about a second
+  before the beam fires, and it never takes the middle of a gap. Rocks get a marker at the bottom
+  edge before they arrive.
+- **Score** comes from distance, grazes, dashes and a +3000 bonus for every section flown without
+  a scratch, so stars and ranks work as in the other missions.
+- **The steal.** Fly well enough and the Scrapjaw's brig pod tears loose near the end: grab it.
+  That counts as the capture (triple pay) and changes the debrief. Miss it, or score too low for it
+  to appear, and you simply got away (base pay).
+- Checkpoints: the chase, the gauntlet, the dive. SELECT+A on the map starts at the dive.
+- Accessibility: hazards are always warm and bright (white, yellow, orange) and your side is cool
+  (cyan, blue), so nothing depends on telling red from green; warnings have a shape and a blink as
+  well as a colour; the screen never strobes (the ending is a slow haze fade).
 
 ## Shooting bullets
 Your shots knock small enemy bullets out of the air (+10 each). Big orbs soak shots unless
@@ -144,29 +174,31 @@ rune circle.
 4. **Frostbite Moon**: bolted-down mine turrets, frost bats, Tatzelwurms (hit the cat face), ice-storm wind, mid-boss **Beast of Bray Road** (leaps between perches) → **Wendigo** (claw grabs with a marker, ice shard fans, howl rings with whiteout, bat summons, blizzard).
 
 5. **Flatwoods Drift** (gun cam): scout saucers, a debris field, the swarm → **Flatwoods Monster** (orb volleys, escorts, big orbs, the eye beam you break by shooting it).
+6. **Escape Run** (no guns): the chase, the asteroid gauntlet, the dive → outrun **Nubs's gang** and, on a good run, steal their brig pod.
 
 Creature art is redrawn from the KRYPTID-DEX sheets (ref/dex).
 
 Every mission has checkpoints at the start, the mid-boss and the boss approach.
-Clearing a mission unlocks the next; clearing mission 5 plays the ending.
+Clearing a mission unlocks the next; clearing mission 6 plays the ending (career tally, the crew's verdict on your flying, and something watching).
 
 ## Story / crew
-Crew: YETI (captain), FORGE (armorer, rune master), SUTURE (medic), ZANNAH (contract mistress), STATIC (navigator/pilot). Names live in `tools/gen_script.py`.
+Crew: YETI (captain), FORGE (armorer, rune master), SUTURE (medic), ZANNAH (contract mistress), STATIC (navigator/pilot). GRAUL, a werewolf bounty hunter, turns up in mission 6's best debrief. Names live in `tools/gen_script.py`.
 Edit there, then `python3 tools/gen_script.py` and rebuild.
 
 ## Building
 Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated sources
 (art, music, dialog) are committed, so Python is only needed to change them.
-- Linux/macOS/WSL: `make GBDK_HOME=/path/to/gbdk` → `build/sneaky_kryptid.gbc` and `build/sneaky_kryptid_nosave.gbc`
+- Linux/macOS/WSL: `make GBDK_HOME=/path/to/gbdk` → every ROM: `build/sneaky_kryptid.gbc`, `_nosave`, `_unlocked` and the two Flatwoods demo ROMs
 - Windows: `build.bat` (expects GBDK at `C:\gbdk`, or set `GBDK_HOME`)
 - `make flatwoods` → `build/flatwoods_drift.gbc` and `build/flatwoods_drift_nosave.gbc`, the standalone gun-cam demo
   (same sources built with `-DFLATWOODS_DEMO`: no mission map or armory, cart title FLATWOODS).
 - `make unlocked` → `build/sneaky_kryptid_unlocked.gbc`, a test build with every mission selectable from the
-  start (title shows DEMO V1.1 UNLOCKED; same save format).
+  start (title shows DEMO V1.2 UNLOCKED; same save format).
 - Do not build with `make -j`: lcc keeps its intermediate files side by side and parallel jobs
   produce broken objects (the Makefile sets `.NOTPARALLEL`).
 - Regenerate data: `make script` (dialog, `tools/gen_script.py`), `make music` (`tools/gen_sound.py`),
   `make cockpit` (mission 5 art, `tools/gen_cockpit.py`, Python 3 + Pillow + numpy),
+  `make escape` (mission 6 art and Graul's portraits, `tools/gen_escape.py`, same needs; reads `ref/escape/`),
   `make assets` (`tools/gen_assets.py`, Python 3 + Pillow + numpy). Crew portraits and the title art
   are converted from reference paintings that are not in this repo, so `make assets` needs them in `ref/`.
   The cockpit hitbox dot (`tools/sprites.py`) and the coral Mission 1 enemy palette (`tools/stage1.py`)
@@ -178,16 +210,18 @@ Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated s
 ### Layout
 | Path | What |
 |---|---|
-| `src/` | game code (GBDK C). `stage.c` engine, `s1.c`–`s4.c` mission logic, `cockpit.c` mission 5 (gun cam, its own small engine), `scenes.c` menus/story/saves, `core.c` interrupts and loaders |
+| `src/` | game code (GBDK C). `stage.c` engine, `s1.c`–`s4.c` mission logic, `cockpit.c` mission 5 (gun cam, its own small engine), `escape.c` mission 6 (escape run, its own small engine), `ending.c` the ending, `scenes.c` menus/story/saves, `core.c` interrupts and loaders |
 | `src/studio_card/` | Rejected By The Machines studio card module (owns the STAT vector; the game's raster split runs through `sc_stat_hook`) |
 | `tools/` | Python generators: sprites, scenery, bosses, music, script |
 | `ref/dex/` | creature sheets the enemies were redrawn from |
+| `ref/escape/` | Graul's face crops for the mission 6 portraits |
 | `test/` | PyBoy bots (`bot.py`, `suite.sh`) and a SameBoy harness (`test/sameboy/`) |
 
 ## Testing
 `pip install pyboy`, then `python3 test/bot.py build/sneaky_kryptid.gbc cadet|pilot|hunter kid|pro [seed] [--stage N] [--boss]`
 plays a mission (1-4); `python3 test/bot_cockpit.py build/sneaky_kryptid.gbc cadet|pilot|hunter kid|pro [seed] [--boss]`
-plays mission 5; `test/bot_flatwoods.py` plays the standalone demo; `sh test/suite.sh build/sneaky_kryptid.gbc "1 2 3 4 5"` runs every mission in all three modes.
+plays mission 5; `python3 test/bot_escape.py build/sneaky_kryptid.gbc cadet|pilot|hunter kid|pro [seed] [--sprint]` plays mission 6;
+`test/bot_flatwoods.py` plays the standalone demo; `sh test/suite.sh build/sneaky_kryptid.gbc` runs every mission in all three modes (36 runs).
 PyBoy is not timing-accurate for the studio card's per-line effects; use SameBoy or Emulicious to judge it.
 
 ## Flashing a ModRetro Chromatic cart (ChroMagician)
