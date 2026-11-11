@@ -7,6 +7,13 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
 - `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows DEMO V1.2 UNLOCKED)
 
+## Escape Run: no-guns demo v1.0 (2026-11-11)
+- `escape_run.gbc` (`escape_run_nosave.gbc` without save RAM): mission 6 as its own short demo.
+  Studio card, title, pilot select, briefing, the run and the debrief, then back to pilot select.
+- SELECT+A on the pilot screen starts at the atmosphere dive.
+- Separate save block (`SKE`), so it can share a cart's save RAM with the full game and Flatwoods Drift.
+- Browser: `docs/escape/` (GitHub Pages: /escape/).
+
 ## New in v1.2 (2026-11-11)
 - **Mission 6, Escape Run:** Nubs's whole gang ambushes the ship, an EMP kills the guns, and you
   run for the planet below. No shooting: dodge bullet curtains, homing missiles, asteroid walls

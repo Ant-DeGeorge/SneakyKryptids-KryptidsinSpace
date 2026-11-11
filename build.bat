@@ -29,7 +29,13 @@ set FW=-Wf--opt-code-size -Wl-m -Wl-j -Wm-yC -Wm-yn"FLATWOODS" -Wm-yo32 -autoban
 if errorlevel 1 goto :fail
 %LCC% %FW% -Wm-yt0x19 -o build\flatwoods_drift_nosave.gbc %SRC%
 if errorlevel 1 goto :fail
-echo Built build\sneaky_kryptid.gbc, build\sneaky_kryptid_nosave.gbc, build\flatwoods_drift.gbc and build\flatwoods_drift_nosave.gbc
+rem Escape Run standalone no-guns demo (same sources, -DESCAPE_DEMO, cart title ESCAPERUN)
+set ER=-Wf--opt-code-size -Wl-m -Wl-j -Wm-yC -Wm-yn"ESCAPERUN" -Wm-yo32 -autobank -Isrc -Isrc\hUGE -Wf-DESCAPE_DEMO
+%LCC% %ER% -Wm-ya1 -Wm-yt0x1B -o build\escape_run.gbc %SRC%
+if errorlevel 1 goto :fail
+%LCC% %ER% -Wm-yt0x19 -o build\escape_run_nosave.gbc %SRC%
+if errorlevel 1 goto :fail
+echo Built build\sneaky_kryptid.gbc, build\sneaky_kryptid_nosave.gbc, build\flatwoods_drift.gbc, build\flatwoods_drift_nosave.gbc, build\escape_run.gbc and build\escape_run_nosave.gbc
 goto :eof
 :fail
 echo BUILD FAILED

@@ -22,7 +22,7 @@ build/card/%.o: src/studio_card/%.c src/studio_card/studio_card.h
 	@mkdir -p build/card
 	$(LCC) -Wa-l -Wm-yC -autobank -Wf--opt-code-speed -c -o $@ $<
 
-all: build/$(NAME).gbc build/$(NAME)_nosave.gbc unlocked flatwoods
+all: build/$(NAME).gbc build/$(NAME)_nosave.gbc unlocked flatwoods escape_demo
 
 # Generated sources (src/assets*, cockpit_b*, src/music/*.c, script_*.c, stage_defs.c) are committed,
 # so a normal build needs only GBDK. Regenerate after editing art/music/script:
@@ -31,7 +31,7 @@ all: build/$(NAME).gbc build/$(NAME)_nosave.gbc unlocked flatwoods
 #   make script      (dialog only)
 #   make music       (songs: music/*.uge from tools/music/compose.py, then C for hUGEDriver)
 #   make weaponfx    (weapon colours + shot/effect sprites -> src/weapon_fx.h; also prints the colour-blind check)
-.PHONY: all assets script music cockpit escape weaponfx clean
+.PHONY: all escape_demo assets script music cockpit escape weaponfx clean
 assets:
 	python3 tools/gen_assets.py
 cockpit:
@@ -81,6 +81,18 @@ build/flatwoods_drift.gbc: $(OBJ) $(CARD_O) build/obj/scenes_flatwoods.o
 	$(LCC) $(FW_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(FW_OBJ)
 build/flatwoods_drift_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_flatwoods.o
 	$(LCC) $(FW_CF) -Wm-yt0x19 -o $@ $(FW_OBJ)
+
+# Escape Run on its own: the no-guns chase as a standalone demo (title -> pilot -> mission 6)
+escape_demo: build/escape_run.gbc build/escape_run_nosave.gbc
+build/obj/scenes_escape.o: src/scenes.c $(HDR)
+	@mkdir -p build/obj
+	$(LCC) $(CFLAGS) -Wf-DESCAPE_DEMO -c -o $@ $<
+ER_OBJ = $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_escape.o $(CARD_O)
+ER_CF  = $(filter-out -Wm-yn"$(TITLE)",$(CFLAGS)) -Wm-yn"ESCAPERUN"
+build/escape_run.gbc: $(OBJ) $(CARD_O) build/obj/scenes_escape.o
+	$(LCC) $(ER_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(ER_OBJ)
+build/escape_run_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_escape.o
+	$(LCC) $(ER_CF) -Wm-yt0x19 -o $@ $(ER_OBJ)
 
 # sound test ROM: every song and effect through the game's sound engine (tools/music/jukebox)
 .PHONY: jukebox

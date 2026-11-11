@@ -20,6 +20,11 @@ A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space 
 **New: Flatwoods Drift, the gun-cam demo.** Mission 5 on its own: Rejected By The Machines card, title, pick a
 pilot, fly it. Play in the browser at https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/flatwoods/
 or flash `rom/flatwoods_drift.gbc` (`rom/flatwoods_drift_nosave.gbc` for carts without save RAM).
+
+**New: Escape Run, the no-guns demo.** Mission 6 on its own: guns offline, Nubs's gang on your tail, dodge,
+graze and dash your way down to the planet. Play in the browser at
+https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/escape/ or flash `rom/escape_run.gbc`
+(`rom/escape_run_nosave.gbc` for carts without save RAM). Build it with `make escape_demo`.
 It keeps its own save (signature `SKF` at 0xA400), so it never touches a Sneaky Kryptid save.
 
 **The full game:**
