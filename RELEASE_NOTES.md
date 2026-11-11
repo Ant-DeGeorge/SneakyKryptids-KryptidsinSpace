@@ -6,6 +6,19 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - `sneaky_kryptid.gbc` — the demo, with saves (use this one)
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
 
+## Update (2026-11-11, later)
+- **New soundtrack:** full four-channel music (hUGEDriver). New title theme (Bounty Call), map
+  (Star Chart), and a stage and boss theme for every mission; Rimeveil Lane, the boss fights and
+  both Flatwoods tracks are aggressive EDM. Every track has a name; see the sound test
+  (`make jukebox`) for the list.
+- **AGD PRESENTS** fades in once on its own, then the title; the title music plays straight
+  through from AGD PRESENTS instead of hiccuping between the screens.
+- **Weapon flair, part 2:** ship recoil and exhaust in the weapon colour, weapon-name pop on the HUD,
+  per-weapon impacts and kill shards, and three Weapon Runes in Forge's Armory (Lance pierces,
+  Bounce ricochets, Chain links wisps). The gun cam gets per-weapon shots too.
+- **New ending:** a rank screen, crew banter that roasts your record, and something watching back.
+- Saves from earlier versions are migrated on first boot.
+
 ## ROM refresh (2026-11-11)
 - **Final Rejected By The Machines studio card:** static, the eye wakes and scans, the claws
   slash, then the lettering is stamped on (REJECTED BY THE, then MACHINES with its red ink).
