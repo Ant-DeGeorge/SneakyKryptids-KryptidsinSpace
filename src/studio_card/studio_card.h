@@ -21,6 +21,14 @@
 BANKREF_EXTERN(studio_card)
 void studio_card_play(void) BANKED;
 
+/* Colour theme, read when the card plays (default 0).
+   SC_THEME_PROTAN keeps every accent on the blue-yellow axis so it stays vivid
+   with protanopia (red-blind): gold eye + MACHINES, blue claws, ink and flash.
+   Example:  sc_theme = SC_THEME_PROTAN; studio_card_play();                  */
+#define SC_THEME_DEFAULT 0
+#define SC_THEME_PROTAN  1
+extern uint8_t sc_theme;
+
 /* frame counter of the running card (0..329), handy for debugging/tests */
 extern volatile uint16_t sc_frame;
 

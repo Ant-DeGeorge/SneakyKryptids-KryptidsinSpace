@@ -6,6 +6,14 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - `sneaky_kryptid.gbc` — the demo, with saves (use this one)
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
 
+## ROM refresh (2026-11-11)
+- **Final Rejected By The Machines studio card:** static, the eye wakes and scans, the claws
+  slash, then the lettering is stamped on (REJECTED BY THE, then MACHINES with its red ink).
+  The second burst of static over the lettering is gone. Same card in both ROMs and in the browser builds.
+- The ROMs now include the weapon flair update: colour-blind-safe weapon colours, new shot art,
+  muzzle flash, hit sparks and a softer bomb flash.
+- Saves carry over; nothing else changed.
+
 ## New in v1.1
 - **Mission 5, Flatwoods Drift:** a first-person gun-cam mission. The helm is jammed, so you
   aim a crosshair from the cockpit, shoot down what is fired at the ship, and face the

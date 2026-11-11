@@ -25,6 +25,7 @@ BANKREF(studio_card)
 #include "studio_card_data.h"
 
 volatile uint16_t sc_frame;
+uint8_t sc_theme;                     /* SC_THEME_DEFAULT / SC_THEME_PROTAN, read at each palette build */
 
 /* ---- RAM state ---- */
 static uint8_t scx_a[145], scx_b[145];
@@ -34,8 +35,8 @@ static uint8_t nz[128];              /* bitset: map position currently shows sta
 static const uint8_t bitm[8] = {1, 2, 4, 8, 16, 32, 64, 128};
 static uint16_t rev1; static uint8_t visi, slash_scy;
 static uint16_t pal_bg[32], pal_ob[4];
-static uint8_t rgbmap[10];
-static uint16_t rgbf[10];
+static uint8_t rgbmap[SC_NCOL];
+static uint16_t rgbf[SC_NCOL];
 static uint16_t f;
 static uint8_t eye_cur, ring_cur, slash_cur, last_pal_key_f, last_pal_flags;
 static uint8_t ct, ca, back_on, cur_on, budget, pal_dirty;
@@ -156,7 +157,6 @@ static void content(uint8_t x, uint8_t y) {
     }
 }
 static void show(uint8_t x, uint8_t y) { content(x, y); put(x, y, ct, ca); }
-#define WORD_NOISE_PAL 6
 static uint8_t noise_tile(uint8_t x, uint8_t y) { return SC_NOISE0 + ((uint8_t)sc_rt[(uint8_t)(((y << 5) - y) + (x << 3) - x)] & 7); }
 static void make_noise_row(uint8_t y, uint8_t pal) {
     uint8_t x;
@@ -166,29 +166,20 @@ static void make_noise_row(uint8_t y, uint8_t pal) {
 static void reveal1(uint8_t p) {
     while (budget && rev1 < SC_REV1_N && sc_rev1_t[rev1] >= p) {
         uint8_t x = sc_rev1_x[rev1], y = sc_rev1_y[rev1++];
-        if (y >= 7 && y <= 17) { put(x, y, noise_tile(x, y), WORD_NOISE_PAL); budget--; }   /* stays static, just hidden */
-        else if (NOISE_GET(x, y)) { NOISE_CLR(x, y); show(x, y); budget--; }
-    }
-}
-static uint16_t rev2w;
-static void reveal2(uint8_t p) {
-    while (budget && rev2w < SC_REV2_N && sc_rev2_t[rev2w] >= p) {
-        uint8_t x = sc_rev2_x[rev2w], y = sc_rev2_y[rev2w++];
         if (NOISE_GET(x, y)) { NOISE_CLR(x, y); show(x, y); budget--; }
     }
 }
 /* ---- palettes ---- */
+static uint8_t last_st;
 static void build_palettes(void) {
-    uint8_t i, j, fl = sc_f_flags[f] | (f >= 172 ? 32 : 0), fd = sc_f_fade[f];
-    if (fl == last_pal_flags && fd == last_pal_key_f) return;
-    last_pal_flags = fl; last_pal_key_f = fd; pal_dirty = 1;
-    for (i = 0; i < 10; i++) rgbmap[i] = i;
+    uint8_t i, j, fl = sc_f_flags[f], fd = sc_f_fade[f], sa = sc_f_stA[f], sb = sc_f_stB[f];
+    uint8_t st = (uint8_t)((sa << 4) | sb);
+    if (fl == last_pal_flags && fd == last_pal_key_f && st == last_st) return;
+    last_pal_flags = fl; last_pal_key_f = fd; last_st = st; pal_dirty = 1;
+    for (i = 0; i < SC_NCOL; i++) rgbmap[i] = i;
     if (fl & 1) { rgbmap[SC_BG] = rgbmap[SC_LN] = rgbmap[SC_DK] = SC_RK; }
-    if (fl & 2) { rgbmap[SC_TL] = SC_RD; rgbmap[SC_RD] = SC_TL; }
-    if (fl & 4) { rgbmap[SC_CR] = SC_TL; }
-    if (fl & 8) { rgbmap[SC_BG] = rgbmap[SC_LN] = SC_TD; }
-    for (i = 0; i < 10; i++) {
-        uint16_t c = sc_rgb[rgbmap[i]];
+    for (i = 0; i < SC_NCOL; i++) {
+        uint16_t c = (sc_theme == SC_THEME_PROTAN ? sc_rgb_protan : sc_rgb)[rgbmap[i]];
         const uint8_t *ft = sc_fade_tab + (uint8_t)(fd << 5);
         rgbf[i] = ft[c & 31] | ((uint16_t)ft[(c >> 5) & 31] << 5) | ((uint16_t)ft[(c >> 10) & 31] << 10);
     }
@@ -197,11 +188,10 @@ static void build_palettes(void) {
         if (lc == SC_LN && !(fl & 16) && i != SC_NOISE_PAL) lc = SC_BG;   /* stripes hidden pre-reveal */
         pal_bg[i * 4 + j] = rgbf[lc];
     }
-    /* palette 6: static pre-laid over the wordmark rows; flat BG until it is due */
-    pal_bg[24] = rgbf[SC_BG];
-    pal_bg[25] = (fl & 32) ? rgbf[SC_LN] : rgbf[SC_BG];
-    pal_bg[26] = (fl & 32) ? rgbf[SC_GR] : rgbf[SC_BG];
-    pal_bg[27] = rgbf[SC_BG];
+    /* stamps: 0 hidden, 1 ghost, 2 impact flash, 3 settled, 4 settled + red ink */
+    pal_bg[SC_STAMP_A_PAL * 4 + 2] = rgbf[sa == 0 ? SC_BG : sa == 1 ? SC_GR : sa == 2 ? SC_WH : SC_CR];
+    pal_bg[SC_STAMP_B_PAL * 4 + 2] = rgbf[sb == 0 ? SC_BG : sb == 1 ? SC_GR : sb == 2 ? SC_WH : SC_TL];
+    pal_bg[SC_STAMP_B_PAL * 4 + 3] = rgbf[sb == 4 ? SC_RD : SC_BG];
     pal_ob[0] = 0; pal_ob[1] = rgbf[SC_RD]; pal_ob[2] = rgbf[SC_RK]; pal_ob[3] = 0;
 }
 
@@ -261,14 +251,13 @@ void studio_card_play(void) BANKED {
     LCDC_REG = LCDCF_OFF | LCDCF_BG8000 | LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON | LCDCF_WINOFF;
     SCX_REG = 0; SCY_REG = sc_f_scy[0];
 
-    f = 0; eye_cur = sc_f_eyeId[0]; eye_row = sc_eye_tab + (uint16_t)eye_cur * SC_EYE_N; ring_row = sc_ring_tab; ring_cur = 255; slash_cur = 255; last_pal_flags = 255; last_pal_key_f = 255;
+    f = 0; eye_cur = sc_f_eyeId[0]; eye_row = sc_eye_tab + (uint16_t)eye_cur * SC_EYE_N; ring_row = sc_ring_tab; ring_cur = 255; slash_cur = 255; last_pal_flags = 255; last_pal_key_f = 255; last_st = 255;
     build_palettes(); set_bkg_palette(0, 8, pal_bg); set_sprite_palette(0, 1, pal_ob);
     sc_load_gfx();
     set_bkg_data(SC_NOISE0, 8, sc_noise_pool);
-    memset(nz, 0, sizeof nz); rev1 = 0; rev2w = 0; visi = 0; slash_scy = 1;
+    memset(nz, 0, sizeof nz); rev1 = 0; visi = 0; slash_scy = 1;
     for (y = 0; y < 32; y++) {
         if (y <= 13 || y >= 27) make_noise_row(y, SC_NOISE_PAL);
-        else if (y <= 17) make_noise_row(y, WORD_NOISE_PAL);
         else for (x = 0; x < 32; x++) show(x, y);
     }
     for (i = 0; i < 40; i++) { move_sprite((uint8_t)i, 0, 0); set_sprite_prop((uint8_t)i, 0); }
@@ -318,13 +307,12 @@ void studio_card_play(void) BANKED {
             for (x = 0; x < SC_RING_N; x++) { uint8_t px = sc_ring_x[x], py = sc_ring_y[x];
                 if (!NOISE_GET(px, py)) show(px, py); }
         }
-        while (visi < SC_VIS_N && (uint16_t)sc_vis_f2[visi] * 2 <= f) {
+        while (q_n < 40 && visi < SC_VIS_N && (uint16_t)sc_vis_f2[visi] * 2 <= f) {   /* capped: rest next frame */
             uint8_t px = sc_vis_x[visi], py = sc_vis_y[visi++];
             if (!NOISE_GET(px, py)) show(px, py);
         }
         budget = q_n >= 40 ? 0 : 40 - q_n;            /* reveals fill the queue up to 40 (fits one VBlank) */
         if (f >= 40 && rev1 < SC_REV1_N) reveal1(sc_f_pTop[f]);
-        if (f >= 181) reveal2(sc_f_pLow[f]);
 
         /* --- skip --- */
         keys = joypad();
