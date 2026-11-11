@@ -48,6 +48,8 @@ extern uint8_t pf_gear[N_PROFILES][N_GEAR];
 
 uint8_t stage_run(uint8_t sid) BANKED;     // bank 1
 uint8_t cockpit_run(void) BANKED;          // bank 25: mission 5, the gun-cam stage
+uint8_t escape_run(void) BANKED;
+void bstar_take(uint8_t scy) BANKED;        // bandstars.c: clear the stars in the boss band
 void game_main(void) BANKED;
 void ending_run(void) BANKED;              // autobanked (ending.c): tally, crew banter, the watcher               // bank 7
 void save_write(void);

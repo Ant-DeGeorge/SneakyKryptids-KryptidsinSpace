@@ -14,11 +14,11 @@
 #include "ending_eyes.h"
 
 #define BANK_A6 6
-#define N_BOUNTY N_MISSIONS
+#define N_BOUNTY 5                        // missions with a bounty to capture (the escape run has none)
 
-extern uint8_t pf_best[N_PROFILES][N_BOUNTY];
-extern uint32_t pf_hi[N_PROFILES][N_BOUNTY];
-extern uint8_t pf_out[N_PROFILES][N_BOUNTY];
+extern uint8_t pf_best[N_PROFILES][N_MISSIONS];
+extern uint32_t pf_hi[N_PROFILES][N_MISSIONS];
+extern uint8_t pf_out[N_PROFILES][N_MISSIONS];
 extern const uint8_t por_cap_a_tiles[], por_cap_b_tiles[], por_static_a_tiles[], por_static_b_tiles[], por_forge_a_tiles[], por_forge_b_tiles[],
     por_doc_a_tiles[], por_doc_b_tiles[], por_vex_a_tiles[], por_vex_b_tiles[];
 extern const uint16_t por_cap_a_pals[], por_cap_b_pals[], por_static_a_pals[], por_static_b_pals[], por_forge_a_pals[], por_forge_b_pals[],
@@ -102,7 +102,7 @@ static void pal_lv(uint8_t slot, const uint16_t *src, uint8_t lv) {      // lv 0
         r = (r * lv) >> 3; g = (g * lv) >> 3; b = (b * lv) >> 3;
         fbuf[i] = r | ((uint16_t)g << 5) | ((uint16_t)b << 10);
     }
-    set_bkg_palette(slot, 1, fbuf);
+    ld_bkg_pal(BANK_A2, slot, 1, fbuf);          // RAM source; HBlank-safe writer (the LCD is on)
 }
 static void e_center(uint8_t y, const char *s, uint8_t attr) {
     txt_put((20 - (uint8_t)strlen(s)) >> 1, y, s, 0, attr);
@@ -147,10 +147,9 @@ static void tally(void) {
         if (o == OUT_CAPTURE) { n_cap++; kin = i; }
         else if (o == OUT_KILL) n_kill++;
         else n_flee++;
-        sum += pf_best[profile][i];
-        tot += pf_hi[profile][i];
     }
-    r = (sum + (N_BOUNTY >> 1)) / N_BOUNTY;            // 1..5
+    for (i = 0; i < N_MISSIONS; i++) { sum += pf_best[profile][i]; tot += pf_hi[profile][i]; }
+    r = (sum + (N_MISSIONS >> 1)) / N_MISSIONS;        // 1..5
     if (r < 1) r = 1;
     tier = r >= 5 ? 3 : r >= 4 ? 2 : r >= 3 ? 1 : 0;
     outc = n_flee ? 3 : n_cap == N_BOUNTY ? 0 : n_kill > n_cap ? 2 : 1;
@@ -264,9 +263,10 @@ static void eye_frame(uint8_t f) {                         // f: 0 open, 1 half,
 static void eye_flash(const uint16_t *p) {
     static uint16_t w[4];
     w[0] = p[0]; w[1] = p[3]; w[2] = p[3]; w[3] = p[3];
-    wait_vbl_done(); set_bkg_palette(2, 1, w);
+    wait_vbl_done(); ld_bkg_pal(BANK_A2, 2, 1, w);
     wait_frames(3);
-    wait_vbl_done(); set_bkg_palette(2, 1, p);
+    w[1] = p[1]; w[2] = p[2];                    // back to the eye colours (copied to RAM: the loader switches banks)
+    wait_vbl_done(); ld_bkg_pal(BANK_A2, 2, 1, w);
     wait_frames(4);
 }
 static uint8_t type_line(uint8_t y, const char *s) {
@@ -337,7 +337,7 @@ static void watcher(void) {
     for (lv = 8; lv; lv--) {
         wait_vbl_done(); pal_lv(2, p, lv - 1);
         tp[2] = fbuf[2]; tp[3] = fbuf[3];
-        set_bkg_palette(7, 1, tp);
+        ld_bkg_pal(BANK_A2, 7, 1, tp);
         if (pause(6)) goto done;
     }
 done:

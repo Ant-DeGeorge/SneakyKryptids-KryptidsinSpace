@@ -924,6 +924,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
                 if (pos < (SD->n_rows - 18) * 8) { pos++; scroll_rows(); }
                 else if (st == ST_PLAY) {
                     st = ST_BOSS; scroll_on = 0;
+                    bstar_take((uint8_t)(112 - pos));          // clear the stars in the boss band so they don't sway with it
                     logic_boss_start();
                     hud_init(1);
                 }

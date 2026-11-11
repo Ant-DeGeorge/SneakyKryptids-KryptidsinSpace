@@ -1,10 +1,25 @@
-# Sneaky Kryptid: Kryptids in Space — Demo v1.1
+# Sneaky Kryptid: Kryptids in Space — Demo v1.2
 
 Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromatic
 
 ## Download
 - `sneaky_kryptid.gbc` — the demo, with saves (use this one)
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
+- `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows DEMO V1.2 UNLOCKED)
+
+## New in v1.2 (2026-11-11)
+- **Mission 6, Escape Run:** Nubs's whole gang ambushes the ship, an EMP kills the guns, and you
+  run for the planet below. No shooting: dodge bullet curtains, homing missiles, asteroid walls
+  and warned laser columns across three phases (chase, gauntlet, atmosphere dive).
+- **Graze and dash:** near misses fill the BOOST meter; A dashes through danger when it is full
+  (Cadet dodges by itself). B is a shield pulse that clears nearby shots.
+- **The steal:** a good run lets you grab the gang's brig pod, which counts as the capture and
+  brings a new face into the debrief: Graul, a werewolf bounty hunter.
+- The ending now plays after mission 6.
+- Fix: stars no longer slide along with the bosses in missions 1-4.
+- Colour-blind-safe hazards (warm and bright against a cool player side, with shape and blink
+  warnings) and no full-screen flashes in the new mission.
+- Saves from v1.0 and v1.1 are upgraded on boot (save version 4); mission 6 unlocks after Flatwoods Drift.
 
 ## Update (2026-11-11, later)
 - **New soundtrack:** full four-channel music (hUGEDriver). New title theme (Bounty Call), map
@@ -43,16 +58,16 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - Browser: `docs/flatwoods/` (GitHub Pages: /flatwoods/).
 
 ## What's in it
-- Five bounty missions: Rimeveil Lane (Space Kraken), Stormwall Nebula (Thunderbird),
+- Six missions. Five bounty missions: Rimeveil Lane (Space Kraken), Stormwall Nebula (Thunderbird),
   Barrens Belt (Jersey Devil), Frostbite Moon (Wendigo), each with a mid-boss, and the
-  gun-cam mission Flatwoods Drift (Flatwoods Monster).
+  gun-cam mission Flatwoods Drift (Flatwoods Monster); then Escape Run, with no guns at all.
 - Three difficulties: CADET (easy, autofire), PILOT (3 hearts, autofire), HUNTER (one-hit, hold A).
 - Fly clean and score high to CAPTURE the bounty (triple pay); a good run KILLS it; a weak run lets it ESCAPE.
 - Shoot enemy bullets out of the air. Spend your pay at Forge's Armory (START on the mission map).
 - Rescue sleeping baby cryptids to fly as wingmen.
 
 ## Controls
-D-pad fly (mission 5: aim) · A fire (Hunter) · B bomb · START pause / armory · SELECT+A on the map: boss practice ·
+D-pad fly (mission 5: aim) · A fire (Hunter; mission 6: dash) · B bomb (mission 6: shield pulse) · START pause / armory · SELECT+A on the map: boss practice ·
 SELECT+B on the title: erase saves.
 
 ## Known limits

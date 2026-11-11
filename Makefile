@@ -5,7 +5,7 @@ LCC = $(GBDK_HOME)/bin/lcc
 NAME   = sneaky_kryptid
 TITLE  = SNEAKYKRYPT
 SRC    = src/main0.c src/core.c src/sound.c src/script_data.c src/script_scenes.c src/stage_defs.c \
-         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/scenes.c src/ending.c \
+         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/escape.c src/escape_art.c src/bandstars.c src/scenes.c src/ending.c \
          $(wildcard src/assets_b*.c) $(wildcard src/cockpit_b*.c) $(wildcard src/music/*.c) $(wildcard src/weapon_fx2_b*.c)
 OBJ    = $(SRC:src/%.c=build/obj/%.o)
 HDR    = $(wildcard src/*.h)
@@ -22,7 +22,7 @@ build/card/%.o: src/studio_card/%.c src/studio_card/studio_card.h
 	@mkdir -p build/card
 	$(LCC) -Wa-l -Wm-yC -autobank -Wf--opt-code-speed -c -o $@ $<
 
-all: build/$(NAME).gbc build/$(NAME)_nosave.gbc
+all: build/$(NAME).gbc build/$(NAME)_nosave.gbc unlocked flatwoods
 
 # Generated sources (src/assets*, cockpit_b*, src/music/*.c, script_*.c, stage_defs.c) are committed,
 # so a normal build needs only GBDK. Regenerate after editing art/music/script:
@@ -31,11 +31,13 @@ all: build/$(NAME).gbc build/$(NAME)_nosave.gbc
 #   make script      (dialog only)
 #   make music       (songs: music/*.uge from tools/music/compose.py, then C for hUGEDriver)
 #   make weaponfx    (weapon colours + shot/effect sprites -> src/weapon_fx.h; also prints the colour-blind check)
-.PHONY: all assets script music cockpit weaponfx clean
+.PHONY: all assets script music cockpit escape weaponfx clean
 assets:
 	python3 tools/gen_assets.py
 cockpit:
 	python3 tools/gen_cockpit.py
+escape:
+	python3 tools/gen_escape.py
 script:
 	python3 tools/gen_script.py
 music:
