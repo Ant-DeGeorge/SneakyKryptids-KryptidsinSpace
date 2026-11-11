@@ -221,12 +221,12 @@ static uint8_t title_wait(uint8_t n) {        // A/START skips the intro
     return 0;
 }
 static void title_screen(void) {
-    uint8_t t = 0, buf[40], lv, skip = 0;
-    static uint16_t art_pals[4 * 7];
+    uint8_t t = 0, buf[40], lv, skip = 0, intro = 0;
+    static uint16_t art_pals[4 * 8];            // 0-5 art, 6 logo, 7 text: faded together
     music_play(MUS_TITLE);
     if (!title_seen) {
         // AGD PRESENTS on its own, fading up out of black
-        title_seen = 1;
+        title_seen = intro = 1;
         screen_prep();
         txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
         pal_fade(7, 1, pal_text, 0);
@@ -237,11 +237,22 @@ static void title_screen(void) {
         if (!skip) skip = title_wait(80);
         for (lv = 8; lv && !skip; lv--) { pal_fade(7, 1, pal_text, lv - 1); skip = title_wait(3); }
     }
-    screen_prep();
-    ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
     ld_copy(BANK_A6, art_pals, title_art_pals, 6 * 8);
     ld_copy(BANK_A6, art_pals + 24, logo_pal, 8);
-    pal_fade(0, 7, art_pals, skip ? 8 : 0);
+    memcpy(art_pals + 28, pal_text, 8);
+    if (intro) {
+        // Straight on from AGD PRESENTS with the screen left on: every palette goes black and the art
+        // loads behind it. Switching the LCD off here would stop the VBlank interrupt that ticks the
+        // music, and the title song would stall between the two screens.
+        pal_fade(0, 8, art_pals, 0);
+        txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
+        ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
+    } else {
+        screen_prep();
+        ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
+        pal_fade(0, 8, art_pals, 0);
+    }
+    if (skip) pal_fade(0, 8, art_pals, 8);
     ld_image(BANK_A6, 0, 2, 20, 10, title_art_map, title_art_attr, N_COMMON, 0, 0);
     ld_bkg_data(BANK_A6, 1, 0, LOGO_NT, logo_tiles);
     ld_copy(BANK_A6, buf, logo_map, LOGO_W * 2);
@@ -249,11 +260,10 @@ static void title_screen(void) {
     VBK_REG = 1; fill_bkg_rect(0, 12, 20, 2, 6 | 0x08); VBK_REG = 0;
     txt_fill(0, 0, 20, 2, txt_tile(' '), 7, 0);
     txt_fill(0, 14, 20, 4, txt_tile(' '), 7, 0);
-    center(0, "AGD PRESENTS", 7);
     screen_on(LCDC_SCREEN);
-    // the art and logo fade in under AGD PRESENTS
-    for (lv = 1; lv <= 8 && !skip; lv++) { pal_fade(0, 7, art_pals, lv); skip = title_wait(6); }
-    pal_fade(0, 7, art_pals, 8);
+    // the art and logo fade in
+    for (lv = 1; lv <= 8 && !skip; lv++) { pal_fade(0, 8, art_pals, lv); skip = title_wait(6); }
+    pal_fade(0, 8, art_pals, 8);
 #ifdef FLATWOODS_DEMO
     center(14, "FLATWOODS DRIFT", 7);
 #else
