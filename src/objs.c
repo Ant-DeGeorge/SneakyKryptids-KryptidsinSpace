@@ -55,6 +55,7 @@ uint8_t px, py;
 uint8_t hud_dirty;
 uint32_t next_extend;
 uint8_t kill_count;
+uint8_t kp_new, kp_x, kp_y, kp_bigf;                    // last kill, for the stage's shard pop
 
 uint8_t e_type[MAXE], e_hp[MAXE], e_t[MAXE], e_flash[MAXE], e_a[MAXE], e_b[MAXE], e_c[MAXE], e_st[MAXE], e_fl[MAXE];
 uint16_t e_x[MAXE], e_y[MAXE];
@@ -220,6 +221,7 @@ void e_kill(uint8_t i) {
     }
     if ((t == E_EEL || t == E_SNAKE) && e_c[i] < NCH) ch_used[e_c[i]] = 0;
     e_type[i] = E_BOOM; e_t[i] = 0; e_hp[i] = 0;
+    kp_new = 1; kp_x = x + (e_style[t] == SY_32 ? 16 : 8); kp_y = y + 8; kp_bigf = e_style[t] == SY_32;
     sfx_play(SFX_EXPL_S);
     if (tf & TF_BURST) {
         if (HUNTER) eb_ring(x + 8, y + 8, 8, 2, 16, 0);

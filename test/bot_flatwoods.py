@@ -9,7 +9,7 @@ from bot_cockpit import CockpitBot
 class FlatwoodsBot(CockpitBot):
     def start(self):
         g = self.g
-        g.tick(500)                                      # studio card, then the title
+        g.tick(760)                                      # studio card, AGD PRESENTS fade, then the title
         g.press('start'); g.tick(30)                     # title -> pilot select
         for k in range({'cadet': 0, 'pilot': 1, 'hunter': 2}[self.mode]):
             g.press('down'); g.tick(4)

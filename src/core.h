@@ -34,6 +34,7 @@ uint8_t ld_byte(uint8_t bank, const uint8_t *p);
 void txt_put(uint8_t x, uint8_t y, const char *s, uint8_t win, uint8_t attr);
 void txt_fill(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t tile, uint8_t attr, uint8_t win);
 uint8_t txt_tile(char c);
+void score_tiles(uint8_t *o);             // 7 digit tiles of the score
 
 // ---- OAM builder: slots 0-3 fixed (player), 4-39 rotated each frame for flicker sharing
 extern uint8_t oam_n;
