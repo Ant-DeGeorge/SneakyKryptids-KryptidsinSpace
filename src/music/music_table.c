@@ -19,4 +19,4 @@ extern const hUGESong_t mus_wendigo;
 extern const hUGESong_t mus_stage5;
 extern const hUGESong_t mus_flatwoods;
 const hUGESong_t * const music_songs[] = {&mus_title, &mus_stage, &mus_boss, &mus_brief, &mus_warn, &mus_clear, &mus_over, &mus_end, &mus_stage2, &mus_tbird, &mus_stage3, &mus_jdevil, &mus_map, &mus_stage4, &mus_wendigo, &mus_stage5, &mus_flatwoods};
-const uint8_t music_banks[] = {28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 29, 29, 29, 29, 29, 29};
+const uint8_t music_banks[] = {28, 28, 28, 28, 28, 29, 29, 28, 29, 29, 29, 30, 30, 30, 30, 31, 31};
