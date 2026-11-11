@@ -1,3 +1,3 @@
 // AUTO-GENERATED
-#define SC_TILES0 250
-#define SC_TILES1 232
+#define SC_TILES0 248
+#define SC_TILES1 222

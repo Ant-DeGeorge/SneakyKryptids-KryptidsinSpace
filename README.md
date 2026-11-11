@@ -156,16 +156,16 @@ Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated s
   are converted from reference paintings that are not in this repo, so `make assets` needs them in `ref/`.
   The cockpit hitbox dot (`tools/sprites.py`) and the coral Mission 1 enemy palette (`tools/stage1.py`)
   are edited in the generator sources, so `make assets` reproduces them once `ref/` is present.
-- Studio card: `src/studio_card/*.h` are the original card export plus fixes (badge stripes removed,
-  slashes kept off the iris, REJECTED stamp, taglines typed out earlier so they hold at full brightness).
-  `sh tools/studio_card_patch/run.sh` rebuilds them from the untouched export in `tools/studio_card_patch/orig/`.
+- Studio card: `src/studio_card/` is the final Rejected By The Machines card (stamped lettering, standard
+  colours), copied unmodified from the `rbtm-studio-card` module. To update it, copy that module's 9 `src/` files
+  over these; don't edit the generated headers here (regenerate them in the module with `node tools/export.js src`).
 
 ### Layout
 | Path | What |
 |---|---|
 | `src/` | game code (GBDK C). `stage.c` engine, `s1.c`–`s4.c` mission logic, `cockpit.c` mission 5 (gun cam, its own small engine), `scenes.c` menus/story/saves, `core.c` interrupts and loaders |
 | `src/studio_card/` | Rejected By The Machines studio card module (owns the STAT vector; the game's raster split runs through `sc_stat_hook`) |
-| `tools/` | Python generators: sprites, scenery, bosses, music, script. `tools/studio_card_patch/run.sh` re-applies the card fixes to the original card export |
+| `tools/` | Python generators: sprites, scenery, bosses, music, script |
 | `ref/dex/` | creature sheets the enemies were redrawn from |
 | `test/` | PyBoy bots (`bot.py`, `suite.sh`) and a SameBoy harness (`test/sameboy/`) |
 

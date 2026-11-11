@@ -1,8 +1,22 @@
-# Rejected By The Machines: Studio Card (X1 Static Awakening) for GBC
+# Rejected By The Machines: Studio Card (X1, final)
+
+**This is the studio card every game uses.** Standard teal/red colours, stamped
+lettering. Final as of 2026-11-11.
+`rom/studio_card_test.gbc` (SHA-256 in `rom/SHA256SUMS`) is the approved reference
+build, and `rom/RBTM_studio_card_ROM_SameBoy.mp4` shows it running on CGB-accurate SameBoy.
+
+**Quick start for a new game:** copy the 9 files from `src/` (every file except
+`main.c`) into your game, compile them with `-autobank`, link at least 64 KB
+(`-Wl-yo4`), and call `studio_card_play();` first thing in `main()`. Details below.
+
+---
+
+## Module overview
 
 A drop-in GBDK-2020 module that plays the studio card before your game:
 static → the eye wakes and scans → red lock-on → claw slashes tear the
-signal → the wordmark glitches in and locks. 5.5 s, 60 fps, with a
+signal → the emblem lifts and the lettering is stamped on (REJECTED BY THE,
+then MACHINES with its red ink). 5.5 s, 60 fps, with a
 chiptune sting. A or START skips it.
 
 Game Boy Color only (CGB double speed, two VRAM banks, CGB palettes).
@@ -17,7 +31,9 @@ Call one function at boot, get the studio card, and then carry on with your game
 - The whole card is one BG map. Effects use only what the hardware does:
   - per-scanline SCX from a STAT interrupt (tears and waves; exact per-frame tables)
   - SCY for the emblem lift
-  - CGB palette rewrites (fade, red flash, colour flicker, lock flash)
+  - CGB palette rewrites (fade, red flash, and the two lettering stamps:
+    palettes 6 and 7 go hidden → grey ghost → white impact → settled → red ink)
+  - SCY screen shake on each stamp
   - 8 static tiles whose pixels change every 2 frames
   - eye and ring animation by swapping map entries to tiles preloaded in VRAM bank 1
   - claw slashes as 18 8x16 sprites (at most 8 on a line)
@@ -57,6 +73,18 @@ Call one function at boot, get the studio card, and then carry on with your game
    **These are left dirty:** VRAM tiles, the 0x9800 map, **and its CGB attribute
    map**. Clear the attributes (VBK_REG = 1) or load your own before showing anything.
 
+### Optional colour theme (not used: games ship with the default colours)
+Set `sc_theme` before calling the card. It's the same animation and the same
+data; only the 11-colour RGB table changes (22 bytes):
+```c
+sc_theme = SC_THEME_PROTAN;   /* or SC_THEME_DEFAULT (0) */
+studio_card_play();
+```
+It moves every accent onto the blue-yellow axis, which stays vivid with protanopia:
+gold eye and gold MACHINES, blue claw slashes, blue ink shadow, blue lock-on
+flash. A game can expose it as a "colour assist" option and set it from its save.
+- In `rom/studio_card_test.gbc` it only appears if you hold SELECT at power-on; leave `sc_theme` at its default (0) in games.
+
 ### The STAT interrupt (important)
 For tears and waves on every scanline, `studio_card_home.c` **owns the STAT
 vector (0x48)**. GBDK's shared `add_LCD` dispatcher was too slow for 144
@@ -86,7 +114,7 @@ interrupts a frame: it cost 16+ frames per frame in testing.
 src/            module + test ROM (main.c: card, then a placeholder screen; START replays)
 tools/          core.js + variants.js (the JS preview renderer), export.js (asset/timeline exporter)
 test/           sameboy.py (headless libretro front end), sb_run.py (timing + frame capture)
-rom/            studio_card_test.gbc (raster) / studio_card_test_noraster.gbc
+rom/            studio_card_test.gbc (approved build) / studio_card_test_noraster.gbc / SameBoy video / SHA256SUMS
 build.sh / build.bat
 ```
 
