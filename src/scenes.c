@@ -65,11 +65,11 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #ifdef FLATWOODS_DEMO
 #define SAVE ((uint8_t *)0xA400)
 #define SAVE_SIG 'F'
-#define SAVE_VER 1
+#define SAVE_VER 2
 #else
 #define SAVE ((uint8_t *)0xA200)
 #define SAVE_SIG 'D'
-#define SAVE_VER 2
+#define SAVE_VER 3
 #endif
 #ifdef FLATWOODS_DEMO
 #define DEMO_VERSION "GUN CAM DEMO V1.0"
@@ -78,16 +78,18 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #else
 #define DEMO_VERSION "DEMO V1.1"
 #endif
-#define PF_LEN(n) (2 + (n) + 4 * (n) + (n) + 2 + N_GEAR)
-#define SAVE_LEN (4 + N_PROFILES * PF_LEN(N_MISSIONS) + 1)
-#define SAVE_LEN_V1 (4 + N_PROFILES * PF_LEN(4) + 1)        // version 1: four missions
+#define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
+#define SAVE_LEN (4 + N_PROFILES * PF_LEN(N_MISSIONS, N_GEAR) + 1)
+#define OLD_GEAR 5                                           // saves before the weapon runes held five gear slots
+#define SAVE_LEN_OLD (4 + N_PROFILES * PF_LEN(N_MISSIONS, OLD_GEAR) + 1)
+#define SAVE_LEN_V1 (4 + N_PROFILES * PF_LEN(4, OLD_GEAR) + 1)   // version 1: four missions
 static uint8_t sum8(uint8_t *p, uint8_t n) { uint8_t s = 0x5A; while (n--) s += *p++; return s; }
 static void save_clear(void) {
     memset(pf_unlock, 0, sizeof pf_unlock); memset(pf_done, 0, sizeof pf_done);
     memset(pf_best, 0, sizeof pf_best); memset(pf_hi, 0, sizeof pf_hi);
     memset(pf_out, 0, sizeof pf_out); memset(pf_credits, 0, sizeof pf_credits); memset(pf_gear, 0, sizeof pf_gear);
 }
-static void save_parse(uint8_t *q, uint8_t n) {              // n = missions stored per pilot
+static void save_parse(uint8_t *q, uint8_t n, uint8_t g) {   // n = missions, g = gear slots stored per pilot
     uint8_t p;
     for (p = 0; p < N_PROFILES; p++) {
         pf_unlock[p] = *q++; pf_done[p] = *q++;
@@ -95,7 +97,7 @@ static void save_parse(uint8_t *q, uint8_t n) {              // n = missions sto
         memcpy(pf_hi[p], q, 4 * n); q += 4 * n;
         memcpy(pf_out[p], q, n); q += n;
         pf_credits[p] = q[0] | ((uint16_t)q[1] << 8); q += 2;
-        memcpy(pf_gear[p], q, N_GEAR); q += N_GEAR;
+        memcpy(pf_gear[p], q, g); q += g;
     }
 }
 void save_read(void) {
@@ -105,9 +107,12 @@ void save_read(void) {
     DISABLE_RAM;
     save_clear();
     if (buf[0] != 'S' || buf[1] != 'K' || buf[2] != SAVE_SIG) return;
-    if (buf[3] == SAVE_VER && buf[SAVE_LEN - 1] == sum8(buf, SAVE_LEN - 1)) save_parse(buf + 4, N_MISSIONS);
-    else if (SAVE_SIG == 'D' && buf[3] == 1 && buf[SAVE_LEN_V1 - 1] == sum8(buf, SAVE_LEN_V1 - 1)) {
-        save_parse(buf + 4, 4);                              // v1.0 save: keep it, mission 5 starts empty
+    if (buf[3] == SAVE_VER && buf[SAVE_LEN - 1] == sum8(buf, SAVE_LEN - 1)) save_parse(buf + 4, N_MISSIONS, N_GEAR);
+    else if (buf[3] == SAVE_VER - 1 && buf[SAVE_LEN_OLD - 1] == sum8(buf, SAVE_LEN_OLD - 1)) {
+        save_parse(buf + 4, N_MISSIONS, OLD_GEAR);           // save from before the weapon runes: keep it, runes start unbought
+        save_write();
+    } else if (SAVE_SIG == 'D' && buf[3] == 1 && buf[SAVE_LEN_V1 - 1] == sum8(buf, SAVE_LEN_V1 - 1)) {
+        save_parse(buf + 4, 4, OLD_GEAR);                    // v1.0 save: keep it, mission 5 starts empty
         save_write();
     }
 }
@@ -198,29 +203,74 @@ static void put_rating(uint8_t x, uint8_t y, uint8_t prof, uint8_t sid) {
 }
 
 // ------------------------------------------------------------------ title
+static uint16_t fade_buf[4 * 8];
+static uint8_t title_seen;
+// scale palettes to level lv (0 black .. 8 full) and load them
+static void pal_fade(uint8_t first, uint8_t n, const uint16_t *src, uint8_t lv) {
+    uint8_t i, r, g, b;
+    for (i = 0; i < n * 4; i++) {
+        uint16_t c = src[i];
+        r = ((c & 31) * lv) >> 3; g = (((c >> 5) & 31) * lv) >> 3; b = (((c >> 10) & 31) * lv) >> 3;
+        fade_buf[i] = r | ((uint16_t)g << 5) | ((uint16_t)b << 10);
+    }
+    wait_vbl_done();
+    set_bkg_palette(first, n, fade_buf);
+}
+static uint8_t title_wait(uint8_t n) {        // A/START skips the intro
+    while (n--) { wait_vbl_done(); input_poll(); if (joy_new & (J_A | J_START)) return 1; }
+    return 0;
+}
 static void title_screen(void) {
-    uint8_t t = 0, buf[40];
-    screen_prep();
-    ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
-    ld_bkg_pal(BANK_A6, 0, 6, title_art_pals);
+    uint8_t t = 0, buf[40], lv, skip = 0, intro = 0;
+    static uint16_t art_pals[4 * 8];            // 0-5 art, 6 logo, 7 text: faded together
+    music_play(MUS_TITLE);
+    if (!title_seen) {
+        // AGD PRESENTS on its own, fading up out of black
+        title_seen = intro = 1;
+        screen_prep();
+        txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
+        pal_fade(7, 1, pal_text, 0);
+        center(8, "AGD PRESENTS", 7);
+        screen_on(LCDC_SCREEN);
+        for (lv = 1; lv <= 8 && !skip; lv++) skip = title_wait(6);
+        pal_fade(7, 1, pal_text, 8);
+        if (!skip) skip = title_wait(80);
+        for (lv = 8; lv && !skip; lv--) { pal_fade(7, 1, pal_text, lv - 1); skip = title_wait(3); }
+    }
+    ld_copy(BANK_A6, art_pals, title_art_pals, 6 * 8);
+    ld_copy(BANK_A6, art_pals + 24, logo_pal, 8);
+    memcpy(art_pals + 28, pal_text, 8);
+    if (intro) {
+        // Straight on from AGD PRESENTS with the screen left on: every palette goes black and the art
+        // loads behind it. Switching the LCD off here would stop the VBlank interrupt that ticks the
+        // music, and the title song would stall between the two screens.
+        pal_fade(0, 8, art_pals, 0);
+        txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
+        ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
+    } else {
+        screen_prep();
+        ld_bkg_data(BANK_A6, 0, N_COMMON, TITLE_ART_NT, title_art_tiles);
+        pal_fade(0, 8, art_pals, 0);
+    }
+    if (skip) pal_fade(0, 8, art_pals, 8);
     ld_image(BANK_A6, 0, 2, 20, 10, title_art_map, title_art_attr, N_COMMON, 0, 0);
     ld_bkg_data(BANK_A6, 1, 0, LOGO_NT, logo_tiles);
-    ld_bkg_pal(BANK_A6, 6, 1, logo_pal);
     ld_copy(BANK_A6, buf, logo_map, LOGO_W * 2);
     set_bkg_tiles(0, 12, LOGO_W, 2, buf);
     VBK_REG = 1; fill_bkg_rect(0, 12, 20, 2, 6 | 0x08); VBK_REG = 0;
     txt_fill(0, 0, 20, 2, txt_tile(' '), 7, 0);
     txt_fill(0, 14, 20, 4, txt_tile(' '), 7, 0);
-    center(0, "ANTHONY DEGEORGE", 7);
-    center(1, "PRESENTS", 7);
+    screen_on(LCDC_SCREEN);
+    // the art and logo fade in
+    for (lv = 1; lv <= 8 && !skip; lv++) { pal_fade(0, 8, art_pals, lv); skip = title_wait(6); }
+    pal_fade(0, 8, art_pals, 8);
 #ifdef FLATWOODS_DEMO
     center(14, "FLATWOODS DRIFT", 7);
 #else
     center(14, "KRYPTIDS IN SPACE", 7);
 #endif
     center(17, DEMO_VERSION, 7);
-    screen_on(LCDC_SCREEN);
-    music_play(MUS_TITLE);
+    if (skip) title_wait(15);                  // don't let the skip press also start the game
     while (1) {
         wait_vbl_done(); input_poll();
         t++;
@@ -368,15 +418,20 @@ static uint8_t mission_map(void) {
 }
 
 // ------------------------------------------------------------------ Forge's armory
-static const char * const gear_name[N_GEAR] = {"HULL PLATING", "CANNON TUNE", "BOMB RACK", "BUDDY BAY", "RUNE ROUNDS"};
-static const uint8_t gear_max[N_GEAR] = {2, 2, 2, 2, 1};
-static const uint16_t gear_cost[N_GEAR][2] = {{150, 350}, {120, 300}, {80, 200}, {200, 400}, {300, 0}};
+static const char * const gear_name[N_GEAR] = {"HULL PLATING", "CANNON TUNE", "BOMB RACK", "BUDDY BAY", "RUNE ROUNDS",
+    "LANCE RUNE", "RICOCHET RUNE", "CHAIN RUNE"};
+static const uint8_t gear_max[N_GEAR] = {2, 2, 2, 2, 1, 1, 1, 1};
+static const uint16_t gear_cost[N_GEAR][2] = {{150, 350}, {120, 300}, {80, 200}, {200, 400}, {300, 0}, {250, 0}, {250, 0}, {300, 0}};
 static const char * const gear_desc[N_GEAR][2] = {
     {"+1 LIFE EVERY\nMISSION", "ANOTHER +1 LIFE.\nTANK MODE."},
     {"START WITH\nWEAPON LEVEL 2", "START WITH\nWEAPON LEVEL 3"},
     {"+1 BOMB EVERY\nMISSION", "ANOTHER +1 BOMB"},
     {"ROOM FOR 3\nBUDDIES", "START EVERY\nMISSION WITH ONE"},
-    {"SHOTS BREAK\nBIG ORBS (2 HITS)", ""}};
+    {"SHOTS BREAK\nBIG ORBS (2 HITS)", ""},
+    {"MAX TWIN: CENTRE\nLANCE PIERCES ALL", ""},
+    {"MAX SPREAD: OUTER\nSTARS BOUNCE", ""},
+    {"MAX WISP: HITS\nJUMP TO ANOTHER", ""}};
+#define GEAR_PAGE1 GEAR_LANCE                        // page 2 of the armory: the weapon runes
 static const char * const forge_quip[4] = {"FORGE: NICE.\nSHE PURRS NOW.", "FORGE: RUNES\nCARVED. DON'T LICK.",
     "FORGE: PAID IN\nFULL. I LOVE YOU.", "FORGE: DONE. TRY\nNOT TO SCRATCH IT."};
 static void put_lines(uint8_t x, uint8_t y, const char *s) {
@@ -384,43 +439,51 @@ static void put_lines(uint8_t x, uint8_t y, const char *s) {
     for (; *s; s++) { if (*s == '\n') { y++; cx = x; continue; } c[0] = *s; txt_put(cx++, y, c, 0, 7); }
 }
 static void armory(void) {
-    uint8_t sel = 0, t = 0, i, lv, redraw = 1, quip = 0xFF;
+    uint8_t sel = 0, t = 0, i, lv, redraw = 1, quip = 0xFF, pg = 0, g0, gn, r;
     screen_prep();
     set_bkg_palette(6, 1, pal_teal);
     set_bkg_palette(5, 1, pal_star);
     set_bkg_palette(4, 1, pal_dim);
     txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
     center(0, "FORGE'S ARMORY", 7);
-    center(17, "A: BUY   B: BACK", 6);
+    center(17, "A:BUY B:BACK PAD:TAB", 6);
     screen_on(LCDC_SCREEN);
     while (1) {
+        g0 = pg ? GEAR_PAGE1 : 0; gn = pg ? N_GEAR - GEAR_PAGE1 : GEAR_PAGE1;
         if (redraw) {
             redraw = 0;
-            txt_fill(0, 1, 20, 15, txt_tile(' '), 7, 0);
+            txt_fill(0, 1, 20, 16, txt_tile(' '), 7, 0);
             txt_put(2, 1, "CREDITS", 0, 6); put_num(13, 1, pf_credits[profile], 4, 7);
-            for (i = 0; i < N_GEAR; i++) {
-                lv = pf_gear[profile][i];
-                txt_put(2, 3 + i * 2, gear_name[i], 0, lv ? 7 : 6);
-                { char c[7]; strcpy(c, "LV 0/0"); c[3] = '0' + lv; c[5] = '0' + gear_max[i]; txt_put(3, 4 + i * 2, c, 0, lv ? 7 : 4); }
-                if (lv >= gear_max[i]) txt_put(15, 4 + i * 2, "MAX", 0, 6);
-                else { txt_put(14, 4 + i * 2, "$", 0, 6); put_num(15, 4 + i * 2, gear_cost[i][lv], 3, pf_credits[profile] >= gear_cost[i][lv] ? 7 : 4); }
+            txt_put(1, 2, "GEAR", 0, pg ? 4 : 7); txt_put(8, 2, "WEAPON RUNES", 0, pg ? 7 : 4);
+            for (i = 0; i < gn; i++) {
+                r = g0 + i; lv = pf_gear[profile][r];
+                txt_put(2, 3 + i * 2 + pg, gear_name[r], 0, lv ? 7 : 6);
+                { char c[7]; strcpy(c, "LV 0/0"); c[3] = '0' + lv; c[5] = '0' + gear_max[r]; txt_put(3, 4 + i * 2 + pg, c, 0, lv ? 7 : 4); }
+                if (lv >= gear_max[r]) txt_put(15, 4 + i * 2 + pg, "MAX", 0, 6);
+                else { txt_put(14, 4 + i * 2 + pg, "$", 0, 6); put_num(15, 4 + i * 2 + pg, gear_cost[r][lv], 3, pf_credits[profile] >= gear_cost[r][lv] ? 7 : 4); }
             }
             if (quip != 0xFF) put_lines(1, 14, forge_quip[quip]);
             else {
-                lv = pf_gear[profile][sel];
-                if (lv < gear_max[sel]) put_lines(1, 14, gear_desc[sel][lv]);
+                r = g0 + sel; lv = pf_gear[profile][r];
+                if (lv < gear_max[r]) put_lines(1, 14, gear_desc[r][lv]);
+                else if (pg) put_lines(1, 14, "FORGE: CARVED.\nMAX IT TO WAKE IT.");
                 else put_lines(1, 14, "FORGE: MAXED OUT.\nSHE'S PERFECT.");
             }
         }
         wait_vbl_done(); input_poll(); t++;
-        arrow_at(0, 3 + sel * 2, t);
-        if (joy_new & J_UP) { sel = sel ? sel - 1 : N_GEAR - 1; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF; }
-        if (joy_new & J_DOWN) { sel = sel + 1 < N_GEAR ? sel + 1 : 0; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF; }
+        arrow_at(0, 3 + sel * 2 + pg, t);
+        if (joy_new & (J_LEFT | J_RIGHT)) {
+            txt_put(0, 3 + sel * 2 + pg, " ", 0, 7);
+            pg ^= 1; sel = 0; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF;
+            continue;
+        }
+        if (joy_new & J_UP) { txt_put(0, 3 + sel * 2 + pg, " ", 0, 7); sel = sel ? sel - 1 : gn - 1; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF; }
+        if (joy_new & J_DOWN) { txt_put(0, 3 + sel * 2 + pg, " ", 0, 7); sel = sel + 1 < gn ? sel + 1 : 0; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF; }
         if (joy_new & J_A) {
-            lv = pf_gear[profile][sel];
-            if (lv < gear_max[sel] && pf_credits[profile] >= gear_cost[sel][lv]) {
-                pf_credits[profile] -= gear_cost[sel][lv];
-                pf_gear[profile][sel]++;
+            r = g0 + sel; lv = pf_gear[profile][r];
+            if (lv < gear_max[r] && pf_credits[profile] >= gear_cost[r][lv]) {
+                pf_credits[profile] -= gear_cost[r][lv];
+                pf_gear[profile][r]++;
                 save_write();
                 sfx_play(SFX_POWER);
                 quip = t & 3;
@@ -579,26 +642,7 @@ static void results(uint8_t sid) {
 }
 
 static void ending(void) {
-    screen_prep();
-    set_bkg_palette(7, 1, pal_text);
-    set_bkg_palette(6, 1, pal_teal);
-    load_scene(0);
-    txt_fill(0, 9, 20, 9, txt_tile(' '), 7, 0);
-    if ((gmode != MODE_HUNTER)) {
-        char c[20];
-        strcpy(c, "GREAT FLYING,"); center(10, c, 7);
-        strcpy(c, pilot_names[profile]); strcat(c, "!"); center(11, c, 6);
-        center(13, "MONSTER HUNTER!", 7);
-    } else {
-        center(10, "NICE SHOOTING,", 7);
-        center(11, "HUNTER.", 6);
-        center(13, "FIVE BOUNTIES IN.", 7);
-    }
-    center(16, "TO BE CONTINUED...", 7);
-    screen_on(LCDC_SCREEN);
-    music_play(MUS_END);
-    wait_frames(90);
-    wait_button(1500);
+    ending_run();
     screen_prep();
     set_bkg_palette(6, 1, pal_teal);
     txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
@@ -645,6 +689,10 @@ void game_main(void) BANKED {
     profile = 0;
     while (1) {
         title_screen();
+#ifdef TEST_ENDING
+        ending();                       // test ROM only: poke pf_out/pf_best/profile/gmode at the title
+        continue;
+#endif
 #ifdef FLATWOODS_DEMO
         // standalone gun-cam demo: pilot select -> briefing -> Flatwoods Drift -> debrief, and again
         while (pilot_select()) {

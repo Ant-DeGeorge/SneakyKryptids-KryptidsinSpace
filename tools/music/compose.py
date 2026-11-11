@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+"""Sneaky Kryptid soundtrack, written as code. All compositions original.
+
+Writes music/<song>.uge for every song (hUGETracker 1.0 files). Songs listed in music/HAND_EDITED
+were changed in hUGETracker and are left alone. tools/music/build_music.py turns the .uge files into C.
+
+New hUGEDriver arrangements: TITLE ("Bounty Call"), MAP ("Star Chart").
+Every other song is the v1.1 tune carried over note for note (lead on ch2, bass on ch3) until
+it gets its own arrangement.
+"""
+import os, sys, math
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.join(HERE, '..', '..')
+sys.path.insert(0, HERE)
+import uge
+from score import Score
+
+MUSIC = os.path.join(ROOT, 'music')
+ORDER = ['TITLE', 'STAGE', 'BOSS', 'BRIEF', 'WARN', 'CLEAR', 'OVER', 'END', 'STAGE2', 'TBIRD', 'STAGE3', 'JDEVIL',
+         'MAP', 'STAGE4', 'WENDIGO', 'STAGE5', 'FLATWOODS']
+
+# ---------------------------------------------------------------- waveforms (32 nibbles)
+def wave_from_fn(f):
+    return [max(0, min(15, int(round(7.5 + 7.5 * f(i / 32))))) for i in range(32)]
+W_OLD = [0x0, 0x1, 0x2, 0x3, 0x5, 0x6, 0x8, 0x9, 0xB, 0xC, 0xE, 0xE, 0xF, 0xF, 0xF, 0xF,
+         0xE, 0xE, 0xC, 0xB, 0x9, 0x8, 0x6, 0x5, 0x3, 0x2, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0]
+W_TRI = wave_from_fn(lambda x: 1 - 4 * abs(x - 0.5))
+W_PUNCH = wave_from_fn(lambda x: 0.75 * max(-1, min(1, 1.6 * math.sin(2 * math.pi * x) + 0.35 * math.sin(4 * math.pi * x))))   # rounded square: bass with bite, sits under the lead
+W_SOFT = wave_from_fn(lambda x: 0.8 * math.sin(2 * math.pi * x) + 0.2 * math.sin(6 * math.pi * x))
+
+
+# ================================================================ carried-over songs (v1.1 tunes)
+def load_old():
+    src = open(os.path.join(ROOT, 'tools', 'gen_sound.py')).read()
+    cut = src.index('for _k, (_m, _b, _e, _l) in songs.items():')
+    ns = {'__file__': os.path.join(ROOT, 'tools', 'gen_sound.py')}
+    exec(src[:cut], ns)
+    return ns['songs']
+
+OLD_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+def old_note(i): return OLD_NAMES[(i - 1) % 12] + str((i - 1) // 12 + 1)
+
+def events_to_rows(sc, ch, ev, tpr, instr=1):
+    """(note, frames) pairs from gen_sound.py -> rows. Notes start on row boundaries; a rest that
+    falls inside a row becomes a note cut on that tick."""
+    import score as S
+    rows, t = [], 0
+    total = sum(ev[1::2])
+    n_rows = -(-total // tpr)
+    rows = [uge.Cell() for _ in range(n_rows)]
+    for k in range(0, len(ev), 2):
+        n, d = ev[k], ev[k + 1]
+        r, tick = divmod(t, tpr)
+        if n:
+            assert tick == 0, f'note off the row grid at frame {t}'
+            rows[r].note, rows[r].instr = S.hnote(old_note(n), ch), instr
+        else:
+            if rows[r].note != uge.NO_NOTE and tick == 0:
+                raise AssertionError('rest on a note row')
+            rows[r].fx, rows[r].param = 0xE, tick
+        t += d
+    return rows
+
+def carry_over(key, old):
+    mel, bas, env, loop = old[key]
+    durs = mel[1::2]
+    tpr = math.gcd(*[d for d in durs if d])
+    sc = Score(key.title(), tpr)
+    sc.duty(1, 'v1.1 lead', duty=2, vol=env >> 4, decay=env & 7, up=bool(env & 8))
+    sc.wave(1, 'v1.1 bass', 0, level=2)
+    sc.waveform(0, W_OLD)
+    sc.raw(2, events_to_rows(sc, 2, mel, tpr))
+    sc.raw(3, events_to_rows(sc, 3, bas, tpr))
+    return sc.build(end_silent=not loop)
+
+
+# ================================================================ helpers for new arrangements
+MINOR, MAJOR = '037', '047'
+def chord_arp(chords, pulse=4, octave=4):
+    """Harmony on ch1: each chord retriggers every `pulse` rows with an arpeggio. chords: 'Dm Bb C A'
+    with an optional :beats suffix (default 4 beats = one bar)."""
+    out = []
+    for tok in chords.split():
+        if tok == '|': out.append('|'); continue
+        name, beats = (tok.split(':') + ['4'])[:2]
+        rows = int(beats) * 4
+        minor = name.endswith('m')
+        root = name[:-1] if minor else name
+        oct_ = octave - 1 if root in ('A', 'Bb', 'B', 'G', 'G#', 'A#', 'Ab') else octave
+        for _ in range(rows // pulse):
+            out.append(f'{root}{oct_}:{pulse}/0{MINOR[1:] if minor else MAJOR[1:]}')
+    return ' '.join(out)
+
+def bass_drive(roots, alt='oct'):
+    """Driving eighths on ch3: root / octave alternating, 8 per bar. roots: 'D2 Bb1 C2 A1'."""
+    out = []
+    for r in roots.split():
+        if r == '|': out.append('|'); continue
+        if ':' in r:                                    # split bar, e.g. Bb1:2 C2:2 (beats)
+            n, b = r.split(':'); b = int(b)
+        else: n, b = r, 4
+        hi = n[:-1] + str(int(n[-1]) + 1)
+        for k in range(b * 2): out.append(f'{n if k % 2 == 0 else hi}:2')
+    return ' '.join(out)
+
+
+# ================================================================ TITLE: "Bounty Call" (D minor, 128 BPM)
+def title():
+    sc = Score('Bounty Call', 7)                 # 7 ticks/row, 4 rows per beat = 128.6 BPM
+    sc.duty(1, 'Lead 50% sustain', duty=2, vol=12, decay=0)
+    sc.duty(2, 'Lead 25% bright', duty=1, vol=13, decay=0)
+    sc.duty(3, 'Arp 12.5% pluck', duty=0, vol=10, decay=2)
+    sc.duty(4, 'Echo 25% quiet', duty=1, vol=5, decay=3)
+    sc.duty(5, 'Fanfare stab', duty=2, vol=14, decay=1)
+    sc.wave(1, 'Bass punch', 0, level=1)
+    sc.wave(2, 'Bass soft', 1, level=2)
+    sc.waveform(0, W_PUNCH); sc.waveform(1, W_TRI)
+    sc.noise(1, 'Kick', vol=13, decay=1)
+    sc.noise(2, 'Snare', vol=12, decay=2)
+    sc.noise(3, 'Hat', vol=6, decay=1, metallic=True)
+    sc.noise(4, 'Open hat', vol=5, decay=3, metallic=True)
+    sc.noise(5, 'Crash', vol=11, decay=5)
+
+    # ---- intro: 4 bars, builds up (Dm Dm Bb A)
+    sc.play(1, '@3 ' + chord_arp('Dm | Dm | Bb | A', pulse=2))
+    sc.play(2, '@5 R:16 | R:16 | D5:2 R:2 D5:2 R:2 D5:2 F5:2 G5:2 A5:2 | A5:4 E5:2 A5:2 C#6:6 R:2')
+    sc.play(3, '@2 R:16 | R:16 | ' + bass_drive('Bb1') + ' | ' + bass_drive('A1'))
+    sc.drum('h.h.h.h.h.h.h.h. h.h.h.h.h.h.hoho k.h.k.h.k.h.k.h. k.s.k.s.ssssssss')
+
+    # ---- A theme (8 bars): the hook
+    A_lead = ('@1 D5:4/422 A4:2 D5:2 E5:2 F5:2 E5:2 D5:2 | F5:6/422 D5:2 Bb4:8/432 | C5:4 E5:2 G5:2 G5:4 F5:2 E5:2 | D5:12/433 A4:2 C5:2 | '
+              'D5:4 A4:2 D5:2 E5:2 F5:2 G5:2 A5:2 | Bb5:6/422 A5:2 G5:4 F5:4 | G5:4 E5:2 C5:2 G5:4 A5:2 G5:2 | A5:8/433 C#5:4 E5:4')
+    A_chords = 'Dm | Bb | C | Dm | Dm | Bb | C | A'
+    A_roots = 'D2 | Bb1 | C2 | D2 | D2 | Bb1 | C2 | A1'
+    beat = 'k.h.s.h.k.k.s.h.'
+    fill = 'k.h.s.h.s.s.ssss'
+    sc.mark('A')
+    sc.play(1, '@3 ' + chord_arp(A_chords))
+    sc.play(2, A_lead)
+    sc.play(3, '@1 ' + bass_drive(A_roots))
+    sc.drum('o.h.s.h.k.k.s.h.' + beat * 6 + fill)
+
+    # ---- B theme (8 bars): the lift
+    B_lead = ('@2 Bb4:2 D5:2 F5:2 Bb5:6/422 A5:2 G5:2 | A5:6/422 G5:2 E5:4 C5:4 | F5:4 A5:4 D6:8/433 | C6:4 A5:4 F5:4 D5:4 | '
+              'D5:2 G5:2 Bb5:2 D6:6/422 C6:2 Bb5:2 | A5:6/422 G5:2 E5:4 C#5:4 | D5:4 F5:4 E5:4 G5:4 | A5:4 E5:2 A5:2 C#6:8/433')
+    sc.play(1, '@3 ' + chord_arp('Bb | C | Dm | Dm | Gm | A | Bb:2 C:2 | A'))
+    sc.play(2, B_lead)
+    sc.play(3, '@1 ' + bass_drive('Bb1 | C2 | D2 | D2 | G1 | A1 | Bb1:2 C2:2 | A1'))
+    sc.drum('o.h.s.h.k.k.s.h.' + beat * 2 + 'k.h.s.h.k.k.s.hh' + 'o.h.s.h.k.k.s.h.' + beat * 2 + 'k.s.s.s.ssssssss')
+
+    # ---- A' (8 bars): the hook again, ch1 answers it an octave down, two rows behind
+    sc.play(2, A_lead)
+    echo = A_lead.replace('@1 ', '@4 ')
+    toks, low = echo.split(), []
+    for t in toks:
+        if t in ('|',) or t.startswith('@'): low.append(t); continue
+        n, rest = (t.split(':', 1) + [''])[:2]
+        if n not in ('R', '-'):
+            n = n[:-1] + str(int(n[-1]) - 1)
+        low.append(n + (':' + rest if rest else ''))
+    low_text = ' '.join(low)
+    # shift two rows: start with a 2-row hold and trim the last note by two rows
+    sc.play(1, '-:2 ' + low_text, bars=0)
+    r1 = sc.rows[1]; del r1[len(r1) - 2:]                  # drop the overhang so channels stay level
+    sc.play(3, '@1 ' + bass_drive(A_roots))
+    sc.drum('o.h.s.h.k.k.s.h.' + 'k.hhs.h.k.k.s.hh' * 6 + 'k.s.s.s.sssssooo')
+    return sc.build(loop_to='A')
+
+
+# ================================================================ MAP: "Star Chart" (F major, 100 BPM)
+def star_chart():
+    sc = Score('Star Chart', 9)                  # 9 ticks/row = 100 BPM
+    sc.duty(1, 'Lead 25% soft', duty=1, vol=9, decay=0)
+    sc.duty(2, 'Pad 12.5% arp', duty=0, vol=7, decay=4)
+    sc.duty(3, 'Echo', duty=1, vol=4, decay=2)
+    sc.wave(1, 'Bass round', 0, level=2)
+    sc.waveform(0, W_SOFT)
+    sc.noise(1, 'Kick soft', vol=9, decay=1)
+    sc.noise(2, 'Rim', vol=7, decay=1)
+    sc.noise(3, 'Hat', vol=4, decay=1, metallic=True)
+    sc.drums = {'k': (1, 22), 's': (2, 47), 'h': (3, 60), 'o': (3, 57), 'r': (2, 47)}
+
+    lead = ('@1 A4:8/423 C5:4 F5:4 | E5:12/433 D5:2 C5:2 | D5:8/423 A4:4 D5:2 E5:2 | F5:12/433 R:4 | '
+            'A5:8/423 G5:4 F5:4 | E5:8/423 G5:4 C5:4 | D5:6 F5:2 Bb5:8/433 | G5:12/433 R:4 | '
+            'F5:6 E5:2 D5:8/423 | C5:6 E5:2 A5:8/423 | Bb5:6 A5:2 F5:8/423 | A5:12/433 R:4 | '
+            'G5:6 F5:2 D5:8/423 | E5:6 F5:2 G5:8/423 | F5:4 D5:4 Bb4:4 D5:4 | E5:8/423 G5:4 C6:4')
+    chords = 'F | C | Dm | Bb | F | C | Bb | C | Dm | Am | Bb | F | Gm | Am | Bb | C'
+    roots = 'F2 C2 D2 Bb1 F2 C2 Bb1 C2 D2 A1 Bb1 F2 G1 A1 Bb1 C2'.split()
+    fifth = {'F2': 'C3', 'C2': 'G2', 'D2': 'A2', 'Bb1': 'F2', 'A1': 'E2', 'G1': 'D2'}
+    sc.play(1, '@2 ' + chord_arp(chords, pulse=8))
+    sc.play(2, lead)
+    sc.play(3, '@1 ' + ' | '.join(f'{r}:8 {fifth[r]}:6 {r}:2' for r in roots))
+    groove = 'k...h...s.k.h...'
+    sc.drum(groove * 7 + 'k...h...s.k.s.ss' + groove * 7 + 'k...s...s.s.ssss')
+    return sc.build()
+
+
+NEW = {'TITLE': title, 'MAP': star_chart}
+
+
+def main(only=None):
+    os.makedirs(MUSIC, exist_ok=True)
+    hand = set()
+    p = os.path.join(MUSIC, 'HAND_EDITED')
+    if os.path.exists(p):
+        hand = {l.strip().upper() for l in open(p) if l.strip() and not l.startswith('#')}
+    old = load_old()
+    for key in ORDER:
+        if only and key not in only: continue
+        if key in hand:
+            print(f'{key}: hand edited, kept'); continue
+        song = NEW[key]() if key in NEW else carry_over(key, old)
+        path = os.path.join(MUSIC, key.lower() + '.uge')
+        song.save(path)
+        print(f'{key}: {len(song.patterns)} patterns, {max(len(o) for o in song.orders)} orders, tpr {song.ticks_per_row}' +
+              ('  (new)' if key in NEW else ''))
+
+
+if __name__ == '__main__':
+    main(set(a.upper() for a in sys.argv[1:]) or None)

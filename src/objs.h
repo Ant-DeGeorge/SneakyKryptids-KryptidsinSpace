@@ -56,6 +56,7 @@ extern uint8_t px, py;
 extern uint8_t hud_dirty;
 extern uint32_t next_extend;
 extern uint8_t kill_count;
+extern uint8_t kp_new, kp_x, kp_y, kp_bigf;
 
 extern uint8_t e_type[MAXE], e_hp[MAXE], e_t[MAXE], e_flash[MAXE], e_a[MAXE], e_b[MAXE], e_c[MAXE], e_st[MAXE], e_fl[MAXE];
 extern uint16_t e_x[MAXE], e_y[MAXE];
