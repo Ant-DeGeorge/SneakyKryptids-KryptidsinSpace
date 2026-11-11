@@ -70,6 +70,11 @@ static uint16_t palbuf[4], bg0;
 static uint8_t buf[32], abuf[32];
 static uint8_t hud_buf[20];
 static uint8_t trail_x[3], trail_y[3];
+// The flagship band (9C00 map) cannot scroll with the field, so its empty sky would sit still
+// while the field's stars stream past below it. These sprite stars keep the sky moving there:
+// they rise at the field's speed and pass behind the hull (OBJ priority).
+#define NBST 5
+static uint8_t bst_x[NBST], bst_y[NBST], last_step;
 
 // [cadet, pilot, hunter]
 static const uint8_t spd_tab[3][3] = {{32, 24, 40}, {32, 28, 44}, {36, 32, 48}};      // scroll, 1/16 px per frame, per phase
@@ -510,10 +515,19 @@ static void draw_all(void) {
     k = phase == 2 ? 5 : 3;
     for (i = 0; i < k; i++) {
         y = (uint8_t)(200 - (uint8_t)(er_t * (5 + i) + i * 61)) % (FIELD_BOT - 8);
-        if (y < bb) continue;
+        if (y < bb) continue;                                 // the band has its own stars below
         x = (uint8_t)(i * 53 + ((er_t * (5 + i) + i * 61) >> 8) * 37) % 152;
         if (st == ST_CLEAR || (atmo_k >= 2 && (i & 1))) oam_add_fx(px - 24 + i * 6, py - 40 - (flame_t & 7) * 2, ER_ST_HEAT, 6 | 8);
-        else oam_add_fx(x + 8, y + 8, ER_ST_STREAK, 6 | 8);
+        else oam_add_fx(x + 8, y + 8, ER_ST_STREAK, 6 | 8 | 0x80);
+    }
+    k = comm_on ? 32 : 0;                                     // first sky line of the band
+    if (bb >= k + 16 && st != ST_CLEAR) {
+        for (i = 0; i < NBST; i++) {
+            y = bst_y[i] - last_step;
+            if (y < k + 8 || y >= bb + 8) { y = bb + (i & 7); bst_x[i] = (rnd() & 127) + (rnd() & 15) + 4; }
+            bst_y[i] = y;
+            if (y >= k + 8) oam_add_fx(bst_x[i] + 8, y + 8, ER_ST_STREAK, 6 | 8 | 0x80);
+        }
     }
     oam_end();
 }
@@ -575,6 +589,7 @@ static void restart_from(uint8_t c) {
     atk_i = 0; atk_cd = 150; burst_n = 0;
     px = XO + 80; py = YO + 84; p_inv = 100; dash_t = 0; pulse_t = 0; shake_t = 0; graze_t = 0; last_dx = 1;
     er_boost = 0; sec_clean = 1; bar_last = 0xFF;
+    { uint8_t i; for (i = 0; i < NBST; i++) { bst_x[i] = rnd() % 156; bst_y[i] = 16 + i * 7; } }
     st = ST_PLAY; st_t = 0;
     txt_fill(0, 0, 20, 2, txt_tile(' '), HA, 1);
     VBK_REG = 1; memset(buf, 5 | 0x08 | 0x80, 5); set_win_tiles(15, 0, 5, 1, buf); VBK_REG = 0;
@@ -663,7 +678,7 @@ uint8_t escape_run(void) BANKED {
         // scroll
         spd = spd_tab[GM][phase];
         if (st == ST_CLEAR) spd = st_t < 60 ? spd + (st_t >> 1) : 80;
-        acc += spd; step = acc >> 4; acc &= 15;
+        acc += spd; step = acc >> 4; acc &= 15; last_step = step;
         { uint8_t n = step; while (n--) { er_fscy++; if ((er_fscy & 7) == 0 && er_row < ROW_END + 400) row_step(); } }
 
         // the flagship slides and sways
