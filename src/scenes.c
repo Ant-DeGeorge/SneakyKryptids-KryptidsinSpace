@@ -61,12 +61,22 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 // The demo keeps its own save block with its own signature ('S','K','D'), away from the
 // family build's block at 0xA000 ('K','S'), so a cart that already holds family saves
 // starts the demo clean and the family saves survive if that ROM is flashed back.
-// FLATWOODS_DEMO: the standalone gun-cam demo (make flatwoods). Its own block and signature
-// ('S','K','F' at 0xA400), so it never touches a Sneaky Kryptid save on the same cart.
+// FLATWOODS_DEMO / ESCAPE_DEMO: one mission on its own (make flatwoods / make escape_demo). Each has
+// its own block and signature ('S','K','F' at 0xA400, 'S','K','E' at 0xA600), so a demo never
+// touches a Sneaky Kryptid save on the same cart. SOLO_DEMO covers both; SOLO_SID is the mission.
+#if defined(FLATWOODS_DEMO) || defined(ESCAPE_DEMO)
+#define SOLO_DEMO
+#endif
 #ifdef FLATWOODS_DEMO
+#define SOLO_SID FLAT_SID
 #define SAVE ((uint8_t *)0xA400)
 #define SAVE_SIG 'F'
 #define SAVE_VER 3
+#elif defined(ESCAPE_DEMO)
+#define SOLO_SID ESC_SID
+#define SAVE ((uint8_t *)0xA600)
+#define SAVE_SIG 'E'
+#define SAVE_VER 1
 #else
 #define SAVE ((uint8_t *)0xA200)
 #define SAVE_SIG 'D'
@@ -74,6 +84,8 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #endif
 #ifdef FLATWOODS_DEMO
 #define DEMO_VERSION "GUN CAM DEMO V1.0"
+#elif defined(ESCAPE_DEMO)
+#define DEMO_VERSION "NO GUNS DEMO V1.0"
 #elif defined(UNLOCK_ALL)
 #define DEMO_VERSION "DEMO V1.2 UNLOCKED"
 #else
@@ -88,6 +100,8 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 static const uint8_t old_fmt[][3] = {
 #ifdef FLATWOODS_DEMO
     {2, 5, N_GEAR}, {1, 5, OLD_GEAR},
+#elif defined(ESCAPE_DEMO)
+    {0, N_MISSIONS, N_GEAR},                                 // first version: nothing to migrate (version 0 is never written)
 #else
     {3, 5, N_GEAR}, {2, 5, OLD_GEAR}, {1, 4, OLD_GEAR},      // v1.1 + runes, v1.1, v1.0
 #endif
@@ -280,6 +294,8 @@ static void title_screen(void) {
     pal_fade(0, 8, art_pals, 8);
 #ifdef FLATWOODS_DEMO
     center(14, "FLATWOODS DRIFT", 7);
+#elif defined(ESCAPE_DEMO)
+    center(14, "ESCAPE RUN", 7);
 #else
     center(14, "KRYPTIDS IN SPACE", 7);
 #endif
@@ -326,15 +342,16 @@ static uint8_t pilot_select(void) {
         y = 4 + p * 4;
         txt_put(3, y, pilot_names[p], 0, 7);
         txt_put(12, y, p == 0 ? "EASY" : p == 1 ? "MEDIUM" : "HARD", 0, 6);
-#ifdef FLATWOODS_DEMO
+#ifdef SOLO_DEMO
         if (p < 2) {
             uint8_t i;
-            for (i = 0; i < 5; i++) put_tile(3 + i, y + 1, i < pf_best[p][FLAT_SID] ? T_HUD_STAR : T_HUD_STARE, 5);
+            for (i = 0; i < 5; i++) put_tile(3 + i, y + 1, i < pf_best[p][SOLO_SID] ? T_HUD_STAR : T_HUD_STARE, 5);
         } else {
             txt_put(3, y + 1, "HI", 0, 6);
-            put_num(6, y + 1, pf_hi[2][FLAT_SID], 7, 7);
+            put_num(6, y + 1, pf_hi[2][SOLO_SID], 7, 7);
         }
-        if (pf_out[p][FLAT_SID]) txt_put(10, y + 1, out_names[pf_out[p][FLAT_SID]], 0, 6);   // best outcome
+        if (pf_out[p][SOLO_SID])                              // best outcome
+            txt_put(10, y + 1, SOLO_SID == ESC_SID ? (pf_out[p][SOLO_SID] == OUT_CAPTURE ? "ROBBED" : "OUTRUN") : out_names[pf_out[p][SOLO_SID]], 0, 6);
         continue;
 #endif
         if (p < 2) {
@@ -346,9 +363,9 @@ static uint8_t pilot_select(void) {
             put_num(6, y + 1, pf_hi[2][0] + pf_hi[2][1] + pf_hi[2][2] + pf_hi[2][3] + pf_hi[2][4], 7, 7);
         }
     }
-#ifdef FLATWOODS_DEMO
+#ifdef SOLO_DEMO
     center(15, "A: GO   B: BACK", 6);
-    center(17, "SELECT+A: BOSS", 6);
+    center(17, SOLO_SID == ESC_SID ? "SELECT+A: DIVE" : "SELECT+A: BOSS", 6);
 #else
     center(16, "A: GO   B: BACK", 6);
 #endif
@@ -362,7 +379,7 @@ static uint8_t pilot_select(void) {
             sfx_play(SFX_START);
             profile = sel;
             gmode = sel;
-#ifdef FLATWOODS_DEMO
+#ifdef SOLO_DEMO
             start_cp = (joy & J_SELECT) ? 2 : 0;
             wait_frames(20);
 #endif
@@ -619,7 +636,7 @@ static void results(uint8_t sid) {
     bonus = (mid_out == OUT_CAPTURE ? 50 : mid_out == OUT_KILL ? 25 : 0) + (hits_taken == 0 ? 50 : 0);
     pf_credits[profile] = pf_credits[profile] + pay + bonus > 9999 ? 9999 : pf_credits[profile] + pay + bonus;
     save_write();
-#ifdef FLATWOODS_DEMO
+#ifdef SOLO_DEMO
     center(0, "MISSION COMPLETE", 7);
 #else
     { char c[20]; strcpy(c, "MISSION 1 COMPLETE"); c[8] = '1' + sid; center(0, c, 7); }
@@ -648,7 +665,7 @@ static void results(uint8_t sid) {
     }
     if (newhi) center(16, "NEW HIGH SCORE!", 6);
     else if (newbest) center(16, "NEW BEST!", 6);
-#ifdef FLATWOODS_DEMO
+#ifdef SOLO_DEMO
     center(17, "FULL GAME: GITHUB", 7);
 #else
     center(17, "SPEND IT AT FORGE'S", 7);
@@ -711,12 +728,13 @@ void game_main(void) BANKED {
         ending();                       // test ROM only: poke pf_out/pf_best/profile/gmode at the title
         continue;
 #endif
-#ifdef FLATWOODS_DEMO
-        // standalone gun-cam demo: pilot select -> briefing -> Flatwoods Drift -> debrief, and again
+#ifdef SOLO_DEMO
+        // one-mission demo: pilot select -> briefing -> the mission -> debrief, and again
         while (pilot_select()) {
-            sid = FLAT_SID;
+            sid = SOLO_SID;
+            memcpy(g_gear, pf_gear[profile], N_GEAR);
             if (!start_cp) cutscene(intro_meta[sid], intro_text[sid], intro_count[sid]);
-            res = cockpit_run();
+            res = SOLO_SID == ESC_SID ? escape_run() : cockpit_run();
             if (res == RES_CLEAR) {
                 { uint8_t o = (bounty_out ? bounty_out : 1) - 1;
                   cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
