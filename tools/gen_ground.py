@@ -56,10 +56,10 @@ FLOOR = '#0A1210'
 PAL_FLOOR = [FLOOR, '#4A4634', '#1B6B45', '#C6E090']
 # 0 gap, 1 bark, 2 leaf, 3 lit leaf
 PAL_TREE = [FLOOR, '#3A3224', '#146B48', '#4EBE78']
-PAL_STEEL = [FLOOR, '#2A3444', '#5C6880', '#B4C0D4']
+PAL_STEEL = ['#4A4634', '#2A3444', '#5C6880', '#B4C0D4']   # colour 0 = trail dirt, so boulders and the wreck sit on the path, not in black boxes
 N_FLOOR = ['#04080C', '#242818', '#123828', '#7A9450']      # night, for the watcher fight
 N_TREE = ['#04080C', '#1A1610', '#0C3828', '#2A6848']
-N_STEEL = ['#04080C', '#1C2434', '#44506C', '#98A8C4']
+N_STEEL = ['#242818', '#1C2434', '#44506C', '#98A8C4']
 PAL_TAG = ['#0C0E18', '#2C3448', '#F08020', '#FFE860']
 
 # ============================================================ field tiles
