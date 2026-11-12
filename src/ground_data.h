@@ -33,9 +33,9 @@ extern const uint8_t gr_eye_tiles[];  // 4320
 #define GR_EYE_BASE 128
 #define GR_EYE_FT 18
 #define GR_EYE_SHAPE_NT 54
-extern const uint8_t gr_hud_tiles[];  // 176
+extern const uint8_t gr_hud_tiles[];  // 192
 #define GR_HUD_BASE 64
-#define GR_HUD_NT 11
+#define GR_HUD_NT 12
 #define GR_ST_G_DOWN 0
 #define GR_ST_G_DOWN2 4
 #define GR_ST_G_UP 8

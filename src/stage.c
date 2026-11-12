@@ -297,29 +297,66 @@ static uint8_t chain_target(uint8_t x, uint8_t y, uint8_t skip) {
     return best;
 }
 // which enemy a shot at (bx, by) touches; chain segments report via *seg
-static uint8_t shot_hits(uint8_t bx, uint8_t by, uint8_t *seg) {
-    uint8_t j, t, s;
-    *seg = 0;
+// Player shots against enemies and enemy bullets. The targets are gathered once per frame into
+// small 8-bit tables (centre and reach), so each shot only walks the live ones; this loop used
+// to cost ~40 scanlines a frame at max weapon (16-bit shifts per shot per enemy per bullet).
+static uint8_t ht_n, ht_j[MAXE], ht_x[MAXE], ht_y[MAXE], ht_rx[MAXE], ht_ry[MAXE], ht_eel[MAXE];
+static uint8_t tb_n, tb_j[MAXEB], tb_x[MAXEB], tb_y[MAXEB];
+static uint8_t ht_y0, ht_y1, tb_y0, tb_y1;                  // screen rows where any target can be hit (whole-loop early out)
+static void targets_gather(void) {
+    uint8_t j, t, y, n = 0, s, c;
+    ht_y0 = 255; ht_y1 = 0;
     for (j = 0; j < MAXE; j++) {
         t = e_type[j];
         if (t == E_NONE || (e_tf[t] & TF_NOHIT) || (e_fl[j] & EF_HIDDEN)) continue;
-        switch (e_style[t]) {
-        case SY_32:
-            if (NEAR(bx, (e_x[j] >> 8) + 16, 15) && NEAR(by, (e_y[j] >> 8) + 12, 11)) return j;
-            break;
-        case SY_EEL:
-            if ((e_y[j] >> 8) > 20 && NEAR(bx, (e_x[j] >> 8) + 8, 9) && NEAR(by, (e_y[j] >> 8) + 8, 9)) return j;
-            if (e_c[j] < NCH) for (s = 0; s < NCSEG; s++)
-                if (NEAR(bx, ch_x[e_c[j]][s], 5) && NEAR(by, ch_y[e_c[j]][s], 5)) { *seg = 1; return j; }
-            break;
-        default:
-            if ((e_y[j] >> 8) > 20 && NEAR(bx, (e_x[j] >> 8) + 8, 9) && NEAR(by, (e_y[j] >> 8) + 8, 9)) return j;
+        y = e_y[j] >> 8;
+        ht_j[n] = j; ht_eel[n] = 0;
+        if (e_style[t] == SY_32) { ht_x[n] = (e_x[j] >> 8) + 16; ht_y[n] = y + 12; ht_rx[n] = 15; ht_ry[n] = 11; }
+        else {
+            ht_x[n] = (e_x[j] >> 8) + 8; ht_y[n] = y + 8; ht_rx[n] = 9; ht_ry[n] = 9;
+            if (y <= 20) ht_rx[n] = 0;                        // head not on screen yet (segments still count)
+            if (e_style[t] == SY_EEL && e_c[j] < NCH) {
+                ht_eel[n] = 1; c = e_c[j];
+                for (s = 0; s < NCSEG; s++) { y = ch_y[c][s]; if (y - 5 < ht_y0) ht_y0 = y - 5; if (y + 5 > ht_y1) ht_y1 = y + 5; }
+            }
+        }
+        if (ht_rx[n]) { y = ht_y[n] - ht_ry[n]; if (y < ht_y0) ht_y0 = y; y = ht_y[n] + ht_ry[n]; if (y > ht_y1) ht_y1 = y; }
+        n++;
+    }
+    ht_n = n;
+    n = 0;
+    tb_y0 = 255; tb_y1 = 0;
+    for (j = 0; j < MAXEB; j++) if (eb_on[j] == 1) {
+        tb_j[n] = j; tb_x[n] = (eb_x[j] >> 8) + 3; y = (eb_y[j] >> 8) + 3; tb_y[n] = y;
+        if (y < tb_y0) tb_y0 = y; if (y > tb_y1) tb_y1 = y;
+        n++;
+    }
+    tb_n = n; tb_y0 -= 7; tb_y1 += 7;
+}
+static uint8_t shot_hits(uint8_t bx, uint8_t by, uint8_t *seg) {
+    uint8_t k, j, s, c, r;
+    *seg = 0;
+    if (by < ht_y0 || by > ht_y1) return 0xFF;
+    for (k = 0; k < ht_n; k++) {
+        r = ht_rx[k];
+        if (r && (uint8_t)(by - ht_y[k] + ht_ry[k]) < (uint8_t)(ht_ry[k] * 2) && (uint8_t)(bx - ht_x[k] + r) < (uint8_t)(r * 2)) {
+            j = ht_j[k];
+            if (e_type[j] == E_NONE || (e_tf[e_type[j]] & TF_NOHIT)) continue;      // killed by an earlier shot this frame
+            return j;
+        }
+        if (ht_eel[k]) {
+            j = ht_j[k];
+            if (e_type[j] == E_NONE || (e_tf[e_type[j]] & TF_NOHIT)) continue;
+            c = e_c[j];
+            for (s = 0; s < NCSEG; s++)
+                if (NEAR(bx, ch_x[c][s], 5) && NEAR(by, ch_y[c][s], 5)) { *seg = 1; return j; }
         }
     }
     return 0xFF;
 }
 static void pbullets_update(void) {
-    uint8_t i, j, bx, by, tx, t, seg, ty;
+    uint8_t i, j, bx, by, tx, t, seg, ty, k;
+    targets_gather();
     for (i = 0; i < MAXPB; i++) {
         if (!pb_on[i]) continue;
         t = pb_type[i];
@@ -369,19 +406,18 @@ static void pbullets_update(void) {
             }
         }
         // shots knock enemy bullets out of the air; big orbs need rune rounds (2 hits)
-        for (j = 0; j < MAXEB; j++) {
+        if (by >= tb_y0 && by <= tb_y1) for (k = 0; k < tb_n; k++) {
+            if ((uint8_t)(bx - tb_x[k] + 5) >= 10 || (uint8_t)(by - tb_y[k] + 7) >= 14) continue;
+            j = tb_j[k];
             if (eb_on[j] != 1) continue;
-            tx = (eb_x[j] >> 8) + 3; ty = (eb_y[j] >> 8) + 3;
-            if (NEAR(bx, tx, 5) && NEAR(by, ty, 7)) {
-                if (eb_big[j]) {
-                    pb_on[i] = 0;
-                    if (!g_gear[GEAR_RUNES]) { sfx_play(SFX_TICK); break; }
-                    if (eb_big[j] == 1) { eb_big[j] = 2; sfx_play(SFX_TICK); break; }
-                } else if (t != PB_PIERCE) pb_on[i] = 0;    // the lance plows through small bullets
-                eb_on[j] = 9; eb_vx[j] = 0; eb_vy[j] = 0;      // spark, then gone
-                add_score(10);
-                break;
-            }
+            if (eb_big[j]) {
+                pb_on[i] = 0;
+                if (!g_gear[GEAR_RUNES]) { sfx_play(SFX_TICK); break; }
+                if (eb_big[j] == 1) { eb_big[j] = 2; sfx_play(SFX_TICK); break; }
+            } else if (t != PB_PIERCE) pb_on[i] = 0;    // the lance plows through small bullets
+            eb_on[j] = 9; eb_vx[j] = 0; eb_vy[j] = 0;      // spark, then gone
+            add_score(10);
+            break;
         }
         if (!pb_on[i] || !k_hpmax || k_state >= 20) continue;
         if (NEAR(bx, boss_cx(), k_hw) && by > k_hy0 - k_retreat && by < k_hy1 - k_retreat) {

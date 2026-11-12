@@ -167,6 +167,9 @@ for f in range(9):
     a = Z(); a[1, :] = 1; a[6, :] = 1; a[2:6, :f] = 3; hud.append(a)
 a = Z(); a[1:3, 1:3] = 3; a[1, 2] = 0; a[3, 3] = 3; a[4, 4] = 3; a[5:7, 5:7] = 3; a[6, 5] = 0; hud.append(a)
 a = Z(); a[3:5, 1:7] = 3; a[2, 2:6] = 3; a[5, 2:6] = 3; a[3:5, 3:5] = 1; hud.append(a)
+wolf = rows(["3......3", "33....33", "3333.333", "33333333", ".313313.", ".333333.", "..3113..", "...33..."], 8)
+wolf = np.where(wolf == 1, 0, wolf).astype(np.uint8)       # eyes as holes; the HUD palette's colour 3 for the head
+hud.append(wolf)                                         # Graul's head: the lives icon on the Hunter HUD
 carray("gr_hud_tiles", sum((enc(t) for t in hud), [])); define("GR_HUD_BASE", 64); define("GR_HUD_NT", len(hud))
 
 # ============================================================ sprites (OBJ bank 1), 8x16 units, 16-px frames = 2 columns
@@ -233,7 +236,7 @@ assert len(spr) <= 128, len(spr)
 OBJ = [['#000000', '#FFFFFF', '#FFE860', '#F08020'],         # 3 shots: warm, bright
        ['#000000', '#7A3410', '#F08020', '#FFE860'],         # 4 critters, the claw
        ['#000000', '#4A5468', '#B4C0D4', '#FFB020'],         # 5 troopers
-       ['#000000', '#6C7890', '#D0DCEC', '#58E8D0']]         # 6 Graul, his mace, the ship's guns: cool
+       ['#000000', '#6C7890', '#C0D0F0', '#48D8E8']]         # 6 Graul, his mace, the ship's guns: cool
 carray("gr_objpal", sum((pal_words(p) for p in OBJ), []), "uint16_t")
 
 # previews

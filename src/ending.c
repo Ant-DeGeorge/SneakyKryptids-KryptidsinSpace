@@ -67,29 +67,35 @@ static const char * const zannah_line[4] = {
     "DEAD ONES\nPAY HALF,\nGENIUS. DO\nYOU HATE\n$&!? MONEY?",
     "ONE GOT\nAWAY. THAT'S\nMY $&!?\nMONEY OUT\nTHERE.",
 };
-static const char * const forge_line[2] = {
+static const char * const forge_line[3] = {
     "MY RUNES ARE\nHUMMING.\nSOMETHING'S\nCALLING TO\nWHAT'S IN\nTHE HOLD...",
     "MY RUNES ARE\nHUMMING.\nSOMETHING'S\nOUT THERE.\nWATCHING\nUS...",
+    "THE WATCHER\nWAS ONLY A\nLOOKOUT. MY\nRUNES SAY\nSOMETHING\nBIGGER COMES",
 };
 
 // ------------------------------------------------------------------ watcher: kin of the captured
-// index = boss sid of the latest capture (0 Kraken .. 4 Flatwoods), 5 = nobody captured
-static const uint8_t kin_shape[6] = {0, 1, 2, 3, 4, 2};
-static const uint16_t kin_pal[6][4] = {
+// index = boss sid of the latest capture (0 Kraken .. 4 Flatwoods), 5 = nobody captured,
+// 6/7 = the Watcher (mission 7) was captured/killed: what it was watching for comes itself
+static const uint8_t kin_shape[8] = {0, 1, 2, 3, 4, 2, 4, 4};
+static const uint16_t kin_pal[8][4] = {
     { RGB8(0, 0, 0), RGB8(96, 16, 72), RGB8(224, 64, 160), RGB8(255, 224, 240) },   // brood of the Kraken
     { RGB8(0, 0, 0), RGB8(104, 80, 0), RGB8(248, 208, 32), RGB8(255, 255, 224) },   // storm-chick of the Thunderbird
     { RGB8(0, 0, 0), RGB8(112, 8, 8), RGB8(240, 40, 24), RGB8(255, 224, 160) },     // the Devil's twelve siblings
     { RGB8(0, 0, 0), RGB8(24, 56, 112), RGB8(120, 200, 255), RGB8(240, 248, 255) }, // another Wendigo
     { RGB8(0, 0, 0), RGB8(8, 80, 24), RGB8(64, 240, 96), RGB8(224, 255, 208) },     // the Flatwoods crew
     { RGB8(0, 0, 0), RGB8(64, 24, 104), RGB8(168, 80, 255), RGB8(240, 224, 255) },  // unknown
+    { RGB8(0, 0, 0), RGB8(120, 88, 24), RGB8(248, 200, 96), RGB8(255, 255, 240) },  // the master, after the Watcher was caged
+    { RGB8(0, 0, 0), RGB8(120, 88, 24), RGB8(248, 200, 96), RGB8(255, 255, 240) },  // the master, after the Watcher fell
 };
-static const char * const kin_line[6][2] = {
+static const char * const kin_line[8][2] = {
     {"YOU TOOK MOTHER.", "THE BROOD REMEMBERS."},
     {"YOU CAGED THE SKY.", "NOW THE STORM HUNTS."},
     {"TWELVE OF US", "ARE STILL OUT HERE."},
     {"THE HUNGER SPREADS.", "YOUR TIME WILL COME."},
     {"WE CAME FOR HIM.", "NOW WE COME FOR YOU."},
     {"NO CAGE HOLDS ME.", "YOUR TIME WILL COME."},
+    {"YOU CAGED MY EYES.", "NOW I COME MYSELF."},
+    {"YOU PUT OUT MY EYES.", "NOW I COME MYSELF."},
 };
 
 // ------------------------------------------------------------------ helpers
@@ -148,11 +154,15 @@ static void tally(void) {
         else if (o == OUT_KILL) n_kill++;
         else n_flee++;
     }
+    {   // the Watcher (mission 7) counts as a bounty too, and decides who is watching now
+        uint8_t o = pf_out[profile][GRD_SID];
+        if (o == OUT_CAPTURE) { n_cap++; kin = 6; } else if (o == OUT_KILL) { n_kill++; kin = 7; } else if (o) n_flee++;
+    }
     for (i = 0; i < N_MISSIONS; i++) { sum += pf_best[profile][i]; tot += pf_hi[profile][i]; }
     r = (sum + (N_MISSIONS >> 1)) / N_MISSIONS;        // 1..5
     if (r < 1) r = 1;
     tier = r >= 5 ? 3 : r >= 4 ? 2 : r >= 3 ? 1 : 0;
-    outc = n_flee ? 3 : n_cap == N_BOUNTY ? 0 : n_kill > n_cap ? 2 : 1;
+    outc = n_flee ? 3 : n_cap == N_BOUNTY + 1 ? 0 : n_kill > n_cap ? 2 : 1;
 
     e_prep();
     set_bkg_palette(7, 1, e_pal_text);
@@ -241,7 +251,7 @@ static void banter(void) {
     if (say(P_YETI, yeti_line[tier])) return;
     if (say(outc ? P_ZANNAH + 1 : P_ZANNAH, zannah_line[outc])) return;
     if (say(P_STATIC + 1, static_line[tier])) return;
-    say(P_FORGE, forge_line[kin == 5]);
+    say(P_FORGE, forge_line[kin >= 6 ? 2 : kin == 5]);
 }
 
 // ------------------------------------------------------------------ 3. the watcher
