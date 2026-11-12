@@ -221,9 +221,87 @@ def star_chart():
     return sc.build()
 
 
+# ================================================================ BRIEF: "Contract Terms" (A minor, 75 BPM)
+# The v1.1 briefing was a 6-second arpeggio loop under 30-40 seconds of talking. Same arpeggio and
+# chords (Am F G E), now 32 seconds: the figure alone, then a slow lead over it, then a middle part.
+def contract_terms():
+    sc = Score('Contract Terms', 6)
+    sc.duty(1, 'Arp 12.5% soft', duty=0, vol=7, decay=3)
+    sc.duty(2, 'Lead 25% calm', duty=1, vol=9, decay=0)
+    sc.wave(1, 'Bass round', 0, level=2)
+    sc.waveform(0, W_SOFT)
+    sc.noise(1, 'Kick soft', vol=8, decay=1)
+    sc.noise(3, 'Hat', vol=3, decay=1, metallic=True)
+    sc.drums = {'k': (1, 22), 'h': (3, 60)}
+    FIG = {'Am': 'A4 C5 E5 C5', 'F': 'F4 A4 C5 A4', 'G': 'G4 B4 D5 B4', 'E': 'E4 G#4 B4 G#4', 'Dm': 'D4 F4 A4 F4'}
+    ROOT = {'Am': 'A2', 'F': 'F2', 'G': 'G2', 'E': 'E2', 'Dm': 'D2'}
+    def arp(chords): return '@1 ' + ' | '.join(' '.join(f'{n}:2' for n in (FIG[c] + ' ' + FIG[c]).split()) for c in chords.split())
+    def bass(chords): return '@1 ' + ' | '.join(f'{ROOT[c]}:12 {ROOT[c]}:4' for c in chords.split())
+    A = 'Am F G E'
+    sc.play(1, arp(A)); sc.play(3, bass(A)); sc.play(2, 'R:16 | R:16 | R:16 | R:16')
+    sc.drum('................' * 3 + '............h.h.')
+    sc.play(1, arp(A + ' ' + A)); sc.play(3, bass(A + ' ' + A))
+    sc.play(2, '@2 E5:8/423 C5:4 A4:4 | A4:8/423 C5:4 F5:4 | D5:8/423 B4:4 G4:4 | B4:12/433 R:4 | '
+               'A5:8/423 E5:4 C5:4 | F5:6 E5:2 C5:8/423 | D5:6 G5:2 B5:8/423 | G#5:12/433 R:4')
+    sc.drum('k.......h.......' * 7 + 'k.......h...h.h.')
+    C = 'Dm Am Dm E F G Am E'
+    sc.play(1, arp(C)); sc.play(3, bass(C))
+    sc.play(2, 'F5:8/423 D5:4 A4:4 | E5:8/423 C5:4 A4:4 | D5:4 F5:4 A5:8/423 | G#5:8/433 E5:4 B4:4 | '
+               'A5:6 G5:2 F5:8/423 | G5:6 F5:2 D5:8/423 | E5:4 C5:4 A4:4 C5:4 | B4:12/433 R:4')
+    sc.drum('k.......h...k...' * 7 + 'k...h...h.h.h.h.')
+    return sc.build()
+
+
+# ================================================================ END: "Long Way Home" (D major, 112 BPM)
+# The v1.1 ending was an 8-second loop under a two-minute ending. Same victory theme (the D major lift
+# of the title), now 43 seconds: theme, theme an octave up with an echo, a new middle eight, theme.
+def long_way_home():
+    import levels
+    sc = Score('Long Way Home', 8)
+    sc.duty(1, 'Arp 12.5% pluck', duty=0, vol=8, decay=2)
+    sc.duty(2, 'Lead 50% warm', duty=2, vol=11, decay=0)
+    sc.duty(3, 'Lead 25% bright', duty=1, vol=12, decay=0)
+    sc.duty(4, 'Echo 25% quiet', duty=1, vol=5, decay=3)
+    sc.wave(1, 'Bass soft', 0, level=2)
+    sc.waveform(0, W_TRI)
+    sc.noise(1, 'Kick', vol=11, decay=1)
+    sc.noise(2, 'Snare', vol=9, decay=2)
+    sc.noise(3, 'Hat', vol=5, decay=1, metallic=True)
+    sc.noise(5, 'Crash', vol=9, decay=5)
+    sc.drums = {'k': (1, 22), 's': (2, 41), 'h': (3, 60), 'c': (5, 33)}
+    theme = ('D4:2 A4:2 F#4 G4 A4:2 B4:2 A4 G4 F#4:2 E4:2 | D4:2 A4:2 F#4 G4 A4 B4 D5:6 R:2 | '
+             'G4:2 A4 B4 A4:2 F#4:2 E4:2 F#4 G4 A4:2 D4:2 | E4 F#4 G4 A4 B4 C#5 D5 E5 D5:6 R:2')
+    T_ch = 'D:2 G:2 | D | G:2 A:2 | G:2 A:2'
+    T_bs = 'D2:2 G1:2 | D2 | G1:2 A1:2 | G1:2 A1:2'
+    beat = 'k.h.s.h.k.k.s.h.'
+    # theme, plain: lead, plucked chords, bass, a light beat
+    sc.play(1, '@1 ' + chord_arp(T_ch)); sc.play(2, '@2 ' + theme); sc.play(3, '@1 ' + bass_drive(T_bs))
+    sc.drum('c...h...k...h...' + 'k...h...s...h...' * 2 + 'k...h...s.s.ssss')
+    # theme an octave up, ch1 echoes it two rows behind
+    up = levels.tr(theme, 12)
+    sc.play(2, '@3 ' + up)
+    levels.echo(sc, 1, '@4 ' + theme, 2)
+    sc.play(3, '@1 ' + bass_drive(T_bs))
+    sc.drum('c.h.s.h.k.k.s.h.' + beat * 2 + 'k.h.s.h.s.s.ssss')
+    # middle eight: the long way round (G A Bm Bm | G A D A)
+    B_ch = 'G | A | Bm | Bm | G | A | D | A'
+    sc.play(1, '@1 ' + chord_arp(B_ch))
+    sc.play(2, '@2 B4:4 D5:4 G5:6/422 F#5:2 | E5:6/422 C#5:2 A4:8/432 | D5:4 F#5:4 B5:8/433 | A5:4 F#5:4 D5:4 B4:4 | '
+               'B4:2 D5:2 G5:2 B5:6/422 A5:2 G5:2 | A5:6/422 G5:2 E5:4 C#5:4 | D5:4 F#5:4 A5:4 D6:4 | C#6:8/433 A5:4 E5:4')
+    sc.play(3, '@1 ' + bass_drive('G1 | A1 | B1 | B1 | G1 | A1 | D2 | A1'))
+    sc.drum('c.h.s.h.k.k.s.h.' + beat * 6 + 'k.s.s.s.ssssssss')
+    # theme home again, both leads
+    sc.play(2, '@3 ' + up)
+    sc.play(1, '@1 ' + chord_arp(T_ch))
+    sc.play(3, '@1 ' + bass_drive(T_bs))
+    sc.drum('c.h.s.h.k.k.s.h.' + beat * 2 + 'k.h.s.h.k.k.s...')
+    return sc.build()
+
+
 NEW = {'TITLE': title, 'MAP': star_chart}
 import levels
 NEW.update(levels.SONGS)
+NEW.update({'BRIEF': contract_terms, 'END': long_way_home})
 
 
 def main(only=None):

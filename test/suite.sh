@@ -1,7 +1,7 @@
 #!/bin/sh
 # balance suite: every stage, kid + pro bots, all three modes. One JSON-ish line per run.
 ROM=${1:-build/sneaky_kryptid.gbc}
-STAGES=${2:-"1 2 3 4 5 6 7"}
+STAGES=${2:-"1 2 3 4 5 6"}   # mission 7 is its own ROM (tree_line.gbc); bot_ground.py needs a 7-mission build
 for s in $STAGES; do
   [ "$s" = 5 ] && continue
   [ "$s" = 6 ] && continue

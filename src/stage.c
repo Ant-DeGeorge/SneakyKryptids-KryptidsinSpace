@@ -998,7 +998,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
                     continues_used++;
                     if (HUNTER) { score = 0; bounty_pts = 0; } else bounty_pts >>= 1;   // continues cost the bounty
                     lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];
-                    if (HUNTER) wlevel = g_gear[GEAR_CANNON];
+                    if (HUNTER) { wlevel = g_gear[GEAR_CANNON]; if (checkpoint == 2 && wlevel < 1) wlevel = 1; }   // a continue at the boss is not a pea-shooter fight
                     restart_from(checkpoint);
                     continue;
                 }

@@ -40,7 +40,7 @@ static const Cmd script[] = {
     {RAT(S1_ROW_ICE0, 66), C_ICE, 40, 0}, {RAT(S1_ROW_ICE0, 68), C_ICE, 120, 0},
     {RAT(S1_ROW_ICE0, 74), C_SKIFF, 0, 2},
     {RAT(S1_ROW_ICE0, 82), C_KLV, 80, 0}, {RAT(S1_ROW_ICE0, 84), C_KLV | H, 40, 0}, {RAT(S1_ROW_ICE0, 90), C_ICE, 92, 0},
-    {S1_CP1 + 1, C_COMM, CM1_ICE, 0}, {S1_CP1 + 4, C_ICE, 48, 0}, {S1_CP1 + 8, C_ICE, 112, 0}, {S1_CP1 + 14, C_ICE | H, 80, 0},
+    {S1_CP1 + 1, C_COMM, CM1_NUBS, 0}, {S1_CP1 + 4, C_MID, 0, 0}, {S1_CP1 + 8, C_ICE, 48, 0}, {S1_CP1 + 11, C_ICE, 112, 0}, {S1_CP1 + 14, C_ICE | H, 80, 0},
     {RAT(S1_ROW_ICE0, 112), C_KLSWOOP, 0, 0}, {RAT(S1_ROW_ICE0, 116), C_KLSWOOP, 1, 0}, {RAT(S1_ROW_ICE0, 124), C_ICE, 60, 0}, {RAT(S1_ROW_ICE0, 126), C_ICE | H, 100, 0},
     {PAL_TENT_ROW, C_PAL, 6, BP_TENT},
     {RAT(S1_ROW_CONVOY0, 4), C_COMM, CM1_TANKER, 0},

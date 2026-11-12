@@ -219,6 +219,11 @@ static void clear_shots(uint8_t pts) {
 static void boom(uint8_t x, uint8_t y) { boom_at(x, y); }
 static void er_hit(void) {
     if (p_inv || dash_t || st != ST_PLAY) return;
+    if (GM == MODE_CADET && er_boost >= BOOST_MAX) {         // Cadet: a full meter dodges for you
+        er_boost = 0; dash_t = 14; dash_dx = px < XO + 80 ? 4 : -4; dash_dy = 0; p_inv = 30;
+        sfx_play(SFX_WHOOSH); hud_dirty = 1;
+        return;
+    }
     hits_taken++; sec_clean = 0;
     shake_t = 12; hud_dirty = 1;
     if (hearts > 1) { hearts--; p_inv = 80; sfx_play(SFX_HURT); hud_dirty = 1; return; }
@@ -231,7 +236,7 @@ static void graze(uint8_t x, uint8_t y) {
     graze_t = 8; graze_x = x; graze_y = y;
     if (er_boost < BOOST_MAX) {
         er_boost += gain_tab[GM];
-        if (er_boost >= BOOST_MAX) { er_boost = BOOST_MAX; tag("BOOST READY: A ", 90); sfx_play(SFX_POWER); }
+        if (er_boost >= BOOST_MAX) { er_boost = BOOST_MAX; tag(GM == MODE_CADET ? "BOOST READY!   " : "BOOST READY: A ", 90); sfx_play(SFX_POWER); }
     }
     sfx_play(SFX_TICK);
 }
@@ -700,7 +705,8 @@ uint8_t escape_run(void) BANKED {
         shots_update(); mis_update(); rock_update(step);
         if (er_pod == 1) {
             if (er_t & 1) er_pod_y++;
-            if ((er_t & 7) == 0) {                          // drifts off the safe line, not toward the ship
+            if (GM == MODE_CADET) er_pod_x += (er_pod_x < px) ? ((er_t & 3) == 0) : -((er_t & 3) == 0);   // Cadet: it drifts toward the ship
+            else if ((er_t & 7) == 0) {                     // drifts off the safe line, not toward the ship
                 if (er_pod_x < XO + 80) { if (er_pod_x > XO + 12) er_pod_x--; }
                 else if (er_pod_x < XO + 148) er_pod_x++;
             }

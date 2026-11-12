@@ -84,7 +84,7 @@ int8_t wind;
 static const uint16_t mid_cap_thr[2][N_STAGES] = {{10000, 10000, 10000, 10000}, {15000, 16000, 16000, 16000}};
 extern const uint8_t mid_comm[], boss_out_comm[];
 // boss outcome thresholds (points this mission, boss bonus included) [mode][stage]
-static const uint32_t cap_thr[2][N_STAGES] = {{45000, 45000, 45000, 45000}, {66000, 72000, 74000, 72000}};
+static const uint32_t cap_thr[2][N_STAGES] = {{45000, 45000, 45000, 45000}, {64000, 68000, 69000, 72000}};   // Hunter: a clean run captures
 static const uint32_t kill_thr[2][N_STAGES] = {{30000, 30000, 30000, 30000}, {48000, 52000, 54000, 52000}};
 uint8_t outro_t;
 

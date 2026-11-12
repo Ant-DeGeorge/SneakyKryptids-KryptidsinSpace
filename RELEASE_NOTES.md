@@ -20,6 +20,20 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
   its boss's main attack, and the forest trail art and bat-back mace for The Tree Line.
 - Saves: unchanged layout (version 5), so v1.3 saves carry over.
 
+### Release pass (2026-11-12)
+- **Capturing works again in missions 1 and 3.** Nubs is back as the mid-boss in both (his points are
+  what make a capture reachable, and he needs introducing before his gang shows up in mission 6).
+  Mission 3's new stomp lesson now comes just before him; its script rows were out of order and are fixed.
+- **Hunter:** a clean run captures in missions 1-3 again (thresholds 64000 / 68000 / 69000), and a
+  continue at a boss starts with a level-1 weapon instead of the starting gun.
+- **Cadet, Escape Run:** the automatic dodge on a full boost meter is back, and the brig pod drifts
+  toward the ship.
+- **Story:** the mission 1 briefing says what the job is again, the Marrow briefing gets its punchline
+  back, and the four boss call-outs are short again (the Old Earth names stay in the briefings).
+- **Music:** the briefing theme (Contract Terms) and the ending theme (Long Way Home) were 6- and
+  8-second loops; both are now full arrangements of the same tunes (32 and 43 seconds, with harmony,
+  bass and drums).
+
 ## Escape Run: no-guns demo v1.0 (2026-11-11)
 - `escape_run.gbc` (`escape_run_nosave.gbc` without save RAM): mission 6 as its own short demo.
   Studio card, title, pilot select, briefing, the run and the debrief, then back to pilot select.

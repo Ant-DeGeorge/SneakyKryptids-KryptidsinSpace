@@ -31,7 +31,7 @@ static const Cmd script[] = {
     {RAT(FO, 100), C_AMBUSH, 72, 0}, {RAT(FO, 102), C_AMBUSH | H, 104, 0},
     {RAT(FO, 110), C_IMPS, 40, 1}, {RAT(FO, 114), C_IMPS, 120, 0},
     {RAT(FO, 122), C_CONES, 96, 0}, {RAT(FO, 126), C_AMBUSH, 56, 0},
-    {S3_CP1 + 1, C_COMM, CM3_NUBS, 0}, {S3_CP1 + 4, C_GAP, 0, 0}, {S3_CP1 + 16, C_GAP, 1, 0}, {S3_CP1 + 28, C_AMBUSH, 80, 0},
+    {S3_CP1 + 1, C_COMM, CM3_GAP, 0}, {S3_CP1 + 3, C_GAP, 0, 0}, {S3_CP1 + 8, C_COMM, CM3_NUBS, 0}, {S3_CP1 + 10, C_MID, 0, 0}, {S3_CP1 + 13, C_GAP, 1, 0},
     {RAT(CA, 34), C_IMPS, 72, 0}, {RAT(CA, 40), C_AMBUSH, 104, 0},
     {RAT(CA, 48), C_CONES, 48, 0}, {RAT(CA, 50), C_CONES | H, 112, 0},
     {RAT(CA, 58), C_IMPS, 96, 0}, {RAT(CA, 62), C_AMBUSH | H, 48, 0},
