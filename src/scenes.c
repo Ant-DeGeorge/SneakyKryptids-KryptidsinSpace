@@ -42,12 +42,12 @@ uint8_t pf_gear[N_PROFILES][N_GEAR];
 uint8_t g_gear[N_GEAR];
 uint8_t bounty_out, mid_out;
 uint32_t bounty_pts;
-static const uint16_t pay_base[N_MISSIONS] = {100, 150, 200, 250, 300, 350};
+static const uint16_t pay_base[N_MISSIONS] = {100, 150, 200, 250, 300, 350, 400};
 static const char * const out_names[4] = {"", "ESCAPED", "KILLED", "CAPTURED"};
 
 static const char * const pilot_names[N_PROFILES] = {"CADET", "PILOT", "HUNTER"};
-static const char * const boss_names[N_MISSIONS] = {"SPACE KRAKEN", "THUNDERBIRD", "JERSEY DEVIL", "WENDIGO", "FLATWOODS MONSTER", "NUBS'S GANG"};
-static const char * const mission_names[N_MISSIONS] = {"RIMEVEIL LANE", "STORMWALL NEBULA", "BARRENS BELT", "FROSTBITE MOON", "FLATWOODS DRIFT", "ESCAPE RUN"};
+static const char * const boss_names[N_MISSIONS] = {"SPACE KRAKEN", "THUNDERBIRD", "JERSEY DEVIL", "WENDIGO", "FLATWOODS MONSTER", "NUBS'S GANG", "THE WATCHER"};
+static const char * const mission_names[N_MISSIONS] = {"RIMEVEIL LANE", "STORMWALL NEBULA", "BARRENS BELT", "FROSTBITE MOON", "FLATWOODS DRIFT", "ESCAPE RUN", "THE TREE LINE"};
 
 static const uint16_t pal_text[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(72, 224, 200), RGB8(248, 248, 248) };
 static const uint16_t pal_panel[4] = { RGB8(12, 14, 24), RGB8(44, 52, 72), RGB8(232, 48, 72), RGB8(248, 248, 248) };
@@ -71,25 +71,25 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #define SOLO_SID FLAT_SID
 #define SAVE ((uint8_t *)0xA400)
 #define SAVE_SIG 'F'
-#define SAVE_VER 3
+#define SAVE_VER 4
 #elif defined(ESCAPE_DEMO)
 #define SOLO_SID ESC_SID
 #define SAVE ((uint8_t *)0xA600)
 #define SAVE_SIG 'E'
-#define SAVE_VER 1
+#define SAVE_VER 2
 #else
 #define SAVE ((uint8_t *)0xA200)
 #define SAVE_SIG 'D'
-#define SAVE_VER 4
+#define SAVE_VER 5
 #endif
 #ifdef FLATWOODS_DEMO
 #define DEMO_VERSION "GUN CAM DEMO V1.0"
 #elif defined(ESCAPE_DEMO)
 #define DEMO_VERSION "NO GUNS DEMO V1.0"
 #elif defined(UNLOCK_ALL)
-#define DEMO_VERSION "DEMO V1.2 UNLOCKED"
+#define DEMO_VERSION "DEMO V1.3 UNLOCKED"
 #else
-#define DEMO_VERSION "DEMO V1.2"
+#define DEMO_VERSION "DEMO V1.3"
 #endif
 #define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
 #define SV_LEN(n, g) (4 + N_PROFILES * PF_LEN(n, g) + 1)
@@ -99,11 +99,11 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 // the new fields start empty, and it is written back in the current layout.
 static const uint8_t old_fmt[][3] = {
 #ifdef FLATWOODS_DEMO
-    {2, 5, N_GEAR}, {1, 5, OLD_GEAR},
+    {3, 6, N_GEAR}, {2, 5, N_GEAR}, {1, 5, OLD_GEAR},
 #elif defined(ESCAPE_DEMO)
-    {0, N_MISSIONS, N_GEAR},                                 // first version: nothing to migrate (version 0 is never written)
+    {1, 6, N_GEAR},                                          // the six-mission layout
 #else
-    {3, 5, N_GEAR}, {2, 5, OLD_GEAR}, {1, 4, OLD_GEAR},      // v1.1 + runes, v1.1, v1.0
+    {4, 6, N_GEAR}, {3, 5, N_GEAR}, {2, 5, OLD_GEAR}, {1, 4, OLD_GEAR},      // v1.2, v1.1 + runes, v1.1, v1.0
 #endif
 };
 static uint8_t sum8(uint8_t *p, uint8_t n) { uint8_t s = 0x5A; while (n--) s += *p++; return s; }
@@ -407,7 +407,7 @@ static uint8_t mission_map(void) {
     txt_put(1, 1, pilot_names[profile], 0, 7);
     txt_put(15, 1, "$", 0, 6); put_num(16, 1, pf_credits[profile], 4, 7);
     for (s = 0; s < N_MISSIONS; s++) {
-        y = 3 + s * 2;
+        y = 2 + s * 2;
         if (s <= top) {
             char c[2]; c[0] = '1' + s; c[1] = 0;
             txt_put(2, y, c, 0, 6);
@@ -420,7 +420,6 @@ static uint8_t mission_map(void) {
             txt_put(4, y, mission_names[s], 0, 4);            // greyed out until unlocked
         }
     }
-    center(15, "BOUNTY:", 6);
     center(17, "A:GO  START:ARMORY", 6);
     screen_on(LCDC_SCREEN);
     music_play(MUS_MAP);
@@ -435,8 +434,8 @@ static uint8_t mission_map(void) {
             center(16, boss_names[sel], 7);
         }
         // the Sneaky Kryptid parks next to the chosen mission
-        oam_fixed(1, 0 * 8 + 8, (3 + sel * 2) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP, 0);
-        oam_fixed(2, 1 * 8 + 8, (3 + sel * 2) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP + 2, 0);
+        oam_fixed(1, 0 * 8 + 8, (2 + sel * 2) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP, 0);
+        oam_fixed(2, 1 * 8 + 8, (2 + sel * 2) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP + 2, 0);
         if (joy_new & J_START) { sfx_play(SFX_SELECT); return 0xFE; }
         if (joy_new & J_A) {
             sfx_play(SFX_START);
@@ -448,82 +447,7 @@ static uint8_t mission_map(void) {
     }
 }
 
-// ------------------------------------------------------------------ Forge's armory
-static const char * const gear_name[N_GEAR] = {"HULL PLATING", "CANNON TUNE", "BOMB RACK", "BUDDY BAY", "RUNE ROUNDS",
-    "LANCE RUNE", "RICOCHET RUNE", "CHAIN RUNE"};
-static const uint8_t gear_max[N_GEAR] = {2, 2, 2, 2, 1, 1, 1, 1};
-static const uint16_t gear_cost[N_GEAR][2] = {{150, 350}, {120, 300}, {80, 200}, {200, 400}, {300, 0}, {250, 0}, {250, 0}, {300, 0}};
-static const char * const gear_desc[N_GEAR][2] = {
-    {"+1 LIFE EVERY\nMISSION", "ANOTHER +1 LIFE.\nTANK MODE."},
-    {"START WITH\nWEAPON LEVEL 2", "START WITH\nWEAPON LEVEL 3"},
-    {"+1 BOMB EVERY\nMISSION", "ANOTHER +1 BOMB"},
-    {"ROOM FOR 3\nBUDDIES", "START EVERY\nMISSION WITH ONE"},
-    {"SHOTS BREAK\nBIG ORBS (2 HITS)", ""},
-    {"MAX TWIN: CENTRE\nLANCE PIERCES ALL", ""},
-    {"MAX SPREAD: OUTER\nSTARS BOUNCE", ""},
-    {"MAX WISP: HITS\nJUMP TO ANOTHER", ""}};
-#define GEAR_PAGE1 GEAR_LANCE                        // page 2 of the armory: the weapon runes
-static const char * const forge_quip[4] = {"FORGE: NICE.\nSHE PURRS NOW.", "FORGE: RUNES\nCARVED. DON'T LICK.",
-    "FORGE: PAID IN\nFULL. I LOVE YOU.", "FORGE: DONE. TRY\nNOT TO SCRATCH IT."};
-static void put_lines(uint8_t x, uint8_t y, const char *s) {
-    uint8_t cx = x; char c[2]; c[1] = 0;
-    for (; *s; s++) { if (*s == '\n') { y++; cx = x; continue; } c[0] = *s; txt_put(cx++, y, c, 0, 7); }
-}
-static void armory(void) {
-    uint8_t sel = 0, t = 0, i, lv, redraw = 1, quip = 0xFF, pg = 0, g0, gn, r;
-    screen_prep();
-    set_bkg_palette(6, 1, pal_teal);
-    set_bkg_palette(5, 1, pal_star);
-    set_bkg_palette(4, 1, pal_dim);
-    txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
-    center(0, "FORGE'S ARMORY", 7);
-    center(17, "A:BUY B:BACK PAD:TAB", 6);
-    screen_on(LCDC_SCREEN);
-    while (1) {
-        g0 = pg ? GEAR_PAGE1 : 0; gn = pg ? N_GEAR - GEAR_PAGE1 : GEAR_PAGE1;
-        if (redraw) {
-            redraw = 0;
-            txt_fill(0, 1, 20, 16, txt_tile(' '), 7, 0);
-            txt_put(2, 1, "CREDITS", 0, 6); put_num(13, 1, pf_credits[profile], 4, 7);
-            txt_put(1, 2, "GEAR", 0, pg ? 4 : 7); txt_put(8, 2, "WEAPON RUNES", 0, pg ? 7 : 4);
-            for (i = 0; i < gn; i++) {
-                r = g0 + i; lv = pf_gear[profile][r];
-                txt_put(2, 3 + i * 2 + pg, gear_name[r], 0, lv ? 7 : 6);
-                { char c[7]; strcpy(c, "LV 0/0"); c[3] = '0' + lv; c[5] = '0' + gear_max[r]; txt_put(3, 4 + i * 2 + pg, c, 0, lv ? 7 : 4); }
-                if (lv >= gear_max[r]) txt_put(15, 4 + i * 2 + pg, "MAX", 0, 6);
-                else { txt_put(14, 4 + i * 2 + pg, "$", 0, 6); put_num(15, 4 + i * 2 + pg, gear_cost[r][lv], 3, pf_credits[profile] >= gear_cost[r][lv] ? 7 : 4); }
-            }
-            if (quip != 0xFF) put_lines(1, 14, forge_quip[quip]);
-            else {
-                r = g0 + sel; lv = pf_gear[profile][r];
-                if (lv < gear_max[r]) put_lines(1, 14, gear_desc[r][lv]);
-                else if (pg) put_lines(1, 14, "FORGE: CARVED.\nMAX IT TO WAKE IT.");
-                else put_lines(1, 14, "FORGE: MAXED OUT.\nSHE'S PERFECT.");
-            }
-        }
-        wait_vbl_done(); input_poll(); t++;
-        arrow_at(0, 3 + sel * 2 + pg, t);
-        if (joy_new & (J_LEFT | J_RIGHT)) {
-            txt_put(0, 3 + sel * 2 + pg, " ", 0, 7);
-            pg ^= 1; sel = 0; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF;
-            continue;
-        }
-        if (joy_new & J_UP) { txt_put(0, 3 + sel * 2 + pg, " ", 0, 7); sel = sel ? sel - 1 : gn - 1; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF; }
-        if (joy_new & J_DOWN) { txt_put(0, 3 + sel * 2 + pg, " ", 0, 7); sel = sel + 1 < gn ? sel + 1 : 0; sfx_play(SFX_SELECT); redraw = 1; quip = 0xFF; }
-        if (joy_new & J_A) {
-            r = g0 + sel; lv = pf_gear[profile][r];
-            if (lv < gear_max[r] && pf_credits[profile] >= gear_cost[r][lv]) {
-                pf_credits[profile] -= gear_cost[r][lv];
-                pf_gear[profile][r]++;
-                save_write();
-                sfx_play(SFX_POWER);
-                quip = t & 3;
-            } else sfx_play(SFX_TICK);
-            redraw = 1;
-        }
-        if (joy_new & (J_B | J_START)) { sfx_play(SFX_SELECT); oam_clear(); return; }
-    }
-}
+// Forge's armory lives in armory.c (its own bank); saves are written here when it closes.
 
 // ------------------------------------------------------------------ cutscenes
 extern const uint8_t por_cap_a_tiles[], por_cap_b_tiles[], por_static_a_tiles[], por_static_b_tiles[], por_forge_a_tiles[], por_forge_b_tiles[],
@@ -745,10 +669,10 @@ void game_main(void) BANKED {
 #endif
         while (pilot_select()) {
             while ((sid = mission_map()) != 0xFF) {
-                if (sid == 0xFE) { armory(); continue; }
+                if (sid == 0xFE) { armory_run(); save_write(); continue; }
                 memcpy(g_gear, pf_gear[profile], N_GEAR);
                 if (!start_cp) cutscene(intro_meta[sid], intro_text[sid], intro_count[sid]);
-                res = sid == ESC_SID ? escape_run() : sid == FLAT_SID ? cockpit_run() : stage_run(sid);
+                res = sid == GRD_SID ? ground_run() : sid == ESC_SID ? escape_run() : sid == FLAT_SID ? cockpit_run() : stage_run(sid);
                 if (res == RES_CLEAR) {
                     { uint8_t o = (bounty_out ? bounty_out : 1) - 1;
                       cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }

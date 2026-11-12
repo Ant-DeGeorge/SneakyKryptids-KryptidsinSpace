@@ -5,7 +5,7 @@ LCC = $(GBDK_HOME)/bin/lcc
 NAME   = sneaky_kryptid
 TITLE  = SNEAKYKRYPT
 SRC    = src/main0.c src/core.c src/sound.c src/script_data.c src/script_scenes.c src/stage_defs.c \
-         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/escape.c src/escape_art.c src/bandstars.c src/scenes.c src/ending.c \
+         src/objs.c src/stage.c src/s1.c src/s2.c src/s3.c src/s4.c src/cockpit.c src/escape.c src/escape_art.c src/script_comm.c src/ground.c src/ground_draw.c src/ground_art.c src/armory.c src/bandstars.c src/scenes.c src/ending.c \
          $(wildcard src/assets_b*.c) $(wildcard src/cockpit_b*.c) $(wildcard src/music/*.c) $(wildcard src/weapon_fx2_b*.c)
 OBJ    = $(SRC:src/%.c=build/obj/%.o)
 HDR    = $(wildcard src/*.h)

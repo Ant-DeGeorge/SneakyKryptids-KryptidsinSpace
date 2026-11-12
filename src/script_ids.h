@@ -90,6 +90,21 @@
 #define CM6_POD 86
 #define CM6_GOTPOD 87
 #define CM6_CLEAR 88
-#define CM_BUDHINT 89
-#define CM_BUDGOT 90
+#define CM7_START 89
+#define CM7_HINT 90
+#define CM7_AMBUSH 91
+#define CM7_CLEAR 92
+#define CM7_BRUISER 93
+#define CM7_BRDOWN 94
+#define CM7_NEAR 95
+#define CM7_WRECK 96
+#define CM7_HULL 97
+#define CM7_GUNS 98
+#define CM7_DARK 99
+#define CM7_EYES 100
+#define CM7_BFLEE 101
+#define CM7_BKILL 102
+#define CM7_BCAP 103
+#define CM_BUDHINT 104
+#define CM_BUDGOT 105
 #endif

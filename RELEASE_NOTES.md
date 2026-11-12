@@ -14,6 +14,15 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - Separate save block (`SKE`), so it can share a cart's save RAM with the full game and Flatwoods Drift.
 - Browser: `docs/escape/` (GitHub Pages: /escape/).
 
+## Coming in v1.3 (branch `tree-line`, not released yet)
+- **Mission 7, The Tree Line:** the first mission on foot. Graul fights up a forest path with his
+  chain-mace (A) and howl (B), through an ambush and a bruiser, then holds the wreck at night while
+  Forge repairs the guns.
+- **The Watcher:** the eyes from the ending become a boss over the tree line, with the eyes of the
+  kin of your last capture. Bat its orbs back, smash its claw, let the turret work.
+- The ending now plays after mission 7. Saves from every earlier version are upgraded (save version 5).
+- Under the hood: Forge's armory and the crew's radio lines moved to their own banks to make room.
+
 ## New in v1.2 (2026-11-11)
 - **Mission 6, Escape Run:** Nubs's whole gang ambushes the ship, an EMP kills the guns, and you
   run for the planet below. No shooting: dodge bullet curtains, homing missiles, asteroid walls
