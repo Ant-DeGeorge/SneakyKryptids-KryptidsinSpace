@@ -154,15 +154,17 @@ static void tally(void) {
         else if (o == OUT_KILL) n_kill++;
         else n_flee++;
     }
+#if N_PLAY > GRD_SID
     {   // the Watcher (mission 7) counts as a bounty too, and decides who is watching now
         uint8_t o = pf_out[profile][GRD_SID];
         if (o == OUT_CAPTURE) { n_cap++; kin = 6; } else if (o == OUT_KILL) { n_kill++; kin = 7; } else if (o) n_flee++;
     }
-    for (i = 0; i < N_MISSIONS; i++) { sum += pf_best[profile][i]; tot += pf_hi[profile][i]; }
-    r = (sum + (N_MISSIONS >> 1)) / N_MISSIONS;        // 1..5
+#endif
+    for (i = 0; i < N_PLAY; i++) { sum += pf_best[profile][i]; tot += pf_hi[profile][i]; }
+    r = (sum + (N_PLAY >> 1)) / N_PLAY;        // 1..5
     if (r < 1) r = 1;
     tier = r >= 5 ? 3 : r >= 4 ? 2 : r >= 3 ? 1 : 0;
-    outc = n_flee ? 3 : n_cap == N_BOUNTY + 1 ? 0 : n_kill > n_cap ? 2 : 1;
+    outc = n_flee ? 3 : n_cap == N_BOUNTY + (N_PLAY > GRD_SID) ? 0 : n_kill > n_cap ? 2 : 1;
 
     e_prep();
     set_bkg_palette(7, 1, e_pal_text);

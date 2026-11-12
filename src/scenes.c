@@ -64,7 +64,7 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 // FLATWOODS_DEMO / ESCAPE_DEMO: one mission on its own (make flatwoods / make escape_demo). Each has
 // its own block and signature ('S','K','F' at 0xA400, 'S','K','E' at 0xA600), so a demo never
 // touches a Sneaky Kryptid save on the same cart. SOLO_DEMO covers both; SOLO_SID is the mission.
-#if defined(FLATWOODS_DEMO) || defined(ESCAPE_DEMO)
+#if defined(FLATWOODS_DEMO) || defined(ESCAPE_DEMO) || defined(TREELINE_DEMO)
 #define SOLO_DEMO
 #endif
 #ifdef FLATWOODS_DEMO
@@ -77,6 +77,11 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #define SAVE ((uint8_t *)0xA600)
 #define SAVE_SIG 'E'
 #define SAVE_VER 2
+#elif defined(TREELINE_DEMO)
+#define SOLO_SID GRD_SID
+#define SAVE ((uint8_t *)0xA800)
+#define SAVE_SIG 'G'
+#define SAVE_VER 1
 #else
 #define SAVE ((uint8_t *)0xA200)
 #define SAVE_SIG 'D'
@@ -86,10 +91,12 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #define DEMO_VERSION "GUN CAM DEMO V1.0"
 #elif defined(ESCAPE_DEMO)
 #define DEMO_VERSION "NO GUNS DEMO V1.0"
+#elif defined(TREELINE_DEMO)
+#define DEMO_VERSION "ON FOOT DEMO V1.0"
 #elif defined(UNLOCK_ALL)
-#define DEMO_VERSION "DEMO V1.3 UNLOCKED"
+#define DEMO_VERSION "DEMO V1.4 UNLOCKED"
 #else
-#define DEMO_VERSION "DEMO V1.3"
+#define DEMO_VERSION "DEMO V1.4"
 #endif
 #define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
 #define SV_LEN(n, g) (4 + N_PROFILES * PF_LEN(n, g) + 1)
@@ -102,6 +109,8 @@ static const uint8_t old_fmt[][3] = {
     {3, 6, N_GEAR}, {2, 5, N_GEAR}, {1, 5, OLD_GEAR},
 #elif defined(ESCAPE_DEMO)
     {1, 6, N_GEAR},                                          // the six-mission layout
+#elif defined(TREELINE_DEMO)
+    {0xFF, N_MISSIONS, N_GEAR},                              // first version: nothing older to read
 #else
     {4, 6, N_GEAR}, {3, 5, N_GEAR}, {2, 5, OLD_GEAR}, {1, 4, OLD_GEAR},      // v1.2, v1.1 + runes, v1.1, v1.0
 #endif
@@ -296,6 +305,8 @@ static void title_screen(void) {
     center(14, "LAMP DRIFT", 7);
 #elif defined(ESCAPE_DEMO)
     center(14, "ESCAPE RUN", 7);
+#elif defined(TREELINE_DEMO)
+    center(14, "THE TREE LINE", 7);
 #else
     center(14, "KRYPTIDS IN SPACE", 7);
 #endif
@@ -328,7 +339,7 @@ static void title_screen(void) {
 // ------------------------------------------------------------------ pilot select
 static uint8_t total_stars(uint8_t p) {
     uint8_t s = 0, i;
-    for (i = 0; i < N_MISSIONS; i++) s += pf_best[p][i];
+    for (i = 0; i < N_PLAY; i++) s += pf_best[p][i];
     return s;
 }
 static uint8_t pilot_select(void) {
@@ -357,15 +368,15 @@ static uint8_t pilot_select(void) {
         if (p < 2) {
             put_tile(3, y + 1, T_HUD_STAR, 5);
             put_num(5, y + 1, total_stars(p), 2, 7);
-            txt_put(7, y + 1, "/25", 0, 7);
+            txt_put(7, y + 1, "/30", 0, 7);
         } else {
             txt_put(3, y + 1, "HI", 0, 6);
-            put_num(6, y + 1, pf_hi[2][0] + pf_hi[2][1] + pf_hi[2][2] + pf_hi[2][3] + pf_hi[2][4], 7, 7);
+            { uint32_t hs = 0; uint8_t i; for (i = 0; i < N_PLAY; i++) hs += pf_hi[2][i]; put_num(6, y + 1, hs, 7, 7); }
         }
     }
 #ifdef SOLO_DEMO
     center(15, "A: GO   B: BACK", 6);
-    center(17, SOLO_SID == ESC_SID ? "SELECT+A: DIVE" : "SELECT+A: BOSS", 6);
+    center(17, SOLO_SID == ESC_SID ? "SELECT+A: DIVE" : SOLO_SID == GRD_SID ? "SELECT+A: WATCHER" : "SELECT+A: BOSS", 6);
 #else
     center(16, "A: GO   B: BACK", 6);
 #endif
@@ -392,9 +403,9 @@ static uint8_t pilot_select(void) {
 // ------------------------------------------------------------------ mission map
 static uint8_t mission_map(void) {
     uint8_t sel, t = 0, s, y, top = pf_unlock[profile];
-    if (top >= N_MISSIONS) top = N_MISSIONS - 1;
+    if (top >= N_PLAY) top = N_PLAY - 1;
 #ifdef UNLOCK_ALL
-    top = N_MISSIONS - 1;                 // test build (make unlocked): every mission selectable
+    top = N_PLAY - 1;                 // test build (make unlocked): every mission selectable
 #endif
     sel = top;
     screen_prep();
@@ -406,7 +417,7 @@ static uint8_t mission_map(void) {
     center(0, "MISSION SELECT", 7);
     txt_put(1, 1, pilot_names[profile], 0, 7);
     txt_put(15, 1, "$", 0, 6); put_num(16, 1, pf_credits[profile], 4, 7);
-    for (s = 0; s < N_MISSIONS; s++) {
+    for (s = 0; s < N_PLAY; s++) {
         y = 2 + s * 2;
         if (s <= top) {
             char c[2]; c[0] = '1' + s; c[1] = 0;
@@ -658,7 +669,7 @@ void game_main(void) BANKED {
             sid = SOLO_SID;
             memcpy(g_gear, pf_gear[profile], N_GEAR);
             if (!start_cp) cutscene(intro_meta[sid], intro_text[sid], intro_count[sid]);
-            res = SOLO_SID == ESC_SID ? escape_run() : cockpit_run();
+            res = SOLO_SID == GRD_SID ? ground_run() : SOLO_SID == ESC_SID ? escape_run() : cockpit_run();
             if (res == RES_CLEAR) {
                 { uint8_t o = (bounty_out ? bounty_out : 1) - 1;
                   cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
@@ -677,7 +688,7 @@ void game_main(void) BANKED {
                     { uint8_t o = (bounty_out ? bounty_out : 1) - 1;
                       cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
                     results(sid);
-                    if (sid == N_MISSIONS - 1) ending();
+                    if (sid == N_PLAY - 1) ending();
                 } else game_over(sid);
             }
         }
