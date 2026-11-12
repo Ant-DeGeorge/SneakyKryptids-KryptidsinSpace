@@ -3,7 +3,9 @@
 //
 // Part A: Graul walks up through the forest (the field scrolls as he pushes on). A swings the
 //         chain-mace in a full circle (Cadet and Pilot swing by themselves), B is a howl that
-//         clears the screen (the bomb stock). An ambush and a bruiser block the way.
+//         clears the screen (the bomb stock). A shot the mace catches flies back into the nearest
+//         enemy; a big orb with nobody to hit keeps going up into the Watcher. The first clearing
+//         teaches that, then an ambush and a bruiser block the way.
 // Part B: back at the wreck at night. Hold it while Forge repairs the guns: critters that reach
 //         the hull slow the repair to a crawl. When the bar fills the ship's turret comes online.
 // Boss:   the watcher from the ending looms over the tree line (BG tiles in the 9C00 map above
@@ -35,9 +37,11 @@
 #define GM gmode
 
 // course, in 8-pixel rows walked
+#define RL  96u                          // first clearing: bat their orbs back
 #define RA1 190u                         // ambush clearing
 #define RA2 400u                         // bruiser clearing
 #define RW 610u                          // the wreck's bottom row
+#define STOPL (RL + 17)
 #define STOP1 (RA1 + 17)
 #define STOP2 (RA2 + 17)
 #define STOP3 (RW + 13)
@@ -56,6 +60,7 @@ uint16_t gr_rep, gr_rep_max, gr_loops;
 static uint8_t gtm[MAXG], ghit[MAXG];
 static int8_t gvx[MAXG], gvy[MAXG];
 static uint8_t wkr[32], bk[32];          // per map row: wreck image row + 1, boulder half (1 top, 2 bottom)
+static uint8_t salt[32];                 // per map row, so the trail dressing does not repeat every 32 rows
 static uint8_t g_c, g_bcd, g_seed;
 static uint16_t stop_row, enc_t;
 static uint8_t enc_left, enc_hits, cp, was_comm;
@@ -90,19 +95,32 @@ static uint8_t grnd(void) { g_seed = g_seed * 5 + 113; return g_seed >> 2; }
 // ------------------------------------------------------------------ the field
 static uint8_t cell_attr;
 static uint8_t tile_at(uint8_t r, uint8_t c) {
-    uint8_t h = r * 37 + c * 53; h ^= h >> 3;
+    uint8_t h = salt[r] * 13 + c * 29, dist;
     if (wkr[r] && c >= 5 && c < 15 && wbuf[c - 5]) { cell_attr = 2; return GR_T_WRECK + wbuf[c - 5]; }
     if (c < gr_pl[r] || c > gr_pr[r]) {
+        dist = c < gr_pl[r] ? gr_pl[r] - c : c - gr_pr[r];
         cell_attr = 1;
-        if (c + 1 == gr_pl[r]) return GR_T_EDGE + (h & 1);
-        if (c == gr_pr[r] + 1) { cell_attr = 1 | 0x20; return GR_T_EDGE + (h & 1); }
-        cell_attr = 1 | ((h & 4) ? 0x20 : 0) | ((h & 8) ? 0x40 : 0);
-        return GR_T_TREE + (h & 3);
+        if (dist == 1) {                                     // trunks along the path, facing inward
+            if (c > gr_pr[r]) cell_attr |= 0x20;
+            return GR_T_TRUNK + (salt[r] & 1);
+        }
+        if ((salt[r] + c) & 1) cell_attr |= 0x20;            // a little lean, no vertical flip (that turned the woods into static)
+        if (dist > 3) return GR_T_DEEP + ((salt[r] + c) & 1);
+        return GR_T_TREE + ((salt[r] * 3 + c) & 3);
     }
     if (bk[r] && c >= gr_ol[r] && c <= gr_or[r]) { cell_attr = 2; return GR_T_BOULDER + (bk[r] == 1 ? 0 : 2) + (c - gr_ol[r]); }
-    cell_attr = 0;
     h &= 63;
-    return h < 7 ? GR_T_GRASS0 + h % 3 : GR_T_BLANK;
+    if (c == gr_pl[r] || c == gr_pr[r]) {                    // moss shoulder
+        cell_attr = c == gr_pr[r] ? 0x20 : 0;
+        return GR_T_VERGE;
+    }
+    cell_attr = 0;
+    if ((c == gr_pl[r] + 1 || c == gr_pr[r] - 1) && h < 28) return h < 16 ? GR_T_TUFT : GR_T_ROOT;
+    if (h < 4) return GR_T_FLOWER;
+    if (h < 7) return GR_T_MUSH;
+    if (h < 12) return GR_T_PEBBLE;
+    if (h < 20) return GR_T_TUFT;
+    return GR_T_DIRT + (h % 3);
 }
 static void row_draw(uint8_t r) {
     uint8_t c;
@@ -112,11 +130,11 @@ static void row_draw(uint8_t r) {
     VBK_REG = 1; set_tiles(0, r, 20, 1, MAP98, abuf); VBK_REG = 0;
 }
 static uint8_t clearing(uint16_t R) {
-    return (R + 1 >= RA1 && R <= RA1 + 15) || (R + 1 >= RA2 && R <= RA2 + 15) || (R + 2 >= RW && R <= RW + 13);
+    return (R + 1 >= RL && R <= RL + 15) || (R + 1 >= RA1 && R <= RA1 + 15) || (R + 1 >= RA2 && R <= RA2 + 15) || (R + 2 >= RW && R <= RW + 13);
 }
 static void gen_row(uint16_t R) {
     uint8_t r = MR(R), hw = R < RA2 ? 5 : 4, d;
-    wkr[r] = 0; bk[r] = 0; gr_ol[r] = 1; gr_or[r] = 0;
+    wkr[r] = 0; bk[r] = 0; gr_ol[r] = 1; gr_or[r] = 0; salt[r] = (uint8_t)(R * 17 + 3);
     if (R > RW + 13) { gr_pl[r] = 20; gr_pr[r] = 19; return; }          // the tree line behind the wreck
     if (clearing(R)) {
         gr_pl[r] = 1; gr_pr[r] = 18; g_c = 10; g_bcd = 6;
@@ -284,8 +302,8 @@ static void enemies_update(void) {
             break;
         case G_SPIT:
             if (y > bb + 6 && !--gtm[i]) {
-                gtm[i] = GM == MODE_CADET ? 120 : MIDMODE ? 96 : 70;
-                eb_fire(x - 3, y - 3, aim(x, y, px, py), bspd[GM], 0);
+                gtm[i] = gr_gs[i] == 1 ? 100 : GM == MODE_CADET ? 120 : MIDMODE ? 96 : 70;
+                eb_fire(x - 3, y - 3, aim(x, y, px, py), gr_gs[i] == 1 ? bspd[GM] - 4 : bspd[GM], gr_gs[i] == 1);
                 sfx_play(SFX_SPIT);
             }
             break;
@@ -344,22 +362,44 @@ static void enemies_update(void) {
         else if (NEAR(x, px, 8) && NEAR(y, py, 8)) hurt();
     }
 }
+static void bat_shot(uint8_t i, uint8_t x, uint8_t y) {     // the mace turns a shot around onto the nearest enemy
+    uint8_t j, best = 0xFF, bd = 255, k;
+    for (j = 0; j < MAXG; j++) if (gr_gt[j] && gr_gt[j] != G_CLAW) {
+        k = (gr_gx[j] > x ? gr_gx[j] - x : x - gr_gx[j]) + (gr_gy[j] > y ? gr_gy[j] - y : y - gr_gy[j]);
+        if (k < bd) { bd = k; best = j; }
+    }
+    if (best != 0xFF) {
+        k = aim(x + 3, y + 3, gr_gx[best], gr_gy[best]);
+        eb_vx[i] = ((int16_t)dsin[k] * 28) >> 2;
+        eb_vy[i] = ((int16_t)DCOS(k) * 28) >> 2;
+        eb_on[i] = 2;
+    } else if (eb_big[i]) {                                  // nobody standing: the big ones still go up into the Watcher
+        eb_on[i] = 2; eb_vy[i] = -640; eb_vx[i] = ((int16_t)((x < WX ? XO + 48 : XO + 112) - x)) * 6;
+    } else { eb_on[i] = 0; add_score(10); return; }
+    add_score(eb_big[i] ? 300 : 10);
+    sfx_play(eb_big[i] ? SFX_POWER : SFX_TICK);
+}
 static void shots_update(void) {
-    uint8_t i, x, y, bb = band_bot() + YO;
+    uint8_t i, j, x, y, d, bb = band_bot() + YO;
     for (i = 0; i < MAXEB; i++) {
         if (!eb_on[i]) continue;
         eb_x[i] += eb_vx[i]; eb_y[i] += eb_vy[i];
         x = eb_x[i] >> 8; y = eb_y[i] >> 8;
-        if (eb_on[i] == 2) {                                 // batted back at the watcher
-            if (y < bb + 2 || y < YO + 4) { eb_on[i] = 0; boom_at(x + 4, y + 8); boss_dmg(6); }
+        if (eb_on[i] == 2) {                                 // flying back: the first enemy it touches takes it
+            for (j = 0; j < MAXG; j++) if (gr_gt[j] && gr_gt[j] != G_CLAW) {
+                d = gr_gt[j] == G_BRUISE ? 16 : 12;
+                if (NEAR(x + 3, gr_gx[j], d) && NEAR(y + 3, gr_gy[j], d)) {
+                    eb_on[i] = 0; boom_at(x + 4, y + 4); g_dmg(j, eb_big[i] ? 2 : 1); add_score(50);
+                    break;
+                }
+            }
+            if (!eb_on[i]) continue;
+            if (eb_big[i] && gr_phase >= P_DARK && (y < bb + 2 || y < YO + 4)) { eb_on[i] = 0; boom_at(x + 4, y + 8); boss_dmg(6); continue; }
+            if (x < 8 || x > 184 || y < 16 || y > FIELD_BOT + YO + 4) eb_on[i] = 0;
             continue;
         }
         if (x < 10 || x > 180 || y < 22 || y > FIELD_BOT + YO - 6) { eb_on[i] = 0; continue; }
-        if (gr_swing && NEAR(x + 3, px, 25) && NEAR(y + 3, py, 25)) {
-            if (eb_big[i]) { eb_on[i] = 2; eb_vy[i] = -640; eb_vx[i] = ((int16_t)((x < WX ? XO + 48 : XO + 112) - x)) * 6; add_score(300); sfx_play(SFX_POWER); }
-            else { eb_on[i] = 0; add_score(10); }
-            continue;
-        }
+        if (gr_swing && NEAR(x + 3, px, 25) && NEAR(y + 3, py, 25)) { bat_shot(i, x, y); continue; }
         if (st == ST_PLAY && NEAR(x + 3, px, 5) && NEAR(y + 3, py + 2, 6)) { eb_on[i] = 0; hurt(); }
     }
 }
@@ -394,7 +434,7 @@ static void bolts_update(void) {
 static void walk_spawn(uint16_t R) {
     uint8_t r = MR(R), sec = R < RA1 ? 0 : R < RA2 ? 1 : 2, h, x, t;
     static const uint8_t every[3][3] = {{11, 9, 8}, {10, 8, 6}, {9, 7, 5}};
-    if (clearing(R) || clearing(R + 6) || R < 24 || R > RW - 8) return;
+    if (R < RL + 16 || clearing(R) || clearing(R + 6) || R > RW - 8) return;
     if (R % every[GM][sec]) return;
     if (g_count() >= (GM == MODE_CADET ? 4 : 6)) return;
     h = grnd();
@@ -479,8 +519,14 @@ static void watcher_in(void) {                               // night falls and 
     comm_queue_add(CM7_DARK);
 }
 static void encounter_start(void) {
+    uint8_t i;
     enc_t = 0; enc_hits = 0;
-    if (stop_row == STOP1) { gr_phase = P_AMBUSH; enc_left = GM == MODE_CADET ? 8 : MIDMODE ? 11 : 14; tag("AMBUSH!        ", 120); comm_queue_add(CM7_AMBUSH); sfx_play(SFX_ALARM); }
+    if (stop_row == STOPL) {
+        gr_phase = P_LESSON;
+        i = spawn(G_SPIT, XO + 80, YO + 18); if (i != 0xFF) { gr_gs[i] = 1; gtm[i] = 70; }
+        spawn(G_CRAWL, XO + 36, YO + 62); spawn(G_CRAWL, XO + 124, YO + 62);
+        tag("BAT THEM BACK! ", 160); comm_queue_add(CM7_BAT); sfx_play(SFX_POWER);
+    } else if (stop_row == STOP1) { gr_phase = P_AMBUSH; enc_left = GM == MODE_CADET ? 8 : MIDMODE ? 11 : 14; tag("AMBUSH!        ", 120); comm_queue_add(CM7_AMBUSH); sfx_play(SFX_ALARM); }
     else if (stop_row == STOP2) { gr_phase = P_BRUISER; spawn(G_BRUISE, XO + 80, YO + 8); tag("BRUISER!       ", 120); comm_queue_add(CM7_BRUISER); music_play(MUS_BOSS); }
     else { gr_phase = P_WRECK; gr_rep = 0; tag("HOLD THE WRECK!", 150); comm_queue_add(CM7_WRECK); set_win_tile_xy(19, 0, GR_HUD_BASE + 9); bar_last = 0xFF; music_play(MUS_STAGE4); }
 }
@@ -488,7 +534,8 @@ static void encounter_done(const char *s) {
     uint8_t i;
     for (i = 0; i < MAXG; i++) if (gr_gt[i]) g_kill(i);
     if (!enc_hits) { add_score(2500); tag("CLEAN! +2500   ", 120); sfx_play(SFX_PICKUP); } else tag(s, 120);
-    gr_phase = P_WALK; stop_row = stop_row == STOP1 ? STOP2 : STOP3;
+    gr_phase = P_WALK;
+    stop_row = stop_row == STOPL ? STOP1 : stop_row == STOP1 ? STOP2 : STOP3;
 }
 static void boss_next(uint8_t s) {
     gr_bs = s; bt = 0; bt_n = 0;
@@ -546,6 +593,9 @@ static void phase_update(void) {
     switch (gr_phase) {
     case P_WALK:
         if (gr_top >= stop_row) encounter_start();
+        break;
+    case P_LESSON:
+        if (!g_count()) { encounter_done("GOT THE TRICK  "); comm_queue_add(CM7_CLEAR); }
         break;
     case P_AMBUSH:
         n = g_count();
@@ -636,7 +686,7 @@ static void restart_from(uint8_t c) {
     comm_reset(); was_comm = 0;
     boss_clear(); k_hpmax = 1;                                // crew lines never wait for a quiet moment here
     cp = c; gr_phase = P_WALK; guns = 0;
-    stop_row = B + 17 < STOP1 ? STOP1 : B + 17 < STOP2 ? STOP2 : STOP3;
+    stop_row = B + 17 < STOPL ? STOPL : B + 17 < STOP1 ? STOP1 : B + 17 < STOP2 ? STOP2 : STOP3;
     gr_fscy = (uint8_t)(((uint8_t)(0 - (uint8_t)B)) & 31) << 3;
     g_seed = (uint8_t)B + 9; g_c = 10; g_bcd = 5;
     for (r = 0; r < 32; r++) { gr_pl[r] = 20; gr_pr[r] = 19; gr_ol[r] = 1; gr_or[r] = 0; wkr[r] = 0; bk[r] = 0; }

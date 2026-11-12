@@ -51,13 +51,15 @@ def rows(lst, w=16):
     for r in lst: assert len(r) == w, (r, len(r))
     return np.array([[0 if c == '.' else int(c) for c in r] for r in lst], np.uint8)
 
-FLOOR = '#0C1818'
-PAL_FLOOR = [FLOOR, '#183030', '#2C4C40', '#5C8068']
-PAL_TREE = [FLOOR, '#0A2420', '#16443A', '#2C6C50']
+FLOOR = '#0A1210'
+# 0 shadow, 1 packed dirt, 2 moss, 3 leaf. Dirt stays darker than the warm hazard colours.
+PAL_FLOOR = [FLOOR, '#4A4634', '#1B6B45', '#C6E090']
+# 0 gap, 1 bark, 2 leaf, 3 lit leaf
+PAL_TREE = [FLOOR, '#3A3224', '#146B48', '#4EBE78']
 PAL_STEEL = [FLOOR, '#2A3444', '#5C6880', '#B4C0D4']
-N_FLOOR = ['#060C10', '#0C1C20', '#183030', '#345448']      # night, for the watcher fight
-N_TREE = ['#060C10', '#06161A', '#0C2C2C', '#1A4840']
-N_STEEL = ['#060C10', '#1C2434', '#44506C', '#98A8C4']
+N_FLOOR = ['#04080C', '#242818', '#123828', '#7A9450']      # night, for the watcher fight
+N_TREE = ['#04080C', '#1A1610', '#0C3828', '#2A6848']
+N_STEEL = ['#04080C', '#1C2434', '#44506C', '#98A8C4']
 PAL_TAG = ['#0C0E18', '#2C3448', '#F08020', '#FFE860']
 
 # ============================================================ field tiles
@@ -65,23 +67,30 @@ ft = []
 def ftile(name, a):
     define(f"GR_T_{name}", f"(N_COMMON + {len(ft)})"); ft.append(np.asarray(a, np.uint8))
 r = random.Random(77)
+def pix(s):
+    lines = s.split()
+    assert len(lines) == 8 and all(len(row) == 8 for row in lines)
+    return np.array([[0 if ch == '.' else int(ch) for ch in row] for row in lines], np.uint8)
 ftile("BLANK", Z())
-a = Z(); a[5, 2] = 2; a[4, 3] = 2; a[5, 4] = 1; a[6, 3] = 1; ftile("GRASS0", a)
-a = Z(); a[2, 5] = 2; a[1, 6] = 3; a[3, 5] = 1; a[6, 1] = 1; ftile("GRASS1", a)
-a = Z(); a[3, 2:4] = 1; a[4, 1:5] = 1; a[4, 2] = 2; a[6, 6] = 1; ftile("GRASS2", a)
-def canopy(seed, edge=False):
-    rr = random.Random(seed); a = Z()
-    for y in range(8):
-        for x in range(8):
-            v = math.sin((x + seed) * 1.3) + math.sin((y + seed * 2) * 1.1) + rr.uniform(-.6, .6)
-            a[y, x] = 3 if v > 1.1 else 2 if v > -0.2 else 1
-            if edge:
-                lim = 3 + 2.2 * math.sin((y + seed) * 0.9)
-                if x > lim + 1: a[y, x] = 0
-                elif x > lim: a[y, x] = 1
-    return a
-for i in range(4): ftile(f"TREE{i}" if i else "TREE", canopy(5 + i * 3))
-ftile("EDGE", canopy(21, True)); ftile("EDGE1", canopy(34, True))      # canopy on the left, floor on the right; X-flip for the other side
+# the trail: packed dirt, moss on the shoulders, things you step over. Never a blank cell.
+ftile("DIRT", pix("11111111 11121111 11111111 11211111 11111111 11111211 11111131 11111111"))
+ftile("DIRT1", pix("11111111 11111111 11221111 11122111 11111111 11111122 11111111 31111111"))
+ftile("DIRT2", pix("21111111 11111112 11131111 11111111 11111111 12111111 11111311 11111112"))
+ftile("VERGE", pix("22211111 23211111 22221111 22311111 22211131 23221111 22211111 22311111"))   # moss on the left; X-flip on the right shoulder
+ftile("TUFT", pix("11111111 11233111 12322111 11221111 11111111 11112211 11111111 11111111"))
+ftile("ROOT", pix("11111111 11111111 11221111 11122111 11111221 11111122 11111111 11111111"))
+ftile("FLOWER", pix(".1111111 11311111 13131111 11311111 11111111 11122111 11111111 11111111"))
+ftile("PEBBLE", pix("11111111 11011111 10110111 11011111 11111111 11111111 11101111 11111111"))
+ftile("MUSH", pix("11111111 11333111 13333311 11333111 11122111 11122111 11111111 11111111"))
+# canopy with holes, then trunks along the path, then darker wood further out
+ftile("TREE", pix("23233223 32322332 23203323 32233232 23322323 32230232 23233223 32323232"))
+ftile("TREE1", pix("32232332 23323223 32233232 23222323 32330232 23233223 32223233 23322322"))
+ftile("TREE2", pix("23223232 32022323 23233202 22323232 23202323 32233232 23322232 32233223"))
+ftile("TREE3", pix("33322232 23233223 22320332 32233222 23233232 32023223 23223322 22332232"))
+ftile("TRUNK", pix("23233232 32212223 23111132 22111122 23111132 32111123 23211232 32233223"))
+ftile("TRUNK1", pix("32332232 23211223 32211132 23111123 22211132 32211122 23322132 32233232"))
+ftile("DEEP", pix("22222222 22232222 22022222 22222232 22220222 23222222 22222222 22223222"))
+ftile("DEEP1", pix("22223222 22222222 23222222 22222022 22222232 22222222 32222222 22222223"))
 bo = np.zeros((16, 16), np.uint8)
 for y in range(16):
     for x in range(16):
@@ -246,6 +255,42 @@ def render(img, pal, path, scale=4):
         for x in range(w): px[x, y] = hx(pal[img[y, x]])
     im.resize((w * scale, h * scale), Image.NEAREST).save(path)
 render(wk, PAL_STEEL, f"{PREV}/gr_wreck.png"); render(hd, ['#04080C', '#28183C', '#40285C', '#C8C8BE'], f"{PREV}/gr_head.png", 3)
+# a slice of the trail, so the floor and the trunks can be looked at together
+trail = np.zeros((16 * 8, 20 * 8), np.uint8)
+pal_i = np.zeros_like(trail)
+for ty in range(16):
+    salt = ty * 17 + 3
+    for tx in range(20):
+        if tx <= 3 or tx >= 16:
+            dist = 4 - tx if tx <= 3 else tx - 15
+            idx = (14 if (salt + tx) & 1 else 15) if dist == 1 else (16 if dist > 3 else 10) + ((salt + tx) & (1 if dist > 3 else 3))
+            if dist > 3: idx = 16 + ((salt + tx) & 1)
+            elif dist == 1: idx = 14 + (salt & 1)
+            else: idx = 10 + ((salt * 3 + tx) & 3)
+            tile = ft[idx]
+            if tx >= 16: tile = np.fliplr(tile)
+            which = 1
+        elif tx in (4, 15):
+            tile = ft[4]; which = 0
+            if tx == 15: tile = np.fliplr(tile)
+        else:
+            h = (salt * 3 + tx * 9) & 63
+            shoulder = tx in (5, 14)
+            if shoulder and h < 28: idx = 5 if h < 16 else 6
+            elif h < 4: idx = 7
+            elif h < 7: idx = 9
+            elif h < 12: idx = 8
+            elif h < 20: idx = 5
+            else: idx = 1 + (h % 3)
+            tile = ft[idx]; which = 0
+        trail[ty * 8:ty * 8 + 8, tx * 8:tx * 8 + 8] = tile
+        pal_i[ty * 8:ty * 8 + 8, tx * 8:tx * 8 + 8] = which
+im = Image.new("RGB", (20 * 8, 16 * 8)); px = im.load()
+for y in range(16 * 8):
+    for x in range(20 * 8):
+        pal = PAL_TREE if pal_i[y, x] else PAL_FLOOR
+        px[x, y] = hx(pal[int(trail[y, x])])
+im.resize((20 * 8 * 3, 16 * 8 * 3), Image.NEAREST).save(f"{PREV}/gr_trail.png")
 sh = Image.new("RGB", (len(spr) // 2 * 9 + 1, 18), (40, 0, 40)); px = sh.load()
 for i in range(len(spr) // 2):
     for half in range(2):

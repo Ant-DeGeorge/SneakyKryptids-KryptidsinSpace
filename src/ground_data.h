@@ -5,22 +5,30 @@
 #include <stdint.h>
 BANKREF_EXTERN(ground_art)
 #define GR_T_BLANK (N_COMMON + 0)
-#define GR_T_GRASS0 (N_COMMON + 1)
-#define GR_T_GRASS1 (N_COMMON + 2)
-#define GR_T_GRASS2 (N_COMMON + 3)
-#define GR_T_TREE (N_COMMON + 4)
-#define GR_T_TREE1 (N_COMMON + 5)
-#define GR_T_TREE2 (N_COMMON + 6)
-#define GR_T_TREE3 (N_COMMON + 7)
-#define GR_T_EDGE (N_COMMON + 8)
-#define GR_T_EDGE1 (N_COMMON + 9)
-#define GR_T_BOULDER (N_COMMON + 10)
-#define GR_FIELD_FIXED 14
-#define GR_T_WRECK (N_COMMON + 14)
+#define GR_T_DIRT (N_COMMON + 1)
+#define GR_T_DIRT1 (N_COMMON + 2)
+#define GR_T_DIRT2 (N_COMMON + 3)
+#define GR_T_VERGE (N_COMMON + 4)
+#define GR_T_TUFT (N_COMMON + 5)
+#define GR_T_ROOT (N_COMMON + 6)
+#define GR_T_FLOWER (N_COMMON + 7)
+#define GR_T_PEBBLE (N_COMMON + 8)
+#define GR_T_MUSH (N_COMMON + 9)
+#define GR_T_TREE (N_COMMON + 10)
+#define GR_T_TREE1 (N_COMMON + 11)
+#define GR_T_TREE2 (N_COMMON + 12)
+#define GR_T_TREE3 (N_COMMON + 13)
+#define GR_T_TRUNK (N_COMMON + 14)
+#define GR_T_TRUNK1 (N_COMMON + 15)
+#define GR_T_DEEP (N_COMMON + 16)
+#define GR_T_DEEP1 (N_COMMON + 17)
+#define GR_T_BOULDER (N_COMMON + 18)
+#define GR_FIELD_FIXED 22
+#define GR_T_WRECK (N_COMMON + 22)
 #define GR_WRECK_W 10
 #define GR_WRECK_H 5
-extern const uint8_t gr_field_tiles[];  // 784
-#define GR_FIELD_NT 49
+extern const uint8_t gr_field_tiles[];  // 912
+#define GR_FIELD_NT 57
 extern const uint8_t gr_wreck_map[];  // 50
 extern const uint16_t gr_bgpal[];  // 12
 extern const uint16_t gr_bgpal_night[];  // 12
