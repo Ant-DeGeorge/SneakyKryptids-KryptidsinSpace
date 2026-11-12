@@ -46,8 +46,8 @@ static const uint16_t pay_base[N_MISSIONS] = {100, 150, 200, 250, 300, 350, 400}
 static const char * const out_names[4] = {"", "ESCAPED", "KILLED", "CAPTURED"};
 
 static const char * const pilot_names[N_PROFILES] = {"CADET", "PILOT", "HUNTER"};
-static const char * const boss_names[N_MISSIONS] = {"SPACE KRAKEN", "THUNDERBIRD", "JERSEY DEVIL", "WENDIGO", "FLATWOODS MONSTER", "NUBS'S GANG", "THE WATCHER"};
-static const char * const mission_names[N_MISSIONS] = {"RIMEVEIL LANE", "STORMWALL NEBULA", "BARRENS BELT", "FROSTBITE MOON", "FLATWOODS DRIFT", "ESCAPE RUN", "THE TREE LINE"};
+static const char * const boss_names[N_MISSIONS] = {"RIMEMAW", "VOLTWAKE", "ASHMARE", "MARROW", "LAMPTALL", "NUBS'S GANG", "THE WATCHER"};
+static const char * const mission_names[N_MISSIONS] = {"RIMEVEIL LANE", "STORMWALL NEBULA", "BARRENS BELT", "FROSTBITE MOON", "LAMP DRIFT", "ESCAPE RUN", "THE TREE LINE"};
 
 static const uint16_t pal_text[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(72, 224, 200), RGB8(248, 248, 248) };
 static const uint16_t pal_panel[4] = { RGB8(12, 14, 24), RGB8(44, 52, 72), RGB8(232, 48, 72), RGB8(248, 248, 248) };
@@ -293,7 +293,7 @@ static void title_screen(void) {
     for (lv = 1; lv <= 8 && !skip; lv++) { pal_fade(0, 8, art_pals, lv); skip = title_wait(6); }
     pal_fade(0, 8, art_pals, 8);
 #ifdef FLATWOODS_DEMO
-    center(14, "FLATWOODS DRIFT", 7);
+    center(14, "LAMP DRIFT", 7);
 #elif defined(ESCAPE_DEMO)
     center(14, "ESCAPE RUN", 7);
 #else
@@ -566,7 +566,7 @@ static void results(uint8_t sid) {
     { char c[20]; strcpy(c, "MISSION 1 COMPLETE"); c[8] = '1' + sid; center(0, c, 7); }
 #endif
     center(1, mission_names[sid], 6);
-    { const char *nm = sid == FLAT_SID ? "FLATWOODS" : boss_names[sid];
+    { const char *nm = boss_names[sid];
       txt_put(1, 3, "TARGET", 0, 6); txt_put(19 - strlen(nm), 3, nm, 0, 7); }
     { const char *os = sid == ESC_SID ? (bounty_out == OUT_CAPTURE ? "ROBBED" : "OUTRUN") : out_names[bounty_out];   // nothing to capture on the escape run
       txt_put(1, 4, "STATUS", 0, 6); txt_put(19 - strlen(os), 4, os, 0, bounty_out == OUT_CAPTURE ? 6 : 7); }

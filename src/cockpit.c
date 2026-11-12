@@ -251,7 +251,7 @@ static void panel_draw(void) {
         set_win_tile_xy(4, 2 + i, CK_T_DIV);
         VBK_REG = 1; set_win_tile_xy(4, 2 + i, 6 | 0x08 | 0x80); VBK_REG = 0;
     }
-    txt_put(5, 2, "FLATWOODS DRIFT", 1, HA);
+    txt_put(5, 2, "LAMP DRIFT", 1, HA);
     txt_put(5, 3, "BOUNTY", 1, HA);
     panel_bar_draw(); panel_rate_draw(); alert_draw();
 }
@@ -260,7 +260,7 @@ static void boss_bar_draw(void) {
     uint8_t n, i;
     if (bar_last == 0xFF) {
         txt_fill(0, 0, 20, 1, txt_tile(' '), HA, 1);
-        txt_put(0, 0, "FLATWOODS", 1, HA);
+        txt_put(0, 0, "LAMPTALL", 1, HA);
     }
     if (k_hp == bar_hp && bar_last != 0xFF) return;
     bar_hp = k_hp;

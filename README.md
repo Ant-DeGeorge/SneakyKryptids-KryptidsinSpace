@@ -90,7 +90,7 @@ Continues cost you: Hunter's bounty points reset, Cadet's and Pilot's are halved
 Bonus pay: +50 for a captured mid-boss (+25 destroyed), +50 for a no-hit mission.
 
 ## Mission 5: the gun cam
-Flatwoods Drift is a change of pace: the Monster's saucers jam the helm, so Static flies and you
+Lamp Drift is a change of pace: the Lamptall's saucers jam the helm, so Static flies and you
 work the cannons from the cockpit.
 - The D-pad moves a crosshair (it speeds up while held). Shots land instantly where it points;
   the crosshair turns gold when something is under it.
@@ -101,7 +101,7 @@ work the cannons from the cockpit.
   In the gun cam S bursts splash nearby targets and H wisps lock on from further away.
 - The dashboard shows the bounty meter and the outcome the run is heading for
   (ESCAPE, KILL or CAPTURE), so you can see what a missed wave costs.
-- **Flatwoods Monster:** orb volleys, saucer escorts and big orbs (three hits, one with Rune
+- **Lamptall** (old Earth: the Flatwoods Monster): orb volleys, saucer escorts and big orbs (three hits, one with Rune
   Rounds). When its eyes flare it is charging a beam: land enough hits before the charge ends
   to stagger it, or take the hit.
 - Lives, hearts, bombs, continues and gear work as in the other missions. Buddy Bay level 2
@@ -197,12 +197,12 @@ their own shots (ink, bolts, arrows, frost), capsules spin and glint, and the bo
 rune circle.
 
 ## Missions
-1. **Rimeveil Lane**: krakenlings (mini Krakens), gremlin skiffs, ice ring, mid-boss Nubs' scrap gunship, hauler convoy, wrecks → **Space Kraken** (a blinking marker shows tentacle slams).
-2. **Stormwall Nebula**: Impundulu lightning birds, Lindworms (hit the head), thunderclouds that drop lightning columns, mid-boss **Mothman** → **Thunderbird** (bolts, feather fans, wind gusts, serpent summons, charge).
-3. **Barrens Belt**: Pukwudgies (some climb out of the pines below; a WARN blinks first), Devil's eggs that burst, will-o'-the-wisps (shoot when lit), mid-boss **Nubs Mk II** → **Jersey Devil** (fire sweep, stomp rows with a gap, screech rings, vanish).
-4. **Frostbite Moon**: bolted-down mine turrets, frost bats, Tatzelwurms (hit the cat face), ice-storm wind, mid-boss **Beast of Bray Road** (leaps between perches) → **Wendigo** (claw grabs with a marker, ice shard fans, howl rings with whiteout, bat summons, blizzard).
+1. **Rimeveil Lane**: rimelings, gremlin skiffs, ice ring, mid-boss Nubs' scrap gunship, hauler convoy, wrecks → **Rimemaw** (old Earth: kraken; a blinking marker shows tentacle slams).
+2. **Stormwall Nebula**: voltwings, galeels (hit the head), thunderclouds that drop lightning columns, mid-boss **Lampwing** (old Earth: Mothman) → **Voltwake** (old Earth: thunderbird; bolts, feather fans, wind gusts, serpent summons, charge).
+3. **Barrens Belt**: ashlings (some climb out of the pines below; a WARN blinks first), mare eggs that burst, gloams (shoot when lit; old Earth: will-o'-the-wisps), mid-boss **Nubs Mk II** → **Ashmare** (old Earth: Jersey Devil; fire sweep, stomp rows with a gap, screech rings, vanish).
+4. **Frostbite Moon**: bolted-down mine turrets, frost bats, frostcats (hit the cat face; old Earth: tatzelwurm), ice-storm wind, mid-boss **Brayhound** (old Earth: Beast of Bray Road; leaps between perches) → **Marrow** (old Earth: wendigo; claw grabs with a marker, ice shard fans, howl rings with whiteout, bat summons, blizzard).
 
-5. **Flatwoods Drift** (gun cam): scout saucers, a debris field, the swarm → **Flatwoods Monster** (orb volleys, escorts, big orbs, the eye beam you break by shooting it).
+5. **Lamp Drift** (gun cam): scout saucers, a debris field, the swarm → **Lamptall** (old Earth: Flatwoods Monster; orb volleys, escorts, big orbs, the eye beam you break by shooting it).
 6. **Escape Run** (no guns): the chase, the asteroid gauntlet, the dive → outrun **Nubs's gang** and, on a good run, steal their brig pod.
 7. **The Tree Line** (on foot): the forest path, an ambush, a bruiser, hold the wreck → **the Watcher**.
 
