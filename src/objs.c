@@ -75,7 +75,7 @@ uint8_t k_state, k_hitflash, k_retreat, k_shake, boss_comm, k_face;
 int8_t k_sway, k_bob;
 int8_t k_hdx; uint8_t k_hw, k_hy0, k_hy1;
 const char *boss_name;
-const char * const boss_label[4] = {"KRAKEN", "THUNDERBIRD", "JERSEY DEVIL", "WENDIGO"};
+const char * const boss_label[4] = {"RIMEMAW", "VOLTWAKE", "ASHMARE", "MARROW"};
 uint8_t bp_n, bp_x[NBP], bp_y[NBP], bp_tile[NBP], bp_pal[NBP], bp_hurt[NBP];
 uint8_t warn_x, warn_t;
 int8_t wind;
