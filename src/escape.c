@@ -78,9 +78,11 @@ static uint8_t bst_x[NBST], bst_y[NBST], last_step;
 
 // [cadet, pilot, hunter]
 static const uint8_t spd_tab[3][3] = {{32, 24, 40}, {32, 28, 44}, {36, 32, 48}};      // scroll, 1/16 px per frame, per phase
-static const uint8_t cd_tab[3][3] = {{120, 220, 95}, {104, 190, 78}, {68, 135, 50}};   // frames between attacks, per phase
-static const uint8_t bspd_tab[3] = {17, 22, 27};                                      // bullet speed, 1/16 px
-static const uint8_t gain_tab[3] = {3, 2, 1};                                         // boost per graze
+static const uint8_t cd_tab[3][3] = {{120, 220, 95}, {104, 190, 78}, {84, 160, 62}};   // frames between attacks, per phase
+static const uint8_t bspd_tab[3] = {17, 22, 24};                                      // bullet speed, 1/16 px
+// Hunter flies the escape with two hits per ship: no guns here, so one-hit ships ended runs in the first minute
+#define ER_HEARTS (HUNTER ? 2 : MAXHEARTS)
+static const uint8_t gain_tab[3] = {3, 2, 2};                                         // boost per graze
 static const uint32_t cap_thr[3] = {40000UL, 40000UL, 50000UL};                       // bounty needed for the brig pod
 #define GM gmode
 
@@ -144,7 +146,7 @@ static void gen_row(uint8_t r) {
     er_wall[r] = 0;
     if (er_row < ROW_GAUNT + 30 || er_row >= ROW_SPRINT - 40) { er_next_warn = 0; return; }
     if (g_thick) {                                           // second row of a wall
-        g_thick--; er_wall[r] = 1; er_wl[r] = g_c - hw; er_wr[r] = g_c + hw - (HUNTER ? 1 : 0);
+        g_thick--; er_wall[r] = 1; er_wl[r] = g_c - hw; er_wr[r] = g_c + hw;
         return;
     }
     if (g_corr) {                                            // corridor: the gap wanders a column at a time
@@ -165,9 +167,9 @@ static void gen_row(uint8_t r) {
         return;
     }
     er_next_warn = 0;
-    er_wall[r] = 1; er_wl[r] = g_c - hw; er_wr[r] = g_c + hw - (HUNTER ? 1 : 0);
-    if ((grnd() & 7) < (HUNTER ? 3 : 2) && er_row < ROW_SPRINT - 80) g_corr = 10 + (grnd() & 3) * 2;
-    else { g_thick = 1; g_cd = GM == MODE_CADET ? 13 : MIDMODE ? 11 : 9; }
+    er_wall[r] = 1; er_wl[r] = g_c - hw; er_wr[r] = g_c + hw;
+    if ((grnd() & 7) < 2 && er_row < ROW_SPRINT - 80) g_corr = 10 + (grnd() & 3) * 2;
+    else { g_thick = 1; g_cd = GM == MODE_CADET ? 13 : MIDMODE ? 11 : 10; }
 }
 static void field_fill(void) {
     uint8_t r;
@@ -192,7 +194,7 @@ static void hud_draw(void) {
     uint8_t i;
     if (HUNTER) {
         hud_buf[0] = T_HUD_SHIP; hud_buf[1] = txt_tile('x'); hud_buf[2] = txt_tile('0' + (lives > 9 ? 9 : lives));
-        hud_buf[3] = txt_tile(' '); hud_buf[4] = txt_tile(' '); hud_buf[5] = txt_tile(' ');
+        hud_buf[3] = txt_tile(' '); hud_buf[4] = hearts > 0 ? T_HUD_HEART : T_HUD_HEARTE; hud_buf[5] = hearts > 1 ? T_HUD_HEART : T_HUD_HEARTE;
     } else {
         for (i = 0; i < 5; i++) hud_buf[i] = i >= MAXHEARTS ? txt_tile(' ') : i < hearts ? T_HUD_HEART : T_HUD_HEARTE;
         hud_buf[5] = txt_tile('0' + lives);
@@ -219,7 +221,7 @@ static void er_hit(void) {
     if (p_inv || dash_t || st != ST_PLAY) return;
     hits_taken++; sec_clean = 0;
     shake_t = 12; hud_dirty = 1;
-    if (!HUNTER && hearts > 1) { hearts--; p_inv = 80; sfx_play(SFX_HURT); return; }
+    if (hearts > 1) { hearts--; p_inv = 80; sfx_play(SFX_HURT); hud_dirty = 1; return; }
     hearts = 0; st = ST_DYING; st_t = 0;
     clear_shots(0);
     sfx_play(SFX_EXPL_L);
@@ -375,7 +377,7 @@ static void attack(uint8_t a) {
     case A_ROCK:
         if (GM == MODE_CADET) rock_spawn(XO + 16 + rnd() % 128);
         else rock_spawn((uint8_t)(px + 40) > XO + 150 ? px - 40 : px + 40);
-        if (HUNTER) { rock_spawn(px); rock_spawn(XO + 16 + rnd() % 128); }
+        if (HUNTER) rock_spawn(px);
         break;
     case A_MISSILE:
         mis_fire(muz_x(4), muz_y() + 4);
@@ -567,17 +569,18 @@ static void er_load(void) {
     }
     move_win(7, FIELD_BOT);
 }
-static const uint16_t cp_row[3] = {0, ROW_GAUNT, ROW_SPRINT};
+#define ROW_CP3 (ROW_SPRINT + 560)       // halfway down the dive: a continue starts here, not at the top of it
+static const uint16_t cp_row[4] = {0, ROW_GAUNT, ROW_SPRINT, ROW_CP3};
 static void restart_from(uint8_t c) {
     screen_off(); splits_off();
     memset(e_type, 0, sizeof e_type); memset(eb_on, 0, sizeof eb_on);
     memset(er_mis_on, 0, sizeof er_mis_on); memset(er_rk_on, 0, sizeof er_rk_on);
     comm_reset(); was_comm = 0;
     boss_clear(); k_hpmax = 1;                                // crew lines never wait for a quiet moment here
-    cp = c; er_row = cp_row[c]; phase = c;
+    cp = c; er_row = cp_row[c]; phase = c > 2 ? 2 : c;
     er_las_state = 0; er_las_n = 0; er_pod = 0; pod_ok = 0;
     er_fscy = 0; acc = 0; er_t = 0; wob = 0;
-    atmo_k = c == 2 ? 1 : 0; glow_k = 0;
+    atmo_k = c == 3 ? 2 : c == 2 ? 1 : 0; glow_k = 0;
     sky_set(er_atmo + atmo_k * 4);
     gen_reset(); field_fill();
     er_vis = 0; vis_t = c == 1 ? 16 : 40; sway_t = 0; sway = 0;
@@ -591,7 +594,7 @@ static void restart_from(uint8_t c) {
     set_win_tile_xy(19, 0, ER_HUD_BASE + 9);
     tag(TAG_IDLE, 0); bar_draw(); hud_draw();
     raster();
-    music_play(c == 2 ? MUS_FLATWOODS : MUS_BOSS);
+    music_play(c >= 2 ? MUS_FLATWOODS : MUS_BOSS);
     oam_clear();
     screen_on(n_lcdc);
     if (c == 0) { comm_queue_add(CM6_EMP); comm_queue_add(CM6_GRAZE); }
@@ -639,6 +642,7 @@ static void row_step(void) {
     if (er_row == 180) comm_queue_add(CM6_MISSILE);
     if (er_row == ROW_SPRINT) { phase = 2; cp = 2; atk_i = 0; atk_cd = 160; vis_t = 40; comm_queue_add(CM6_DIVE); music_play(MUS_FLATWOODS); }
     if (er_row == ROW_SPRINT + 60) { atmo_k = 1; sky_set(er_atmo + 4); }
+    if (er_row == ROW_CP3) cp = 3;
     if (er_row == ROW_SPRINT + 420) { atmo_k = 2; sky_set(er_atmo + 8); comm_queue_add(CM6_HEAT); }
     if (er_row == ROW_SPRINT + 800) { atmo_k = 3; sky_set(er_atmo + 12); }
     if (er_row == ROW_POD) {
@@ -656,7 +660,7 @@ uint8_t escape_run(void) BANKED {
     stage_id = ER_STAGE;
     er_load();
     score = 0; hits_taken = 0; continues_used = 0; play_seconds = 0; midboss_killed = 0; kill_count = 0;
-    lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = 0;
+    lives = 3 + g_gear[GEAR_HULL]; hearts = ER_HEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = 0;
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     next_extend = 30000UL;
     restart_from(start_cp == 2 ? 2 : 0);
@@ -709,14 +713,14 @@ uint8_t escape_run(void) BANKED {
             if ((st_t & 7) == 1) { boom(px - 8 + (rnd() & 15), py - 8 + (rnd() & 15)); sfx_play(SFX_EXPL_S); }
             if (st_t == 70) {
                 if (lives > 1) {
-                    lives--; hearts = MAXHEARTS;
+                    lives--; hearts = ER_HEARTS;
                     if (bombs < 3 + g_gear[GEAR_BOMBS]) bombs = 3 + g_gear[GEAR_BOMBS];
                     p_inv = 150; st = ST_PLAY; hud_dirty = 1;
                 } else {
                     if (!continue_prompt()) { k_hpmax = 0; return RES_GAMEOVER; }
                     continues_used++;
                     if (HUNTER) { score = 0; bounty_pts = 0; } else bounty_pts >>= 1;
-                    lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];
+                    lives = 3 + g_gear[GEAR_HULL]; hearts = ER_HEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];
                     restart_from(cp);
                     continue;
                 }

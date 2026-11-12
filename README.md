@@ -5,8 +5,9 @@ ship, on five cryptid contracts: the Space Kraken, the Thunderbird, the Jersey D
 Wendigo and the Flatwoods Monster. Fly clean and score high to bring the bounty in alive.
 Then a rival gang shows up, the guns go dead, and the sixth mission is a run for your life.
 
-**Demo v1.3 (branch `tree-line`).** Seven missions (four scrolling stages, a first-person gun-cam
-mission, a no-guns escape run and an on-foot mission), three difficulties, saves, upgrades. Runs on real hardware
+**Demo v1.4.** Six missions (four scrolling stages, a first-person gun-cam mission and a no-guns
+escape run), three difficulties, saves, upgrades. The on-foot mission, The Tree Line, is its own ROM for now.
+Runs on real hardware
 (tested on a ModRetro Chromatic; original GBC and GBA hardware should work too) and any Game Boy Color emulator.
 
 A game by Anthony DeGeorge · **Rejected By The Machines** · Kryptids in Space / Kryptid Prime Empire.
@@ -215,6 +216,10 @@ Clearing a mission unlocks the next; clearing mission 7 plays the ending (career
 Crew: YETI (captain), FORGE (armorer, rune master), SUTURE (medic), ZANNAH (contract mistress), STATIC (navigator/pilot). GRAUL, a werewolf bounty hunter, turns up in mission 6's best debrief. Names live in `tools/gen_script.py`.
 Edit there, then `python3 tools/gen_script.py` and rebuild.
 
+**New: The Tree Line, the on-foot demo.** Graul on foot through the forest, the wreck at night, the Watcher.
+Kept out of the main game for now: flash `rom/tree_line.gbc` (`rom/tree_line_nosave.gbc` without save RAM),
+or build it with `make treeline`. SELECT+A on the pilot screen starts at the Watcher. Own save block (`SKG` at 0xA800).
+
 ## Building
 Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated sources
 (art, music, dialog) are committed, so Python is only needed to change them.
@@ -222,8 +227,10 @@ Needs [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) 4.5.0. The generated s
 - Windows: `build.bat` (expects GBDK at `C:\gbdk`, or set `GBDK_HOME`)
 - `make flatwoods` → `build/flatwoods_drift.gbc` and `build/flatwoods_drift_nosave.gbc`, the standalone gun-cam demo
   (same sources built with `-DFLATWOODS_DEMO`: no mission map or armory, cart title FLATWOODS).
+- `make treeline` → `build/tree_line.gbc` and `build/tree_line_nosave.gbc`, The Tree Line on its own
+  (`-DTREELINE_DEMO`, cart title TREELINE).
 - `make unlocked` → `build/sneaky_kryptid_unlocked.gbc`, a test build with every mission selectable from the
-  start (title shows DEMO V1.2 UNLOCKED; same save format).
+  start (title shows DEMO V1.4 UNLOCKED; same save format).
 - Do not build with `make -j`: lcc keeps its intermediate files side by side and parallel jobs
   produce broken objects (the Makefile sets `.NOTPARALLEL`).
 - Regenerate data: `make script` (dialog, `tools/gen_script.py`), `make music` (`tools/gen_sound.py`),

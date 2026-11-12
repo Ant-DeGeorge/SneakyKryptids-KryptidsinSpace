@@ -22,7 +22,7 @@ build/card/%.o: src/studio_card/%.c src/studio_card/studio_card.h
 	@mkdir -p build/card
 	$(LCC) -Wa-l -Wm-yC -autobank -Wf--opt-code-speed -c -o $@ $<
 
-all: build/$(NAME).gbc build/$(NAME)_nosave.gbc unlocked flatwoods escape_demo
+all: build/$(NAME).gbc build/$(NAME)_nosave.gbc unlocked flatwoods escape_demo treeline
 
 # Generated sources (src/assets*, cockpit_b*, src/music/*.c, script_*.c, stage_defs.c) are committed,
 # so a normal build needs only GBDK. Regenerate after editing art/music/script:
@@ -31,7 +31,7 @@ all: build/$(NAME).gbc build/$(NAME)_nosave.gbc unlocked flatwoods escape_demo
 #   make script      (dialog only)
 #   make music       (songs: music/*.uge from tools/music/compose.py, then C for hUGEDriver)
 #   make weaponfx    (weapon colours + shot/effect sprites -> src/weapon_fx.h; also prints the colour-blind check)
-.PHONY: all escape_demo assets script music cockpit escape weaponfx clean
+.PHONY: all escape_demo treeline assets script music cockpit escape weaponfx clean
 assets:
 	python3 tools/gen_assets.py
 cockpit:
@@ -93,6 +93,18 @@ build/escape_run.gbc: $(OBJ) $(CARD_O) build/obj/scenes_escape.o
 	$(LCC) $(ER_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(ER_OBJ)
 build/escape_run_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_escape.o
 	$(LCC) $(ER_CF) -Wm-yt0x19 -o $@ $(ER_OBJ)
+
+# The Tree Line on its own: Graul on foot, kept out of the main game for now (title -> pilot -> mission 7)
+treeline: build/tree_line.gbc build/tree_line_nosave.gbc
+build/obj/scenes_treeline.o: src/scenes.c $(HDR)
+	@mkdir -p build/obj
+	$(LCC) $(CFLAGS) -Wf-DTREELINE_DEMO -c -o $@ $<
+TL_OBJ = $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_treeline.o $(CARD_O)
+TL_CF  = $(filter-out -Wm-yn"$(TITLE)",$(CFLAGS)) -Wm-yn"TREELINE"
+build/tree_line.gbc: $(OBJ) $(CARD_O) build/obj/scenes_treeline.o
+	$(LCC) $(TL_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(TL_OBJ)
+build/tree_line_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_treeline.o
+	$(LCC) $(TL_CF) -Wm-yt0x19 -o $@ $(TL_OBJ)
 
 # sound test ROM: every song and effect through the game's sound engine (tools/music/jukebox)
 .PHONY: jukebox

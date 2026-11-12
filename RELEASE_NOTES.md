@@ -1,11 +1,24 @@
-# Sneaky Kryptid: Kryptids in Space — Demo v1.2
+# Sneaky Kryptid: Kryptids in Space — Demo v1.4
 
 Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromatic
 
 ## Download
 - `sneaky_kryptid.gbc` — the demo, with saves (use this one)
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
-- `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows DEMO V1.2 UNLOCKED)
+- `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows DEMO V1.4 UNLOCKED)
+
+## Demo v1.4 (2026-11-12)
+- **Six missions.** The main game is the flying game again: missions 1-6, and the ending plays after
+  Escape Run. The Tree Line is its own ROM for now (`tree_line.gbc`, `make treeline`), with its own save.
+  Star totals on the pilot screen are out of 30; Hunter's high score adds up all six missions.
+- **Escape Run on Hunter can be beaten.** Hunter ships take two hits here (the hearts show next to the ship
+  count), shots are a little slower, attacks come a little less often, wall gaps are as wide as Pilot's,
+  grazing fills the dash meter twice as fast, and one fewer falling rock per volley. A new checkpoint
+  halfway down the dive, so a continue no longer starts at the top of it.
+- **Mission 7 art:** boulders and the crashed ship sit on the dirt trail instead of in black squares.
+- Also in this build (from `mission7-review`): new future names for the cryptids, each mission teaching
+  its boss's main attack, and the forest trail art and bat-back mace for The Tree Line.
+- Saves: unchanged layout (version 5), so v1.3 saves carry over.
 
 ## Escape Run: no-guns demo v1.0 (2026-11-11)
 - `escape_run.gbc` (`escape_run_nosave.gbc` without save RAM): mission 6 as its own short demo.

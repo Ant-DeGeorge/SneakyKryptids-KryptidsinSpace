@@ -7,6 +7,7 @@
 #define N_MISSIONS 7          // missions on the map: the four stages, the gun-cam mission and the escape run
 #define FLAT_SID 4            // mission index of Flatwoods Drift (gun cam)
 #define ESC_SID 5             // mission index of Escape Run
+#define N_PLAY 6              // missions in the main game; The Tree Line is its own ROM for now (make treeline)
 #define GRD_SID 6             // mission index of The Tree Line (Graul on foot)
 #define ROWS_PER_BANK 409
 
