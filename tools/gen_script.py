@@ -285,7 +285,8 @@ COMMS = [
     ('CM6_CLEAR',   'static', "THEY'RE PULLING UP! TOO HEAVY!"),
 
     ('CM7_START',   'cap',    "STAY ON THE PATH, WOLF. SWING AT ALL."),
-    ('CM7_HINT',    'forge',  "YOUR MACE STOPS SHOTS TOO. USE IT!"),
+    ('CM7_HINT',    'forge',  "CATCH A SHOT. IT FLIES BACK."),
+    ('CM7_BAT',     'forge',  "BAT THEIR ORBS INTO THE PACK!"),
     ('CM7_AMBUSH',  'static', "NUBS'S GROUND CREW! IT'S A TRAP!"),
     ('CM7_CLEAR',   'cap',    "THAT'S ALL OF THEM. KEEP MOVING."),
     ('CM7_BRUISER', 'doc',    "THAT ONE IS BIG. HIT IT A LOT."),

@@ -5,7 +5,7 @@
 #define MAXTB 2
 #define FIELD_BOT 128
 #define HEAD_ROW 8
-enum { P_WALK, P_AMBUSH, P_BRUISER, P_WRECK, P_GUNS, P_DARK, P_BOSS, P_END };
+enum { P_WALK, P_AMBUSH, P_BRUISER, P_WRECK, P_GUNS, P_DARK, P_BOSS, P_END, P_LESSON };
 enum { G_NONE, G_CRAWL, G_SPIT, G_TROOP, G_CHARGE, G_BRUISE, G_CLAW };
 extern uint8_t gr_fscy, gr_phase, gr_vis, gr_gt[MAXG], gr_gx[MAXG], gr_gy[MAXG], gr_gs[MAXG], gr_swing, gr_warn, gr_warn_x;
 extern uint8_t grd_facing, grd_walk_t, grd_p_inv, grd_howl_t, grd_shake_t, grd_gfl[MAXG], grd_tb_on[MAXTB];
