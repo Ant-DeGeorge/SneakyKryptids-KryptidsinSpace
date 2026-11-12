@@ -217,11 +217,6 @@ static void clear_shots(uint8_t pts) {
 static void boom(uint8_t x, uint8_t y) { boom_at(x, y); }
 static void er_hit(void) {
     if (p_inv || dash_t || st != ST_PLAY) return;
-    if (GM == MODE_CADET && er_boost >= BOOST_MAX) {         // Cadet: a full meter dodges for you
-        er_boost = 0; dash_t = 14; dash_dx = px < XO + 80 ? 4 : -4; dash_dy = 0; p_inv = 30;
-        sfx_play(SFX_WHOOSH); hud_dirty = 1;
-        return;
-    }
     hits_taken++; sec_clean = 0;
     shake_t = 12; hud_dirty = 1;
     if (!HUNTER && hearts > 1) { hearts--; p_inv = 80; sfx_play(SFX_HURT); return; }
@@ -234,7 +229,7 @@ static void graze(uint8_t x, uint8_t y) {
     graze_t = 8; graze_x = x; graze_y = y;
     if (er_boost < BOOST_MAX) {
         er_boost += gain_tab[GM];
-        if (er_boost >= BOOST_MAX) { er_boost = BOOST_MAX; tag(GM == MODE_CADET ? "BOOST READY!   " : "BOOST READY: A ", 90); sfx_play(SFX_POWER); }
+        if (er_boost >= BOOST_MAX) { er_boost = BOOST_MAX; tag("BOOST READY: A ", 90); sfx_play(SFX_POWER); }
     }
     sfx_play(SFX_TICK);
 }
@@ -647,7 +642,10 @@ static void row_step(void) {
     if (er_row == ROW_SPRINT + 420) { atmo_k = 2; sky_set(er_atmo + 8); comm_queue_add(CM6_HEAT); }
     if (er_row == ROW_SPRINT + 800) { atmo_k = 3; sky_set(er_atmo + 12); }
     if (er_row == ROW_POD) {
-        if (bounty_pts >= cap_thr[GM]) { er_pod = 1; er_pod_x = muz_x(4); er_pod_y = muz_y() + 10; pod_ok = 1; comm_queue_add(CM6_POD); tag("GRAB THE POD!  ", 200); }
+        er_pod = 1; pod_ok = 1;
+        er_pod_x = (px < XO + 80) ? (uint8_t)(XO + 136) : (uint8_t)(XO + 24);
+        er_pod_y = (uint8_t)(muz_y() + 8);
+        comm_queue_add(CM6_POD); tag("GRAB THE POD!  ", 200);
     }
     if (er_row == ROW_BREAK) { vis_t = 0; comm_queue_add(CM6_CLEAR); }
 }
@@ -698,7 +696,10 @@ uint8_t escape_run(void) BANKED {
         shots_update(); mis_update(); rock_update(step);
         if (er_pod == 1) {
             if (er_t & 1) er_pod_y++;
-            er_pod_x += (er_pod_x < px) ? ((er_t & 3) == 0) : -((er_t & 3) == 0);       // it drifts toward the ship
+            if ((er_t & 7) == 0) {                          // drifts off the safe line, not toward the ship
+                if (er_pod_x < XO + 80) { if (er_pod_x > XO + 12) er_pod_x--; }
+                else if (er_pod_x < XO + 148) er_pod_x++;
+            }
             if (er_pod_y > FIELD_BOT + YO - 8) { er_pod = 3; tag("POD LOST...    ", 120); }
         }
 
