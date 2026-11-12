@@ -155,7 +155,7 @@ static void bar_draw(void) {
 static void hud_draw(void) {
     uint8_t i;
     if (HUNTER) {
-        hud_buf[0] = T_HUD_SHIP; hud_buf[1] = txt_tile('x'); hud_buf[2] = txt_tile('0' + (lives > 9 ? 9 : lives));
+        hud_buf[0] = GR_HUD_BASE + 11; hud_buf[1] = txt_tile('x'); hud_buf[2] = txt_tile('0' + (lives > 9 ? 9 : lives));
         hud_buf[3] = txt_tile(' '); hud_buf[4] = txt_tile(' '); hud_buf[5] = txt_tile(' ');
     } else {
         for (i = 0; i < 5; i++) hud_buf[i] = i >= MAXHEARTS ? txt_tile(' ') : i < hearts ? T_HUD_HEART : T_HUD_HEARTE;
@@ -431,7 +431,8 @@ static void scroll_by(uint8_t n) {
 #define PY_MAX (YO + FIELD_BOT - 10)
 #define SCROLL_Y (YO + 56)
 static uint8_t free_at(uint8_t x, uint8_t y) {
-    return !blocked(x - 5, y + 1) && !blocked(x + 5, y + 1) && !blocked(x - 5, y + 7) && !blocked(x + 5, y + 7);
+    return !blocked(x - 5, y + 1) && !blocked(x + 5, y + 1) && !blocked(x - 5, y + 7) && !blocked(x + 5, y + 7)
+        && !blocked(x - 4, y - 5) && !blocked(x + 4, y - 5);
 }
 static void player_update(void) {
     uint8_t ymin = band_bot() + YO + 10, i, n = 1 + (gr_t & 1), go = 0;
@@ -652,6 +653,7 @@ static void restart_from(uint8_t c) {
     txt_fill(0, 0, 20, 2, txt_tile(' '), HA, 1);
     VBK_REG = 1; memset(buf, 5 | 0x08 | 0x80, 5); set_win_tiles(15, 0, 5, 1, buf); VBK_REG = 0;
     set_win_tile_xy(19, 0, txt_tile(' '));
+    if (HUNTER) { VBK_REG = 1; set_win_tile_xy(0, 1, 5 | 0x08 | 0x80); VBK_REG = 0; }      // Graul's head comes from VRAM bank 1
     tag(TAG_IDLE, 0); bar_draw(); hud_draw();
     ground_draw();
     music_play(MUS_STAGE3);

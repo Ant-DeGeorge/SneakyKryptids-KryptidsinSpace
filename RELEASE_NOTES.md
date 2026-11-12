@@ -22,6 +22,12 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
   kin of your last capture. Bat its orbs back, smash its claw, let the turret work.
 - The ending now plays after mission 7. Saves from every earlier version are upgraded (save version 5).
 - Under the hood: Forge's armory and the crew's radio lines moved to their own banks to make room.
+- **Smoother at max weapon:** the scrolling missions no longer slow down when your shots fill the
+  screen (player-shot collisions now check a small per-frame list of live targets). In Hunter at
+  max weapon, frames that ran long dropped from 14-54% to 1-16%, depending on the mission and weapon.
+- The ending knows about mission 7: capture or kill the Watcher and someone bigger answers.
+- Graul's own head icon on the Hunter HUD; he can no longer stand half inside a boulder; his
+  colours sit further from the hazard colours for tritanopia.
 
 ## New in v1.2 (2026-11-11)
 - **Mission 6, Escape Run:** Nubs's whole gang ambushes the ship, an EMP kills the guns, and you

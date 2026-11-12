@@ -33,7 +33,7 @@ class GroundBot(Bot):
         return c < S['pl'][r] or c > S['pr'][r] or S['ol'][r] <= c <= S['or'][r]
 
     def free(self, S, x, y):
-        return not any(self.blocked(S, x + a, y + b) for a in (-5, 5) for b in (1, 7))
+        return not any(self.blocked(S, x + a, y + b) for a in (-5, 5) for b in (1, 7)) and not any(self.blocked(S, x + a, y - 5) for a in (-4, 4))
 
     def danger(self, S, d, horizon):
         x, y = S['px'], S['py']
