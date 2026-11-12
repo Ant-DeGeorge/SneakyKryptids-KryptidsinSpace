@@ -251,7 +251,9 @@ void set_pal_slot(uint8_t slot, uint8_t bp) {
 
 // ------------------------------------------------------------------ comms (window rows 2-5, shown at the top by a raster split)
 extern const uint8_t comm_who[];
-extern const char * const comm_text[];
+extern const char * const comm_text[];      // in the script_comm bank
+BANKREF_EXTERN(script_comm)
+static char comm_buf[48];
 extern const char * const crew_names[];
 extern const uint8_t mini_cap_tiles[], mini_static_tiles[], mini_forge_tiles[], mini_doc_tiles[], mini_vex_tiles[];
 extern const uint16_t mini_cap_pals[], mini_static_pals[], mini_forge_pals[], mini_doc_pals[], mini_vex_pals[];
@@ -272,7 +274,8 @@ static void comm_start(uint8_t id) {
         VBK_REG = 1; set_win_tile_xy(i & 3, 2 + (i >> 2), 4 | 0x08 | 0x80); VBK_REG = 0;
     }
     txt_put(5, 2, crew_names[who], 1, 5 | 0x80);
-    comm_str = comm_text[id];
+    { const char *p; ld_copy(BANK(script_comm), &p, &comm_text[id], 2); ld_copy(BANK(script_comm), comm_buf, p, 47); comm_buf[47] = 0; }
+    comm_str = comm_buf;
     comm_len = (uint8_t)strlen(comm_str);
     comm_shown = 0; comm_t = 0; comm_on = 1; comm_cx = 0; comm_cy = 0;
     sfx_play(SFX_BLIP);

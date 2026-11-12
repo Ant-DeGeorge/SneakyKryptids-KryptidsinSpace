@@ -174,12 +174,12 @@ class Bot:
     def start(self):
         g = self.g
         g.tick(760)                                       # studio card (~5.5 s), AGD PRESENTS fade, then the title
-        for k in range(3): g.s8('pf_unlock', 5, k)       # all missions open for testing
+        for k in range(3): g.s8('pf_unlock', 6, k)       # all missions open for testing
         g.press('start'); g.tick(30)                     # title -> pilot select
         for k in range({'cadet': 0, 'pilot': 1, 'hunter': 2}[self.mode]):   # slot 0 CADET, 1 PILOT, 2 HUNTER
             g.press('down'); g.tick(4)
         g.press('a'); g.tick(40)                         # -> mission map
-        for k in range(5): g.press('up'); g.tick(3)
+        for k in range(7): g.press('up'); g.tick(3)
         for k in range(self.stage): g.press('down'); g.tick(4)
         if self.boss:
             g.hold('select'); g.press('a'); g.release('select'); g.tick(40)
