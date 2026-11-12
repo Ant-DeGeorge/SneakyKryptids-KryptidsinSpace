@@ -10,7 +10,7 @@
 #include "script_ids.h"
 #define MOUTH_X (uint8_t)(96 + 22 + k_sway)   // the horse-skull mouth (sheet art faces right)
 
-enum { C_IMPS = 1, C_AMBUSH, C_CONES, C_WISP, C_MID, C_COMM, C_PAL, C_WARN, C_SLEEP, C_END };
+enum { C_IMPS = 1, C_AMBUSH, C_CONES, C_WISP, C_MID, C_COMM, C_PAL, C_WARN, C_SLEEP, C_END, C_GAP };
 #define H 0x80
 typedef struct { uint16_t row; uint8_t cmd, a, b; } Cmd;
 #define FO S3_ROW_FOREST0
@@ -31,7 +31,7 @@ static const Cmd script[] = {
     {RAT(FO, 100), C_AMBUSH, 72, 0}, {RAT(FO, 102), C_AMBUSH | H, 104, 0},
     {RAT(FO, 110), C_IMPS, 40, 1}, {RAT(FO, 114), C_IMPS, 120, 0},
     {RAT(FO, 122), C_CONES, 96, 0}, {RAT(FO, 126), C_AMBUSH, 56, 0},
-    {S3_CP1 + 1, C_COMM, CM3_NUBS, 0}, {S3_CP1 + 4, C_MID, 0, 0},
+    {S3_CP1 + 1, C_COMM, CM3_NUBS, 0}, {S3_CP1 + 4, C_GAP, 0, 0}, {S3_CP1 + 16, C_GAP, 1, 0}, {S3_CP1 + 28, C_AMBUSH, 80, 0},
     {RAT(CA, 34), C_IMPS, 72, 0}, {RAT(CA, 40), C_AMBUSH, 104, 0},
     {RAT(CA, 48), C_CONES, 48, 0}, {RAT(CA, 50), C_CONES | H, 112, 0},
     {RAT(CA, 58), C_IMPS, 96, 0}, {RAT(CA, 62), C_AMBUSH | H, 48, 0},
@@ -75,6 +75,23 @@ static void spawners_update(void) {
     for (s = 0; s < MAXSPN; s++) {
         if (!sp_left[s]) continue;
         if (sp_t[s]) { sp_t[s]--; continue; }
+        if (sp_kind[s] == C_GAP) {
+            // one safe column, marked, then the row. The Ashmare's stomp is this.
+            if (!sp_i[s]) {
+                warn_x = sp_a[s] ? (uint8_t)(XO + 36) : (uint8_t)(XO + 124);
+                warn_t = 48; sfx_play(SFX_ALARM);
+                sp_i[s] = 1; sp_t[s] = 48;
+            } else {
+                uint8_t x, gap = warn_x, gw = HUNTER ? 28 : 44;
+                for (x = XO + 4; x < XO + 160; x += 15) {
+                    if (x + 8 > gap - gw / 2 && x < gap + gw / 2) continue;
+                    eb_fire(x, YO + 8, 0, HUNTER ? 14 : 10, 1);
+                }
+                sfx_play(SFX_BOMB);
+                sp_left[s] = 0;
+            }
+            continue;
+        }
         if (sp_kind[s] == C_IMPS) {
             // imps dive from the top in a staggered arc
             i = e_new(E_IMP, sp_a[s] + XO - 8 + (int8_t)((sp_i[s] & 1) ? 16 : -16), 8);
@@ -115,6 +132,7 @@ static void run_cmd(const Cmd *c, uint8_t live) {
                 music_play(MUS_BOSS);
             }
             break;
+        case C_GAP: spawner_add(C_GAP, c->a, 1, 0); break;
         case C_SLEEP: i = e_new(E_SLEEPER, c->a + XO - 8, 8); if (i >= 0) e_a[i] = c->a + XO - 8; break;
         case C_COMM: comm_queue_add(c->a); break;
         case C_PAL: set_pal_slot(c->a, c->b); break;
@@ -216,8 +234,8 @@ static void enemies_update(void) {
 static uint8_t k_phase, k_t, k_swayt, k_atk_i, tail_ph, gap_x, rows_left, row_t;
 static int8_t sway_off;
 enum { A_FIRE = 1, A_STOMP, A_SCREECH, A_IMPS, A_VANISH };
-static const uint8_t atk_p1[] = {A_FIRE, A_STOMP, A_SCREECH, A_STOMP};
-static const uint8_t atk_p2[] = {A_FIRE, A_STOMP, A_IMPS, A_SCREECH, A_VANISH, A_STOMP};
+static const uint8_t atk_p1[] = {A_STOMP, A_VANISH, A_FIRE, A_STOMP};
+static const uint8_t atk_p2[] = {A_VANISH, A_STOMP, A_IMPS, A_FIRE, A_STOMP, A_SCREECH};
 static const uint8_t atk_p3[] = {A_VANISH, A_FIRE, A_STOMP, A_IMPS, A_SCREECH, A_FIRE};
 
 void s3_boss_start(void) BANKED {

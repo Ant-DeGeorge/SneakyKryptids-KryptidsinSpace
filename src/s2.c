@@ -35,24 +35,24 @@ static const Cmd script[] = {
     {RAT(RL, 2), C_COMM, CM2_PYLONS, 0},
     {RAT(RL, 8), C_MOTHS, 64, 0}, {RAT(RL, 14), C_MOTHS | H, 96, 0},
     {S2_CP1 + 2, C_COMM, CM2_MOTHMAN, 0}, {S2_CP1 + 4, C_MID, 0, 0},
-    {RAT(RL, 34), C_MOTHSIDE, 1, 0}, {RAT(RL, 40), C_CLOUD, 64, 0},
-    {RAT(RL, 48), C_EEL, 0, 40}, {RAT(RL, 52), C_MOTHS, 104, 1},
+    {RAT(RL, 34), C_EEL, 1, 40}, {RAT(RL, 40), C_CLOUD, 64, 0},
+    {RAT(RL, 48), C_EEL, 0, 40}, {RAT(RL, 52), C_CLOUD, 104, 0},
     {RAT(RL, 60), C_CLOUD, 104, 0}, {RAT(RL, 62), C_CLOUD | H, 40, 0},
-    {RAT(RL, 70), C_MOTHSIDE, 0, 0}, {RAT(RL, 74), C_EEL | H, 1, 32},
+    {RAT(RL, 70), C_EEL, 0, 32}, {RAT(RL, 74), C_EEL | H, 1, 32},
     {RAT(RL, 80), C_SLEEP, 56, 0},
-    {RAT(RL, 86), C_MOTHS, 72, 0}, {RAT(RL, 92), C_EEL, 1, 56},
+    {RAT(RL, 86), C_CLOUD, 72, 0}, {RAT(RL, 92), C_EEL, 1, 56},
     {RAT(EY, 0), C_STORMY, 1, 0}, {RAT(EY, 2), C_COMM, CM2_EYE, 0},
     {RAT(EY, 8), C_CLOUD, 56, 0}, {RAT(EY, 10), C_CLOUD, 104, 0},
-    {RAT(EY, 18), C_MOTHS, 80, 0}, {RAT(EY, 22), C_EEL, 0, 32}, {RAT(EY, 24), C_EEL | H, 1, 64},
-    {RAT(EY, 32), C_CLOUD, 80, 2}, {RAT(EY, 34), C_MOTHSIDE | H, 1, 0},
-    {RAT(EY, 42), C_MOTHS, 40, 0}, {RAT(EY, 44), C_MOTHS, 120, 0},
+    {RAT(EY, 18), C_CLOUD, 80, 0}, {RAT(EY, 22), C_EEL, 0, 32}, {RAT(EY, 24), C_EEL | H, 1, 64},
+    {RAT(EY, 32), C_CLOUD, 80, 2}, {RAT(EY, 34), C_EEL | H, 1, 40},
+    {RAT(EY, 42), C_CLOUD, 40, 0}, {RAT(EY, 44), C_CLOUD, 120, 0},
     {RAT(EY, 52), C_EEL, 1, 40}, {RAT(EY, 56), C_CLOUD | H, 120, 0}, {RAT(EY, 58), C_CLOUD, 40, 0},
-    {RAT(EY, 66), C_MOTHSIDE, 0, 0}, {RAT(EY, 70), C_MOTHSIDE, 1, 0},
-    {RAT(EY, 78), C_EEL, 0, 48}, {RAT(EY, 80), C_MOTHS, 80, 1},
+    {RAT(EY, 66), C_EEL, 0, 40}, {RAT(EY, 70), C_EEL, 1, 48},
+    {RAT(EY, 78), C_EEL, 0, 48}, {RAT(EY, 80), C_CLOUD, 80, 0},
     {RAT(EY, 88), C_CLOUD, 64, 0}, {RAT(EY, 90), C_CLOUD | H, 96, 0},
-    {RAT(EY, 98), C_MOTHS, 56, 0}, {RAT(EY, 100), C_MOTHS | H, 104, 0},
+    {RAT(EY, 98), C_CLOUD, 56, 0}, {RAT(EY, 100), C_CLOUD | H, 104, 0},
     {RAT(EY, 106), C_EEL, 1, 32}, {RAT(EY, 110), C_EEL | H, 0, 56},
-    {RAT(AP, 0), C_STORMY, 0, 0},
+    {RAT(AP, 0), C_COMM, CM2_GUST, 0},
     {S2_CP2 - 2, C_PAL, 6, BP_TB0}, {S2_CP2 - 2, C_PAL, 7, BP_TB1},
     {S2_CP2 + 2, C_WARN, 0, 0},
     {S2_CP2 + 10, C_COMM, CM2_TBIRD, 0},
@@ -238,6 +238,12 @@ static void enemies_update(void) {
 
 // ------------------------------------------------------------------ storm ambience
 static void storm_update(void) {
+    static uint8_t lane_t;
+    if (stormy && !k_hpmax) {          // the eye's wind keeps pushing through the approach
+        lane_t++;
+        if ((lane_t & 127) == 1) wind = (lane_t & 128) ? 1 : -1;
+        if ((lane_t & 127) == 80) wind = 0;
+    }
     if (flash_left) {
         flash_left--;
         if (!flash_left) { set_pal_slot(2, BP_CLOUD); set_pal_slot(6, BP_ZAP); }
@@ -254,7 +260,7 @@ static void storm_update(void) {
 // ------------------------------------------------------------------ Thunderbird
 static uint8_t k_phase, k_t, k_swayt, k_atk_i, gust_t, sweep_x;
 enum { A_BOLTS = 1, A_FEATHER, A_GUST, A_EELS, A_CHARGE, A_SWEEP };
-static const uint8_t atk_p1[] = {A_BOLTS, A_FEATHER, A_GUST, A_FEATHER};
+static const uint8_t atk_p1[] = {A_GUST, A_BOLTS, A_FEATHER, A_GUST};
 static const uint8_t atk_p2[] = {A_BOLTS, A_FEATHER, A_EELS, A_CHARGE, A_GUST, A_FEATHER};
 static const uint8_t atk_p3[] = {A_SWEEP, A_FEATHER, A_CHARGE, A_EELS, A_BOLTS, A_GUST};
 

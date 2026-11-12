@@ -248,8 +248,8 @@ static uint8_t arm_mode[2], arm_t[2], arm_len[2];
 static int8_t arm_base[2], arm_target[2];
 enum { AM_IDLE, AM_RAISE, AM_GRAB, AM_BACK };
 enum { A_SHARDS = 1, A_GRAB, A_HOWL, A_BATS, A_BLIZZARD };
-static const uint8_t atk_p1[] = {A_SHARDS, A_GRAB, A_HOWL, A_SHARDS};
-static const uint8_t atk_p2[] = {A_GRAB, A_SHARDS, A_BATS, A_HOWL, A_BLIZZARD, A_GRAB};
+static const uint8_t atk_p1[] = {A_BLIZZARD, A_GRAB, A_BLIZZARD, A_GRAB};
+static const uint8_t atk_p2[] = {A_BLIZZARD, A_GRAB, A_BATS, A_HOWL, A_GRAB, A_SHARDS};
 static const uint8_t atk_p3[] = {A_BLIZZARD, A_GRAB, A_HOWL, A_BATS, A_SHARDS, A_GRAB};
 
 void s4_boss_start(void) BANKED {

@@ -40,7 +40,7 @@ static const Cmd script[] = {
     {RAT(S1_ROW_ICE0, 66), C_ICE, 40, 0}, {RAT(S1_ROW_ICE0, 68), C_ICE, 120, 0},
     {RAT(S1_ROW_ICE0, 74), C_SKIFF, 0, 2},
     {RAT(S1_ROW_ICE0, 82), C_KLV, 80, 0}, {RAT(S1_ROW_ICE0, 84), C_KLV | H, 40, 0}, {RAT(S1_ROW_ICE0, 90), C_ICE, 92, 0},
-    {S1_CP1 + 1, C_COMM, CM1_NUBS, 0}, {S1_CP1 + 4, C_MID, 0, 0},
+    {S1_CP1 + 1, C_COMM, CM1_ICE, 0}, {S1_CP1 + 4, C_ICE, 48, 0}, {S1_CP1 + 8, C_ICE, 112, 0}, {S1_CP1 + 14, C_ICE | H, 80, 0},
     {RAT(S1_ROW_ICE0, 112), C_KLSWOOP, 0, 0}, {RAT(S1_ROW_ICE0, 116), C_KLSWOOP, 1, 0}, {RAT(S1_ROW_ICE0, 124), C_ICE, 60, 0}, {RAT(S1_ROW_ICE0, 126), C_ICE | H, 100, 0},
     {PAL_TENT_ROW, C_PAL, 6, BP_TENT},
     {RAT(S1_ROW_CONVOY0, 4), C_COMM, CM1_TANKER, 0},
@@ -53,11 +53,11 @@ static const Cmd script[] = {
     {RAT(S1_ROW_CONVOY0, 50), C_SKIFF, 0, 1},
     {RAT(S1_ROW_WRECK0, 2), C_COMM, CM1_MARKS, 0},
     {RAT(S1_ROW_WRECK0, 6), C_JELLY, 60, 0}, {RAT(S1_ROW_WRECK0, 8), C_JELLY | H, 100, 0},
-    {RAT(S1_ROW_WRECK0, 14), C_KLLINE, 40, 0}, {RAT(S1_ROW_WRECK0, 16), C_KLLINE, 120, 0},
+    {RAT(S1_ROW_WRECK0, 14), C_ICE, 40, 0}, {RAT(S1_ROW_WRECK0, 16), C_ICE, 120, 0},
     {RAT(S1_ROW_WRECK0, 22), C_SKIFF, 1, 0}, {RAT(S1_ROW_WRECK0, 26), C_SKIFF | H, 0, 9},
     {RAT(S1_ROW_WRECK0, 30), C_KLV, 80, 0}, {RAT(S1_ROW_WRECK0, 32), C_KLV | H, 32, 0},
     {RAT(S1_ROW_WRECK0, 38), C_JELLY, 120, 0}, {RAT(S1_ROW_WRECK0, 40), C_KLSWOOP, 0, 0},
-    {RAT(S1_ROW_WRECK0, 46), C_KLLINE, 72, 0}, {RAT(S1_ROW_WRECK0, 48), C_KLLINE | H, 104, 0},
+    {RAT(S1_ROW_WRECK0, 46), C_ICE, 72, 0}, {RAT(S1_ROW_WRECK0, 48), C_ICE | H, 104, 0},
     {RAT(S1_ROW_WRECK0, 54), C_SKIFF, 0, 1},
     {RAT(S1_ROW_WRECK0, 62), C_JELLY, 40, 0}, {RAT(S1_ROW_WRECK0, 64), C_JELLY | H, 120, 0},
     {RAT(S1_ROW_WRECK0, 70), C_KLSWOOP, 1, 0}, {RAT(S1_ROW_WRECK0, 74), C_KLSWOOP, 0, 0},
@@ -193,7 +193,12 @@ static void enemies_update(void) {
             break;
         case E_ICE:
             e_t[i]++;
-            e_y[i] += 0x70; e_x[i] += e_vx[i];
+            if (e_st[i] == 0) {                 // hangs and blinks, then drops straight down that column
+                if ((e_t[i] & 8) == 0) e_fl[i] |= EF_HIDDEN; else e_fl[i] &= (uint8_t)~EF_HIDDEN;
+                if (e_t[i] >= (HUNTER ? 40 : 56)) { e_st[i] = 1; e_t[i] = 0; e_fl[i] &= (uint8_t)~EF_HIDDEN; }
+            } else {
+                e_y[i] += 0x90; e_x[i] += e_vx[i];
+            }
             break;
         case E_GUN:
             e_t[i]++;
@@ -373,6 +378,16 @@ static void boss_update(void) {
                 tn_target[n] = (uint8_t)ang; tn_mode[n] = TM_WARN; tn_t[n] = 0;
                 warn_x = px + 4; warn_t = HUNTER ? 50 : 80;
                 sfx_play(SFX_ALARM);
+                if (k_phase >= 2) {                 // the other arm marks a second column
+                    uint8_t m = n ^ 1;
+                    rx = 48 + XO + (m ? 56 : 40) + k_sway - 16;
+                    d = aim(rx, YO + 52, px + 8, py + 12);
+                    ang = (int8_t)(d << 1);
+                    if (ang > 32) ang -= 64;
+                    if (ang > 20) ang = 20;
+                    if (ang < -20) ang = -20;
+                    tn_target[m] = (uint8_t)ang; tn_mode[m] = TM_WARN; tn_t[m] = 16;
+                }
             }
         }
         break;
