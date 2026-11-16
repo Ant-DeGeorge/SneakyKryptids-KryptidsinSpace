@@ -7,6 +7,7 @@
 #include "assets.h"
 #include "sound.h"
 #include "objs.h"
+#include "s1x.h"
 #include "script_ids.h"
 
 enum { C_KLLINE = 1, C_KLV, C_KLSWOOP, C_JELLY, C_SKIFF, C_ICE, C_MID, C_COMM, C_PAL, C_WARN, C_SLEEP, C_END };
@@ -242,14 +243,14 @@ static uint8_t k_phase, k_t, k_swayt, k_atk_i;
 static uint8_t tn_len[2], tn_mode[2], tn_t[2], tn_target[2];
 static int8_t tn_base[2], tn_curl[2];
 enum { TM_IDLE, TM_WIND, TM_SWIPE, TM_WARN, TM_SLAM, TM_BACK };
-enum { A_INK = 1, A_SWIPE, A_SLAM, A_BROOD, A_SPIRAL };
-static const uint8_t atk_p1[] = {A_INK, A_SWIPE, A_INK, A_SLAM};
-static const uint8_t atk_p2[] = {A_INK, A_SLAM, A_BROOD, A_SWIPE, A_INK, A_SLAM};
-static const uint8_t atk_p3[] = {A_SPIRAL, A_SLAM, A_INK, A_BROOD, A_SWIPE, A_SLAM};
+enum { A_INK = 1, A_SWIPE, A_SLAM, A_BROOD, A_SPIRAL, A_HAIL = S1X_HAIL, A_RAIN = S1X_RAIN };   // hail and rain live in s1x.c
+static const uint8_t atk_p1[] = {A_INK, A_SWIPE, A_HAIL, A_SLAM, A_RAIN};
+static const uint8_t atk_p2[] = {A_INK, A_SLAM, A_BROOD, A_HAIL, A_SWIPE, A_RAIN, A_SLAM};
+static const uint8_t atk_p3[] = {A_SPIRAL, A_SLAM, A_HAIL, A_INK, A_BROOD, A_RAIN, A_SWIPE, A_SLAM};
 
 void s1_boss_start(void) BANKED {
     uint8_t i;
-    k_hpmax = HUNTER ? 820 : 420;
+    k_hpmax = HUNTER ? 820 : MIDMODE ? 700 : 500;
     k_hp = k_hpmax;
     k_phase = 1; k_state = 0; k_t = 90; k_swayt = 0; k_sway = 0; k_hitflash = 0; k_atk_i = 0; k_retreat = 0;
     k_hdx = 0; k_hw = 28; k_hy0 = YO + 10; k_hy1 = YO + 56;
@@ -358,11 +359,11 @@ static void boss_update(void) {
         if (!k_t) {
             uint8_t a;
             if (k_phase == 1) a = atk_p1[k_atk_i % sizeof(atk_p1)];
-            else if (k_phase == 2 || !HUNTER) a = atk_p2[k_atk_i % sizeof(atk_p2)];
+            else if (k_phase == 2) a = atk_p2[k_atk_i % sizeof(atk_p2)];
             else a = atk_p3[k_atk_i % sizeof(atk_p3)];
             k_atk_i++;
             k_state = a; k_t = 0;
-            boss_face(a == A_INK || a == A_SPIRAL ? S1_BV_SPIT : S1_BV_ANGRY);
+            boss_face(a == A_INK || a == A_SPIRAL || a == A_RAIN ? S1_BV_SPIT : S1_BV_ANGRY);
             if (a == A_SWIPE) {
                 uint8_t n = (px + 8 < 96 + k_sway) ? 0 : 1;
                 tn_mode[n] = TM_WIND; tn_t[n] = 0;
@@ -417,12 +418,16 @@ static void boss_update(void) {
         }
         if (k_t >= 70) { k_state = 0; k_t = HUNTER ? 40 : 80; boss_face(S1_BV_OPEN); }
         break;
+    case A_HAIL: case A_RAIN:
+        k_t++;
+        if (s1x_attack(k_state, k_t)) { k_state = 0; k_t = HUNTER ? 40 : 80; boss_face(S1_BV_OPEN); }
+        break;
     case A_SPIRAL:
         k_t++;
-        if ((k_t & 3) == 0 && k_t < 140) {
+        if ((k_t & (HUNTER ? 3 : 7)) == 0 && k_t < 140) {      // one slow arm outside Hunter
             uint8_t cx = 96 + k_sway, cy = YO + 56, d = k_t >> 2;
-            eb_fire(cx, cy, d * 3, 18, 0);
-            eb_fire(cx, cy, d * 3 + 16, 18, 0);
+            eb_fire(cx, cy, d * 3, HUNTER ? 18 : 13, 0);
+            if (HUNTER) eb_fire(cx, cy, d * 3 + 16, 18, 0);
         }
         if (k_t >= 160) { k_state = 0; k_t = 50; boss_face(S1_BV_OPEN); }
         break;

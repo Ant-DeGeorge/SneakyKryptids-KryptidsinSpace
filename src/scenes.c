@@ -94,9 +94,9 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #elif defined(TREELINE_DEMO)
 #define DEMO_VERSION "ON FOOT DEMO V1.0"
 #elif defined(UNLOCK_ALL)
-#define DEMO_VERSION "DEMO V1.4 UNLOCKED"
+#define DEMO_VERSION "DEMO V1.5 UNLOCKED"
 #else
-#define DEMO_VERSION "DEMO V1.4"
+#define DEMO_VERSION "DEMO V1.5"
 #endif
 #define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
 #define SV_LEN(n, g) (4 + N_PROFILES * PF_LEN(n, g) + 1)
@@ -400,64 +400,6 @@ static uint8_t pilot_select(void) {
     }
 }
 
-// ------------------------------------------------------------------ mission map
-static uint8_t mission_map(void) {
-    uint8_t sel, t = 0, s, y, top = pf_unlock[profile];
-    if (top >= N_PLAY) top = N_PLAY - 1;
-#ifdef UNLOCK_ALL
-    top = N_PLAY - 1;                 // test build (make unlocked): every mission selectable
-#endif
-    sel = top;
-    screen_prep();
-    set_bkg_palette(6, 1, pal_teal);
-    set_bkg_palette(5, 1, pal_star);
-    set_bkg_palette(4, 1, pal_dim);
-    set_bkg_palette(3, 1, pal_lock);
-    txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
-    center(0, "MISSION SELECT", 7);
-    txt_put(1, 1, pilot_names[profile], 0, 7);
-    txt_put(15, 1, "$", 0, 6); put_num(16, 1, pf_credits[profile], 4, 7);
-    for (s = 0; s < N_PLAY; s++) {
-        y = 2 + s * 2;
-        if (s <= top) {
-            char c[2]; c[0] = '1' + s; c[1] = 0;
-            txt_put(2, y, c, 0, 6);
-            txt_put(4, y, mission_names[s], 0, 7);
-            put_rating(4, y + 1, profile, s);
-            if (pf_hi[profile][s]) put_num(12, y + 1, pf_hi[profile][s], 7, 4);
-            if (pf_out[profile][s]) { char c[2]; c[0] = " EKC"[pf_out[profile][s]]; c[1] = 0; txt_put(10, y + 1, c, 0, pf_out[profile][s] == OUT_CAPTURE ? 5 : 6); }
-        } else {
-            put_tile(2, y, T_HUD_LOCK, 3);            // light lock icon (pal_lock)
-            txt_put(4, y, mission_names[s], 0, 4);            // greyed out until unlocked
-        }
-    }
-    center(17, "A:GO  START:ARMORY", 6);
-    screen_on(LCDC_SCREEN);
-    music_play(MUS_MAP);
-    s = 0xFF;
-    while (1) {
-        wait_vbl_done(); input_poll(); t++;
-        if ((joy_new & J_UP) && sel) { sel--; sfx_play(SFX_SELECT); }
-        if ((joy_new & J_DOWN) && sel < top) { sel++; sfx_play(SFX_SELECT); }
-        if (s != sel) {
-            s = sel;
-            txt_fill(0, 16, 20, 1, txt_tile(' '), 7, 0);
-            center(16, boss_names[sel], 7);
-        }
-        // the Sneaky Kryptid parks next to the chosen mission
-        oam_fixed(1, 0 * 8 + 8, (2 + sel * 2) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP, 0);
-        oam_fixed(2, 1 * 8 + 8, (2 + sel * 2) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP + 2, 0);
-        if (joy_new & J_START) { sfx_play(SFX_SELECT); return 0xFE; }
-        if (joy_new & J_A) {
-            sfx_play(SFX_START);
-            start_cp = (joy & J_SELECT) ? 2 : 0;
-            wait_frames(20);
-            return sel;
-        }
-        if (joy_new & J_B) return 0xFF;
-    }
-}
-
 // Forge's armory lives in armory.c (its own bank); saves are written here when it closes.
 
 // ------------------------------------------------------------------ cutscenes
@@ -498,13 +440,15 @@ static void load_scene(uint8_t sc) {
     ld_image(s->bank, 0, 0, 20, 9, s->map, s->attr, N_COMMON, 0, 0);
 }
 
+static uint8_t cs_debrief;
 static void cutscene(const uint8_t *meta, const char * const *text, uint8_t count) {
     uint8_t i, cur_scene = 0xFF, k, x, y, b, skip = 0, n;
     screen_prep();
     set_bkg_palette(7, 1, pal_panel);
     txt_fill(0, 9, 20, 9, txt_tile(' '), 7, 0);
     fill_bkg_rect(0, 9, 20, 1, T_HUD_FRAMET);
-    music_play(MUS_BRIEF);
+    if (cs_debrief) { music_play(MUS_BRIEF); cs_debrief = 0; }   // briefings run on the title theme; debriefs get their own
+    else music_play(MUS_TITLE);
     for (i = 0; i < count && !skip; i++) {
         uint8_t sc = meta[i * 2], por = meta[i * 2 + 1];
         const char *s = text[i];
@@ -627,15 +571,87 @@ static void ending(void) {
     wait_button(1200);
 }
 
-static void game_over(uint8_t sid) {
+// ------------------------------------------------------------------ mission map
+// Top half: a picture of the place the chosen mission goes, with the target's name under it.
+// Bottom half: the mission list, then the chosen mission's stars, best score and how the hunt ended.
+static const uint8_t map_scene[N_MISSIONS] = {2, 3, 4, 7, 9, 10, 10};
+static void map_detail(uint8_t sel) {
+    load_scene(map_scene[sel]);
+    txt_fill(0, 8, 20, 1, txt_tile(' '), 7, 0);
+    txt_put(0, 8, "TARGET:", 0, 6); txt_put(8, 8, boss_names[sel], 0, 7);
+    txt_fill(0, 16, 20, 1, txt_tile(' '), 7, 0);
+    put_rating(1, 16, profile, sel);
+    if (pf_hi[profile][sel]) put_num(7, 16, pf_hi[profile][sel], 7, 7);
+    if (pf_out[profile][sel]) txt_put(15, 16, pf_out[profile][sel] == OUT_CAPTURE ? "CAGED" : pf_out[profile][sel] == OUT_KILL ? "SLAIN" : "FLED ", 0, pf_out[profile][sel] == OUT_CAPTURE ? 5 : 6);
+}
+static uint8_t mission_map(void) {
+    uint8_t sel, t = 0, s, y, top = pf_unlock[profile];
+    if (top >= N_PLAY) top = N_PLAY - 1;
+#ifdef UNLOCK_ALL
+    top = N_PLAY - 1;                 // test build (make unlocked): every mission selectable
+#endif
+    sel = top;
     screen_prep();
     set_bkg_palette(6, 1, pal_teal);
+    set_bkg_palette(5, 1, pal_star);
+    set_bkg_palette(4, 1, pal_dim);
+    set_bkg_palette(3, 1, pal_lock);
     txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
-    center(6, "GAME OVER", 7);
-    txt_put(3, 9, "SCORE", 0, 7); put_num(10, 9, score, 7, 7);
-    if (score > pf_hi[profile][sid]) { pf_hi[profile][sid] = score; save_write(); center(12, "NEW HIGH SCORE!", 6); }
+    fill_bkg_rect(0, 9, 20, 1, T_HUD_FRAMET);
+    for (s = 0; s < N_PLAY; s++) {
+        y = 10 + s;
+        if (s <= top) {
+            char c[2]; c[0] = '1' + s; c[1] = 0;
+            txt_put(2, y, c, 0, 6);
+            txt_put(4, y, mission_names[s], 0, 7);
+        } else {
+            put_tile(2, y, T_HUD_LOCK, 3);            // light lock icon (pal_lock)
+            txt_put(4, y, mission_names[s], 0, 4);    // greyed out until unlocked
+        }
+    }
+    center(17, "A:GO  START:ARMORY", 6);
+    map_detail(sel);
     screen_on(LCDC_SCREEN);
-    music_play(MUS_OVER);
+    music_play(MUS_TITLE);            // the title theme runs from the title screen until the mission starts
+    while (1) {
+        wait_vbl_done(); input_poll(); t++;
+        s = sel;
+        if ((joy_new & J_UP) && sel) sel--;
+        if ((joy_new & J_DOWN) && sel < top) sel++;
+        if (s != sel) { sfx_play(SFX_SELECT); screen_off(); map_detail(sel); screen_on(LCDC_SCREEN); }
+        // the Sneaky Kryptid parks next to the chosen mission
+        oam_fixed(1, 0 * 8 + 8, (10 + sel) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP, 0);
+        oam_fixed(2, 1 * 8 + 8, (10 + sel) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP + 2, 0);
+        if (joy_new & J_START) { sfx_play(SFX_SELECT); return 0xFE; }
+        if (joy_new & J_A) {
+            sfx_play(SFX_START);
+            start_cp = (joy & J_SELECT) ? 2 : 0;
+            wait_frames(20);
+            return sel;
+        }
+        if (joy_new & J_B) return 0xFF;
+    }
+}
+
+// ------------------------------------------------------------------ game over / quit card
+// The place the target is still loose in, what happened, the score, and the game's name.
+static void game_over(uint8_t sid, uint8_t res) {
+    screen_prep();
+    set_bkg_palette(6, 1, pal_teal);
+    set_bkg_palette(5, 1, pal_star);
+    txt_fill(0, 0, 20, 18, txt_tile(' '), 7, 0);
+    load_scene(map_scene[sid]);
+    fill_bkg_rect(0, 9, 20, 1, T_HUD_FRAMET);
+    center(10, res == RES_QUIT ? "CONTRACT DROPPED" : "SHIP LOST", 5);
+    center(12, boss_names[sid], 7);
+    center(13, "IS STILL OUT THERE", 7);
+    if (res != RES_QUIT) {
+        txt_put(3, 15, "SCORE", 0, 6); put_num(10, 15, score, 7, 7);
+        if (score > pf_hi[profile][sid]) { pf_hi[profile][sid] = score; save_write(); center(16, "NEW HIGH SCORE!", 5); }
+    }
+    center(17, "KRYPTIDS IN SPACE", 6);
+    screen_on(LCDC_SCREEN);
+    if (res == RES_QUIT) music_stop(); else music_play(MUS_OVER);
     wait_frames(60);
     wait_button(600);
 }
@@ -672,9 +688,9 @@ void game_main(void) BANKED {
             res = SOLO_SID == GRD_SID ? ground_run() : SOLO_SID == ESC_SID ? escape_run() : cockpit_run();
             if (res == RES_CLEAR) {
                 { uint8_t o = (bounty_out ? bounty_out : 1) - 1;
-                  cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
+                  cs_debrief = 1; cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
                 results(sid);
-            } else game_over(sid);
+            } else game_over(sid, res);
         }
         continue;
 #endif
@@ -686,10 +702,10 @@ void game_main(void) BANKED {
                 res = sid == GRD_SID ? ground_run() : sid == ESC_SID ? escape_run() : sid == FLAT_SID ? cockpit_run() : stage_run(sid);
                 if (res == RES_CLEAR) {
                     { uint8_t o = (bounty_out ? bounty_out : 1) - 1;
-                      cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
+                      cs_debrief = 1; cutscene(outro_meta[sid * 3 + o], outro_text[sid * 3 + o], outro_count[sid * 3 + o]); }
                     results(sid);
                     if (sid == N_PLAY - 1) ending();
-                } else game_over(sid);
+                } else game_over(sid, res);
             }
         }
     }

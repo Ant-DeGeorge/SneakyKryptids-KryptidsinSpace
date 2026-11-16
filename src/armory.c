@@ -44,15 +44,16 @@ static const char * const gear_name[N_GEAR] = {"HULL PLATING", "CANNON TUNE", "B
     "LANCE RUNE", "RICOCHET RUNE", "CHAIN RUNE"};
 static const uint8_t gear_max[N_GEAR] = {2, 2, 2, 2, 1, 1, 1, 1};
 static const uint16_t gear_cost[N_GEAR][2] = {{150, 350}, {120, 300}, {80, 200}, {200, 400}, {300, 0}, {250, 0}, {250, 0}, {300, 0}};
-static const char * const gear_desc[N_GEAR][2] = {
-    {"+1 LIFE EVERY\nMISSION", "ANOTHER +1 LIFE.\nTANK MODE."},
-    {"START WITH\nWEAPON LEVEL 2", "START WITH\nWEAPON LEVEL 3"},
-    {"+1 BOMB EVERY\nMISSION", "ANOTHER +1 BOMB"},
-    {"ROOM FOR 3\nBUDDIES", "START EVERY\nMISSION WITH ONE"},
-    {"SHOTS BREAK\nBIG ORBS (2 HITS)", ""},
-    {"MAX TWIN: CENTRE\nLANCE PIERCES ALL", ""},
-    {"MAX SPREAD: OUTER\nSTARS BOUNCE", ""},
-    {"MAX WISP: HITS\nJUMP TO ANOTHER", ""}};
+// what it does, and how you use it (up to 4 lines of 19)
+static const char * const gear_desc[N_GEAR] = {
+    "ONE MORE SHIP EVERY\nMISSION, PER LEVEL.\nALWAYS ON.",
+    "START EACH MISSION\nWITH A STRONGER GUN:\nLV1: 2 PIPS. LV2: 3.",
+    "ONE MORE BOMB EVERY\nMISSION, PER LEVEL.\nPRESS B TO FIRE ONE.",
+    "LV1: KEEP 3 BUDDIES.\nLV2: START WITH ONE.\nFLY INTO A SLEEPING\nBABY TO WAKE IT.",
+    "YOUR SHOTS BREAK THE\nBIG ORBS (2 HITS).\nALWAYS ON.",
+    "TWIN GUN, 3 PIPS:\nTHE CENTRE SHOT GOES\nTHROUGH EVERYTHING.",
+    "SPREAD GUN, 3 PIPS:\nTHE OUTER SHOTS\nBOUNCE OFF WALLS.",
+    "WISP GUN, 3 PIPS:\nEACH HIT JUMPS TO\nTHE NEXT ENEMY."};
 #define GEAR_PAGE1 GEAR_LANCE                        // page 2 of the armory: the weapon runes
 static const char * const forge_quip[4] = {"FORGE: NICE.\nSHE PURRS NOW.", "FORGE: RUNES\nCARVED. DON'T LICK.",
     "FORGE: PAID IN\nFULL. I LOVE YOU.", "FORGE: DONE. TRY\nNOT TO SCRATCH IT."};
@@ -84,13 +85,13 @@ void armory_run(void) BANKED {
                 if (lv >= gear_max[r]) txt_put(15, 4 + i * 2 + pg, "MAX", 0, 6);
                 else { txt_put(14, 4 + i * 2 + pg, "$", 0, 6); put_num(15, 4 + i * 2 + pg, gear_cost[r][lv], 3, pf_credits[profile] >= gear_cost[r][lv] ? 7 : 4); }
             }
-            if (quip != 0xFF) put_lines(1, 14, forge_quip[quip]);
-            else {
-                r = g0 + sel; lv = pf_gear[profile][r];
-                if (lv < gear_max[r]) put_lines(1, 14, gear_desc[r][lv]);
-                else if (pg) put_lines(1, 14, "FORGE: CARVED.\nMAX IT TO WAKE IT.");
-                else put_lines(1, 14, "FORGE: MAXED OUT.\nSHE'S PERFECT.");
-            }
+            // page 2: what the three guns are, with the pickup you grab for each
+            if (pg) {
+                txt_put(1, 10, "THE PICKUP CHANGES", 0, 6); txt_put(1, 11, "AS IT FALLS. SAME", 0, 6); txt_put(1, 12, "GUN AGAIN: +1 PIP.", 0, 6);
+                for (i = 0; i < 3; i++) { oam_fixed(1 + i * 2, 18 * 8 + 8, (4 + i * 2) * 8 + 12, ST_PK_T + i * 4, 7); oam_fixed(2 + i * 2, 19 * 8 + 8, (4 + i * 2) * 8 + 12, ST_PK_T + i * 4 + 2, 7); }
+            } else for (i = 1; i < 7; i++) oam_fixed(i, 0, 0, 0, 0);
+            if (quip != 0xFF) put_lines(0, 14, forge_quip[quip]);
+            else put_lines(0, 13, gear_desc[g0 + sel]);
         }
         wait_vbl_done(); input_poll(); t++;
         arrow_at(0, 3 + sel * 2 + pg, t);

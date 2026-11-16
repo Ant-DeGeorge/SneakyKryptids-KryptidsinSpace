@@ -364,3 +364,18 @@ void boss_clear(void) {
     boss_comm = 0; warn_t = 0; bp_n = 0; wind = 0; bar_last = 0xFF; outro_t = 0;
     memset(hz_on, 0, sizeof hz_on);
 }
+
+// ------------------------------------------------------------------ recharging shield
+uint8_t shield_on;
+static uint16_t shield_t;
+static const uint16_t shield_cd[3] = {240, 420, 900};       // frames to recharge: cadet, pilot, hunter
+void shield_reset(void) { shield_on = 1; shield_t = 0; }
+uint8_t shield_absorb(void) {
+    if (!shield_on) return 0;
+    shield_on = 0; shield_t = shield_cd[gmode];
+    sfx_play(SFX_BOSSHIT);
+    return 1;
+}
+void shield_tick(void) {
+    if (!shield_on && shield_t && !--shield_t) { shield_on = 1; sfx_play(SFX_PICKUP); }
+}
