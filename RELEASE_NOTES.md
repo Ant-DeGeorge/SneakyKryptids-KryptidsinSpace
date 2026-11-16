@@ -44,6 +44,17 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - Escape Run, Cadet: three arrows instead of two, lit for longer.
 - Quit card: a line from the crew.
 
+### Hunter balance (2026-11-16)
+- **Mission 5 (gun-cam):** now has the shield (all modes; Hunter and Pilot see it as a pip on the
+  HUD). Hunter ships take two hits, orbs take a little longer to arrive, at most 5 are in the air
+  (was 6), and enemies wait longer between shots.
+- **Mission 6 (Escape Run), Hunter:** the opening chase attacks less often, the extra aimed orb and
+  the second missile hold off until later phases, missiles are slower and stop steering sooner, and
+  every run starts with one dash ready (all modes).
+- **Shield recharge on Hunter:** 25 s in missions 1-4 (was 15), 10 s in missions 5 and 6.
+- Clumsy test bot on Hunter: mission 5 went from never clearing (three ships lost inside 45 s) to
+  clearing with 0-2 continues; mission 6 from 1-3 continues to 0-1.
+
 ## Demo v1.4 (2026-11-12)
 - **Six missions.** The main game is the flying game again: missions 1-6, and the ending plays after
   Escape Run. The Tree Line is its own ROM for now (`tree_line.gbc`, `make treeline`), with its own save.

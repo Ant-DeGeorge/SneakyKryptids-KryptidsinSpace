@@ -924,7 +924,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
     stage_load();
     score = 0; hits_taken = 0; continues_used = 0; play_seconds = 0; midboss_killed = 0; kill_count = 0;
     lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = g_gear[GEAR_CANNON];
-    shield_reset();
+    shield_reset(0);
     bud_n = g_gear[GEAR_KENNEL] >= 2 ? 1 : 0; bud_hint_done = 0;
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     if (start_cp == 2 && wlevel < 1) wlevel = 1;              // boss practice: start powered up

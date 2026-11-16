@@ -170,11 +170,14 @@ static uint8_t foe_count(void) {
     return n;
 }
 // an orb leaves (x, y) and lands on the cockpit n frames later unless it is shot down
+// Hunter flies this one with two hits per ship, as in Escape Run: one-hit ships with manual fire
+// and no aim help ended runs inside the first minute
+#define CK_HEARTS (HUNTER ? 2 : MAXHEARTS)
 static void orb_fire(uint8_t x, uint8_t y, uint8_t big) {
     int8_t i;
-    uint8_t n = HUNTER ? 76 : MIDMODE ? 94 : 120;
+    uint8_t n = HUNTER ? 86 : MIDMODE ? 94 : 120;
     int16_t dx, dy;
-    if (orb_count() >= (HUNTER ? 6 : MIDMODE ? 4 : 3) + big) return;
+    if (orb_count() >= (HUNTER ? 5 : MIDMODE ? 4 : 3) + big) return;
     i = o_new(big ? O_BIGORB : O_ORB);
     if (i < 0) return;
     if (big) n += 44;
@@ -194,11 +197,12 @@ static void hud_draw(void) {
     uint8_t i;
     if (HUNTER) {
         hud_tile(0, T_HUD_SHIP); hud_tile(1, txt_tile('x')); hud_tile(2, txt_tile('0' + (lives > 9 ? 9 : lives)));
-        hud_tile(3, txt_tile(' ')); hud_tile(4, txt_tile(' '));
+        hud_tile(3, shield_on ? T_HUD_PIP : T_HUD_PIPE);                                    // shield: lit = up
+        hud_tile(4, hearts > 0 ? T_HUD_HEART : T_HUD_HEARTE);
     } else {
         for (i = 0; i < 5; i++) hud_tile(i, i >= MAXHEARTS ? txt_tile(' ') : i < hearts ? T_HUD_HEART : T_HUD_HEARTE);
     }
-    hud_tile(5, HUNTER ? txt_tile(' ') : txt_tile('0' + lives));
+    hud_tile(5, HUNTER ? (hearts > 1 ? T_HUD_HEART : T_HUD_HEARTE) : txt_tile('0' + lives));
     hud_tile(6, T_HUD_BOMB); hud_tile(7, txt_tile('0' + bombs));
     hud_tile(8, bud_n ? T_HUD_BUD : txt_tile(' '));
     hud_tile(9, txt_tile(wtype == 0 ? 'T' : wtype == 1 ? 'S' : 'H'));
@@ -304,9 +308,10 @@ static void clear_orbs(uint8_t pts) {
 }
 static void ck_hit(void) {
     if (p_inv || st == ST_DYING || st == ST_CLEAR) return;
+    if (shield_absorb()) { p_inv = 50; shake_t = 6; hud_dirty = 1; return; }      // the shield takes it
     hits_taken++;
     shake_t = 14; flash_t = 3; hud_dirty = 1;
-    if (!HUNTER && hearts > 1) {
+    if (hearts > 1) {
         hearts--; p_inv = 70; sfx_play(SFX_HURT);
         return;
     }
@@ -424,6 +429,7 @@ static void use_bomb(void) {
 static void player_update(void) {
     uint8_t v;
     if (p_inv) p_inv--;
+    { uint8_t was = shield_on; shield_tick(); if (was != shield_on) hud_dirty = 1; }
     if (joy & (J_LEFT | J_RIGHT | J_UP | J_DOWN)) { if (hold_t < 40) hold_t++; } else hold_t = 0;
     v = hold_t < 5 ? 1 : hold_t < 14 ? 2 : 3;
     if (joy & J_LEFT)  ck_cx = ck_cx > 8 + v ? ck_cx - v : 8;
@@ -465,7 +471,7 @@ static void objects_update(void) {
                 if (ck_z[i] <= (t == O_ELITE ? 80 : 104)) {
                     project(i);
                     ck_st[i] = 1; ck_t[i] = 0; ck_hx[i] = ck_sx[i]; ck_hy[i] = ck_sy[i];
-                    ck_ft[i] = (HUNTER ? 30 : MIDMODE ? 60 : 90) + ((i * 13) & 31);
+                    ck_ft[i] = (HUNTER ? 45 : MIDMODE ? 60 : 90) + ((i * 13) & 31);
                 }
             } else if (ck_st[i] == 1) {                              // hover, strafe, shoot
                 ck_sx[i] = (ck_b[i] & 4) ? ck_hx[i] + (sin64[(ck_t[i] * 2) & 63] >> 3) : ck_hx[i];
@@ -475,7 +481,7 @@ static void objects_update(void) {
                     else {
                         orb_fire(ck_sx[i], ck_sy[i] + 6, t == O_ELITE && HUNTER);
                         ck_b[i] &= ~8;
-                        ck_ft[i] = HUNTER ? 80 : MIDMODE ? 115 : 150;
+                        ck_ft[i] = HUNTER ? 95 : MIDMODE ? 115 : 150;
                     }
                 }
                 if (ck_t[i] >= 250) ck_st[i] = 2;
@@ -911,7 +917,8 @@ uint8_t cockpit_run(void) BANKED {
     stage_id = CK_STAGE;
     ck_load();
     score = 0; hits_taken = 0; continues_used = 0; play_seconds = 0; midboss_killed = 0; kill_count = 0;
-    lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = g_gear[GEAR_CANNON];
+    lives = 3 + g_gear[GEAR_HULL]; hearts = CK_HEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = g_gear[GEAR_CANNON];
+    shield_reset(1);
     bud_n = g_gear[GEAR_KENNEL] >= 2 ? 1 : 0;
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     if (start_cp == 2 && wlevel < 1) wlevel = 1;
@@ -957,7 +964,7 @@ uint8_t cockpit_run(void) BANKED {
                 alert = 0;
                 if (lives > 1) {
                     lives--;
-                    hearts = MAXHEARTS;
+                    hearts = CK_HEARTS;
                     if (HUNTER) { if (wlevel > g_gear[GEAR_CANNON]) wlevel--; }
                     if (bombs < 3 + g_gear[GEAR_BOMBS]) bombs = 3 + g_gear[GEAR_BOMBS];
                     p_inv = 150;
@@ -967,7 +974,7 @@ uint8_t cockpit_run(void) BANKED {
                     if (!continue_prompt()) return RES_GAMEOVER;
                     continues_used++;
                     if (HUNTER) { score = 0; bounty_pts = 0; } else bounty_pts >>= 1;
-                    lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];
+                    lives = 3 + g_gear[GEAR_HULL]; hearts = CK_HEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];
                     if (HUNTER) wlevel = g_gear[GEAR_CANNON];
                     restart_from(ck_cp);
                     continue;
