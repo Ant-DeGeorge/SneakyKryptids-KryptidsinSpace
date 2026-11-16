@@ -27,6 +27,14 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
   gun pickups and explains pips.
 - Saves: unchanged (version 5).
 
+### Speed pass (2026-11-16)
+- The per-frame code (stage, core, objs, s1-s4, escape, cockpit) is compiled with a deeper
+  optimizer search: about 3.3 KB smaller overall and faster. A clean build now takes about 12 minutes.
+- Shots: the enemy-bullet table is built inside the bullet update that already runs, the boss
+  position is worked out once per frame, and nothing runs when no shots are in the air.
+- Hunter at full weapon power, frames that ran long: 3-12% before, 1-7% after. Escape Run: about
+  a third fewer.
+
 ## Demo v1.4 (2026-11-12)
 - **Six missions.** The main game is the flying game again: missions 1-6, and the ending plays after
   Escape Run. The Tree Line is its own ROM for now (`tree_line.gbc`, `make treeline`), with its own save.
