@@ -104,6 +104,7 @@ extern uint8_t shield_on;
 void shield_reset(void);
 uint8_t shield_absorb(void);     // 1 = the shield took this hit
 void shield_tick(void);
+uint8_t shield_show(void);       // 1 = draw the dome this frame
 void add_score(uint16_t pts);
 void spawn_pickup(uint8_t x, uint8_t y, uint8_t kind);
 void e_kill(uint8_t i);

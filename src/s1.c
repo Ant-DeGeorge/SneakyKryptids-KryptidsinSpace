@@ -364,6 +364,7 @@ static void boss_update(void) {
             k_atk_i++;
             k_state = a; k_t = 0;
             boss_face(a == A_INK || a == A_SPIRAL || a == A_RAIN ? S1_BV_SPIT : S1_BV_ANGRY);
+            if (k_phase == 1 && k_atk_i < 6 && a >= A_HAIL) boss_comm = a == A_HAIL ? CM1_HAIL : CM1_RAIN;   // first time each: say what it is
             if (a == A_SWIPE) {
                 uint8_t n = (px + 8 < 96 + k_sway) ? 0 : 1;
                 tn_mode[n] = TM_WIND; tn_t[n] = 0;

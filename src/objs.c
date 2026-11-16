@@ -368,14 +368,22 @@ void boss_clear(void) {
 // ------------------------------------------------------------------ recharging shield
 uint8_t shield_on;
 static uint16_t shield_t;
+static uint8_t shield_fx;                                   // frames of break / return flash
 static const uint16_t shield_cd[3] = {240, 420, 900};       // frames to recharge: cadet, pilot, hunter
-void shield_reset(void) { shield_on = 1; shield_t = 0; }
+void shield_reset(void) { shield_on = 1; shield_t = 0; shield_fx = 0; }
 uint8_t shield_absorb(void) {
     if (!shield_on) return 0;
-    shield_on = 0; shield_t = shield_cd[gmode];
+    shield_on = 0; shield_t = shield_cd[gmode]; shield_fx = 20;
     sfx_play(SFX_BOSSHIT);
     return 1;
 }
 void shield_tick(void) {
-    if (!shield_on && shield_t && !--shield_t) { shield_on = 1; sfx_play(SFX_PICKUP); }
+    if (shield_fx) shield_fx--;
+    if (!shield_on && shield_t && !--shield_t) { shield_on = 1; shield_fx = 30; sfx_play(SFX_PICKUP); }
+}
+// up: a see-through dome (every other frame), solid for half a second when it comes back.
+// broken: it flickers out. About to return (last half second): it flickers in.
+uint8_t shield_show(void) {
+    if (shield_on) return shield_fx || (frame_count & 1);
+    return (shield_fx || shield_t < 30) && (frame_count & 4);
 }

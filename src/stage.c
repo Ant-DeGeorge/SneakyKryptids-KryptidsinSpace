@@ -621,7 +621,7 @@ static void draw_all(void) {
     uint8_t i, x, y, t, p, f, s, c;
     oam_begin();
     if (p_alive) { oam_band[(uint8_t)(py - 16) >> 4] += 2; oam_band[py >> 4] += 2; }   // the ship's fixed slots
-    if (shield_on && p_alive && (flame_t & 1)) { oam_add(px - 8, py - 21, ST_SHIELD, 2 | 8); oam_add(px, py - 21, ST_SHIELD + 2, 2 | 8); }   // shield dome over the nose
+    if (p_alive && shield_show()) { oam_add(px - 8, py - 21, ST_SHIELD, 2 | 8); oam_add(px, py - 21, ST_SHIELD + 2, 2 | 8); }   // shield dome over the nose
     // boss parts (tentacles, tail)
     if (k_hpmax) {
         if (k_state == 21 && bounty_out == OUT_CAPTURE && outro_t < 112) {     // rune net closing in

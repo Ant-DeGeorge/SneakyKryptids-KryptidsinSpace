@@ -199,6 +199,8 @@ COMMS = [
     ('CM1_KRAKEN',  'cap',    "THERE'S OUR PAYCHECK! THE RIMEMAW!"),
     ('CM1_HURT',    'doc',    "IT'S BLEEDING INK! KEEP PUSHING!"),
     ('CM1_TENT',    'forge',  "TENTACLES! DON'T GET HUGGED!"),
+    ('CM1_HAIL',    'static', "ICE OVERHEAD! FIND THE OPEN LANE!"),
+    ('CM1_RAIN',    'cap',    "INK RAIN! SLIP THROUGH THE GAP!"),
     ('CM1_GOTAWAY', 'vex',    "NUBS GOT AWAY. HE STILL OWES ME."),
     ('CM1_MARKS',   'doc',    "SUCKER MARKS ON EVERY HULL. CUTE."),
     ('CM1_MIDCAP',  'vex',    "NUBS, NETTED! DEBT PAID IN FULL!"),
