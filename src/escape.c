@@ -78,7 +78,7 @@ static uint8_t bst_x[NBST], bst_y[NBST], last_step;
 
 // [cadet, pilot, hunter]
 static const uint8_t spd_tab[3][3] = {{32, 24, 40}, {32, 28, 44}, {36, 32, 48}};      // scroll, 1/16 px per frame, per phase
-static const uint8_t cd_tab[3][3] = {{120, 220, 95}, {104, 190, 78}, {84, 160, 62}};   // frames between attacks, per phase
+static const uint8_t cd_tab[3][3] = {{120, 220, 95}, {104, 190, 78}, {98, 160, 62}};   // frames between attacks, per phase
 static const uint8_t bspd_tab[3] = {17, 22, 24};                                      // bullet speed, 1/16 px
 // Hunter flies the escape with two hits per ship: no guns here, so one-hit ships ended runs in the first minute
 #define ER_HEARTS (HUNTER ? 2 : MAXHEARTS)
@@ -264,12 +264,12 @@ static void mis_fire(uint8_t x, uint8_t y) {
     }
 }
 static void mis_update(void) {
-    uint8_t i, x, y, d, a, spd = GM == MODE_CADET ? 20 : MIDMODE ? 24 : 29;
+    uint8_t i, x, y, d, a, spd = GM == MODE_CADET ? 20 : MIDMODE ? 24 : 27;
     for (i = 0; i < MAXMIS; i++) {
         if (!er_mis_on[i]) continue;
         x = er_mis_x[i] >> 8; y = er_mis_y[i] >> 8;
         d = er_mis_d[i];
-        if (++er_mis_t[i] < (HUNTER ? 150 : 110) && (er_mis_t[i] & (HUNTER ? 3 : 7)) == 0) {   // steer for a while, then fly straight
+        if (++er_mis_t[i] < (HUNTER ? 125 : 110) && (er_mis_t[i] & (HUNTER ? 3 : 7)) == 0) {   // steer for a while, then fly straight
             a = (aim(x, y, px, py) - d) & 31;
             if (a && a < 16) d = (d + 1) & 31; else if (a) d = (d - 1) & 31;
             er_mis_d[i] = d;
@@ -368,7 +368,7 @@ static void attack(uint8_t a) {
         d = aim(muz_x(m), muz_y(), px, py);
         eb_fire(muz_x(m), muz_y(), d, sp + 3, 0);
         if (GM != MODE_CADET) { eb_fire(muz_x(m), muz_y(), d + 3, sp + 3, 0); eb_fire(muz_x(m), muz_y(), d - 3, sp + 3, 0); }
-        if (HUNTER) eb_fire(muz_x(4), muz_y() + 6, aim(muz_x(4), muz_y() + 6, px, py), sp, 1);
+        if (HUNTER && phase) eb_fire(muz_x(4), muz_y() + 6, aim(muz_x(4), muz_y() + 6, px, py), sp, 1);   // the extra aimed orb waits until after the opening chase
         sfx_play(SFX_SPIT);
         break;
     case A_CURTAIN:                                          // a row of shots with one gap, falling together
@@ -387,7 +387,7 @@ static void attack(uint8_t a) {
         break;
     case A_MISSILE:
         mis_fire(muz_x(4), muz_y() + 4);
-        if (HUNTER) mis_fire(muz_x(0), muz_y());
+        if (HUNTER && phase == 2) mis_fire(muz_x(0), muz_y());      // a second missile only in the dive
         break;
     case A_RAIN:                                             // crossing diagonals from the outer cannons
         burst_n = GM == MODE_CADET ? 4 : MIDMODE ? 6 : 8; burst_t = 0; burst_k = 0;
@@ -709,8 +709,9 @@ uint8_t escape_run(void) BANKED {
     lives = 3 + g_gear[GEAR_HULL]; hearts = ER_HEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = 0;
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     next_extend = 30000UL;
-    shield_reset();
+    shield_reset(1);
     restart_from(start_cp == 2 ? 2 : 0);
+    er_boost = BOOST_MAX;                                      // every run starts with one dash in the tank
     while (1) {
         wait_vbl_done();
         input_poll();

@@ -101,7 +101,7 @@ int8_t e_new(uint8_t type, uint8_t x, uint8_t y);
 void boom_at(uint8_t x, uint8_t y);
 // recharging shield (scrolling missions and Escape Run): takes one hit, comes back after a few seconds
 extern uint8_t shield_on;
-void shield_reset(void);
+void shield_reset(uint8_t late);  // late = 1 in missions 5 and 6, where Hunter's shield returns sooner
 uint8_t shield_absorb(void);     // 1 = the shield took this hit
 void shield_tick(void);
 uint8_t shield_show(void);       // 1 = draw the dome this frame

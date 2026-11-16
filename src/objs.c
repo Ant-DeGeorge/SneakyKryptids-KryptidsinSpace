@@ -369,11 +369,14 @@ void boss_clear(void) {
 uint8_t shield_on;
 static uint16_t shield_t;
 static uint8_t shield_fx;                                   // frames of break / return flash
-static const uint16_t shield_cd[3] = {240, 420, 900};       // frames to recharge: cadet, pilot, hunter
-void shield_reset(void) { shield_on = 1; shield_t = 0; shield_fx = 0; }
+// frames to recharge: cadet, pilot, hunter. Hunter waits 25 s in the scrolling missions (they have guns,
+// pickups and bombs) and 10 s in the gun-cam mission and Escape Run, which gave it no room at all.
+static const uint16_t shield_cd[2][3] = {{240, 420, 1500}, {240, 420, 600}};
+static uint8_t shield_late;
+void shield_reset(uint8_t late) { shield_on = 1; shield_t = 0; shield_fx = 0; shield_late = late; }
 uint8_t shield_absorb(void) {
     if (!shield_on) return 0;
-    shield_on = 0; shield_t = shield_cd[gmode]; shield_fx = 20;
+    shield_on = 0; shield_t = shield_cd[shield_late][gmode]; shield_fx = 20;
     sfx_play(SFX_BOSSHIT);
     return 1;
 }
