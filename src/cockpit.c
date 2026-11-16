@@ -934,10 +934,10 @@ uint8_t cockpit_run(void) BANKED {
         if ((joy_new & J_START) && st != ST_DYING) {
             paused ^= 1;
             sfx_play(SFX_SELECT);
-            if (paused) txt_put(13, 1, "PAUSE  ", 1, HA);
+            if (paused) txt_put(0, 1, "PAUSE   SELECT: QUIT", 1, HA);
             else hud_dirty = 1;
         }
-        if (paused) continue;
+        if (paused) { if (joy_new & J_SELECT) return RES_QUIT; continue; }
         ck_loops++;
         if (++sec_t >= 60) { sec_t = 0; play_seconds++; }
         if (alert == 2 && play_seconds >= 8) alert = 0;

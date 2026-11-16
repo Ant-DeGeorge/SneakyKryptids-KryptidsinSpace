@@ -580,6 +580,7 @@ static void pressure_fire(void) {
 
 // ------------------------------------------------------------------ dying
 static void player_hit(void) {
+    if (shield_absorb()) { p_inv = 60; return; }
     hits_taken++;
     if (!HUNTER) {
         if (hearts > 1) {
@@ -620,6 +621,7 @@ static void draw_all(void) {
     uint8_t i, x, y, t, p, f, s, c;
     oam_begin();
     if (p_alive) { oam_band[(uint8_t)(py - 16) >> 4] += 2; oam_band[py >> 4] += 2; }   // the ship's fixed slots
+    if (shield_on && p_alive && (flame_t & 1)) { oam_add(px - 8, py - 21, ST_SHIELD, 2 | 8); oam_add(px, py - 21, ST_SHIELD + 2, 2 | 8); }   // shield dome over the nose
     // boss parts (tentacles, tail)
     if (k_hpmax) {
         if (k_state == 21 && bounty_out == OUT_CAPTURE && outro_t < 112) {     // rune net closing in
@@ -871,7 +873,7 @@ static void stage_load(void) {
     ld_spr_pal(SD->dbank, 3, 4, SD->objpal);
     set_sprite_data(ST_SHOT_TWIN, 6, fx_shot_tiles);          // weapon flair art (bank 1)
     set_sprite_data(FX_FIRST, 8, fx_new_tiles);
-    VBK_REG = 1; ld_spr_data(BANK_FX2, FX2_BASE, FX2_NT, fx2_tiles); VBK_REG = 0;   // weapon flair part 2
+    VBK_REG = 1; ld_spr_data(BANK_FX2, FX2_BASE, FX2_NT, fx2_tiles); ld_spr_data(BANK_A2, ST_SHIELD, 4, SHIELD_SRC); VBK_REG = 0;   // weapon flair part 2, shield dome
     wpal_cur = 0xFF;
     ld_bkg_data(BANK_A2, 0, 0, N_COMMON, common_tiles);
     ld_bkg_data(SD->dbank, 0, N_COMMON, SD->n_scen0, SD->scen0);
@@ -922,6 +924,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
     stage_load();
     score = 0; hits_taken = 0; continues_used = 0; play_seconds = 0; midboss_killed = 0; kill_count = 0;
     lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = g_gear[GEAR_CANNON];
+    shield_reset();
     bud_n = g_gear[GEAR_KENNEL] >= 2 ? 1 : 0; bud_hint_done = 0;
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     if (start_cp == 2 && wlevel < 1) wlevel = 1;              // boss practice: start powered up
@@ -949,10 +952,10 @@ uint8_t stage_run(uint8_t sid) BANKED {
         if ((joy_new & J_START) && st != ST_DYING) {
             paused ^= 1;
             sfx_play(SFX_SELECT);
-            if (paused) txt_put(13, hud_row, "PAUSE  ", 1, 5 | 0x80);
+            if (paused) txt_put(0, hud_row, "PAUSE   SELECT: QUIT", 1, 5 | 0x80);
             else hud_dirty = 1;
         }
-        if (paused) continue;
+        if (paused) { if (joy_new & J_SELECT) return RES_QUIT; continue; }
         if (++sec_t >= 60) { sec_t = 0; play_seconds++; }
 
         if (scroll_on && !mb_active && st != ST_BOSS) {
@@ -968,6 +971,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
         }
         if (checkpoint < 2 && (pos >> 3) >= SD->cp[checkpoint + 1] && SD->cp[checkpoint + 1]) checkpoint++;
         comm_update();
+        shield_tick();
         player_update();
         buddies_update();
         pbullets_update();

@@ -224,6 +224,7 @@ static void er_hit(void) {
         sfx_play(SFX_WHOOSH); hud_dirty = 1;
         return;
     }
+    if (shield_absorb()) { p_inv = 60; shake_t = 6; return; }
     hits_taken++; sec_clean = 0;
     shake_t = 12; hud_dirty = 1;
     if (hearts > 1) { hearts--; p_inv = 80; sfx_play(SFX_HURT); hud_dirty = 1; return; }
@@ -469,6 +470,33 @@ static void player_update(void) {
     }
 }
 
+// ------------------------------------------------------------------ Cadet guide
+// Finds the next wall below the ship and where its gap is; if the ship is not lined up with it,
+// or is sitting in the column of a rock or a laser, g_dir says which way to move.
+static int8_t g_dir;
+static uint8_t g_x, g_y;                                      // safe lane centre (object x), screen line of the wall (0 = none)
+static void cadet_guide(void) {
+    uint8_t r, y, best = 255, sy = py - YO, x, i;
+    g_dir = 0; g_y = 0;
+    for (r = 0; r < 32; r++) if (er_wall[r]) {
+        y = (uint8_t)((r << 3) - er_fscy);
+        if (y < 136 && y + 8 > sy && y < best) { best = y; g_x = ((er_wl[r] + er_wr[r] + 1) << 2) + XO; }
+    }
+    if (best == 255 && er_next_warn) { best = 136; g_x = er_next_c * 8 + 4 + XO; }
+    if (best != 255) {
+        g_y = best;
+        if (px + 14 < g_x) g_dir = 1; else if (px > g_x + 14) g_dir = -1;
+    }
+    if (g_dir) return;
+    for (i = 0; i < MAXRK; i++) if (er_rk_on[i] && NEAR(er_rk_x[i], px, 13) && (er_rk_on[i] == 1 || (uint8_t)(er_rk_y[i] >> 8) + 8 > py)) g_dir = px < er_rk_x[i] ? -1 : 1;
+    if (er_las_state == 1 || er_las_state == 2) for (i = 0; i < er_las_n; i++) {
+        x = er_las_col[i] * 8 + 4 + XO;
+        if (NEAR(x, px, 10)) g_dir = px < x ? -1 : 1;
+    }
+    if (g_dir < 0 && px < PX_MIN + 14) g_dir = 1;
+    if (g_dir > 0 && px > PX_MAX - 14) g_dir = -1;
+}
+
 // ------------------------------------------------------------------ drawing
 static void spr16(uint8_t x, uint8_t y, uint8_t tile, uint8_t prop) {     // centre, object coords
     oam_add(x - 16, y - 24, tile, prop); oam_add(x - 8, y - 24, tile + 2, prop);
@@ -486,6 +514,18 @@ static void draw_all(void) {
         oam_fixed(2, ox, oy - 16, k, 1 | 0x40); oam_fixed(3, ox + 8, oy - 16, k + 2, 1 | 0x40);
     }
     oam_begin();
+    if (shield_on && st == ST_PLAY && (flame_t & 1)) { oam_add(ox, oy + 6, ST_SHIELD, 2 | 8 | 0x40); oam_add(ox + 8, oy + 6, ST_SHIELD + 2, 2 | 8 | 0x40); }
+    if (GM == MODE_CADET && st == ST_PLAY) {                  // Cadet: the safe lane is marked, and arrows say which way
+        if (g_y) for (i = 0; i < 3; i++) {
+            y = py - YO + 20 + i * 24 + ((flame_t >> 1) & 7);
+            if (y + 8 < g_y && y < FIELD_BOT - 12) oam_add(g_x - 12, y + 16, ER_ST_CHEV, 6 | 8);
+        }
+        if (g_dir && (flame_t & 4)) {
+            k = g_dir < 0 ? 0x20 : 0;
+            oam_add(px - 12 + g_dir * 15, py - 20, ST_ARROW, 2 | k);
+            oam_add(px - 12 + g_dir * 23, py - 20, ST_ARROW, 2 | k);
+        }
+    }
     if (dash_t) for (i = 0; i < 3; i++) if ((flame_t + i) & 1) { oam_add(trail_x[i] - 16, trail_y[i] - 24, ST_SHIP_TOP, 2 | 0x40); oam_add(trail_x[i] - 8, trail_y[i] - 24, ST_SHIP_TOP + 2, 2 | 0x40); }
     if (pulse_t) {                                           // shield pulse: a ring of cool sparks opening out
         k = (36 - pulse_t) + 6;
@@ -554,7 +594,7 @@ static void er_load(void) {
     screen_off(); splits_off(); oam_clear();
     VBK_REG = 0;
     ld_spr_data(BANK_A2, 0, N_SPR_TILES, spr_tiles);
-    VBK_REG = 1; ld_spr_data(BANK_ER, 0, ER_SPR_NT, er_spr); VBK_REG = 0;
+    VBK_REG = 1; ld_spr_data(BANK_ER, 0, ER_SPR_NT, er_spr); ld_spr_data(BANK_A2, ST_SHIELD, 4, SHIELD_SRC); VBK_REG = 0;
     ld_spr_pal(BANK_A2, 0, 3, obj_pals);
     ld_spr_pal(BANK_A2, 7, 1, obj_pals + 28);
     ld_spr_pal(BANK_ER, 3, 4, er_objpal);
@@ -668,6 +708,7 @@ uint8_t escape_run(void) BANKED {
     lives = 3 + g_gear[GEAR_HULL]; hearts = ER_HEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS]; wtype = 0; wlevel = 0;
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     next_extend = 30000UL;
+    shield_reset();
     restart_from(start_cp == 2 ? 2 : 0);
     while (1) {
         wait_vbl_done();
@@ -675,9 +716,9 @@ uint8_t escape_run(void) BANKED {
         if ((joy_new & J_START) && st == ST_PLAY) {
             paused ^= 1;
             sfx_play(SFX_SELECT);
-            if (paused) txt_put(13, 1, "PAUSE  ", 1, HA); else hud_dirty = 1;
+            if (paused) txt_put(0, 1, "PAUSE   SELECT: QUIT", 1, HA); else hud_dirty = 1;
         }
-        if (paused) continue;
+        if (paused) { if (joy_new & J_SELECT) return RES_QUIT; continue; }
         er_loops++; er_t++;
         if (++sec_t >= 60) { sec_t = 0; play_seconds++; }
         comm_update();
@@ -700,6 +741,8 @@ uint8_t escape_run(void) BANKED {
             if (er_row < ROW_END) attacks_update();
         }
         if (p_inv) p_inv--;
+        shield_tick();
+        if (GM == MODE_CADET) cadet_guide();
         if (pulse_t) pulse_t--;
         laser_update();
         shots_update(); mis_update(); rock_update(step);

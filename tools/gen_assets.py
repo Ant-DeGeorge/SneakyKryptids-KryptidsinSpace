@@ -86,9 +86,12 @@ for k, z in enumerate([art_dex.BUDZ0, art_dex.BUDZ1, art_dex.BUDZ2, art_dex.BUDZ
     add_sprite(f"BUDZ{k}", z, 16)
 add_sprite("SPARK", ["........", "1..1..1.", ".1.1.1..", "..111...", "1111111.", "..111...", ".1.1.1..", "1..1..1."] + ["........"] * 8, 8)
 add_sprite("RUNE", ["..333...", ".31113..", "3121213.", "3112113.", "3121213.", ".31113..", "..333...", "........"] + ["........"] * 8, 8)
-assert len(spr) <= 128, len(spr)
+assert len(spr) <= 120, len(spr)             # tiles 120-127 of VRAM bank 0 belong to the weapon effects
+n_common_spr = len(spr)
+add_sprite("SHIELD_SRC", S.SHIELD, 16)       # shield dome: stored after the common set, loaded to VRAM bank 1 tile 124
 o.carray(2, "spr_tiles", sum((encode(t) for t in spr), []))
-o.define("N_SPR_TILES", len(spr))
+o.define("N_SPR_TILES", n_common_spr)
+o.define("ST_SHIELD", 124)
 print("common sprite tiles:", len(spr))
 
 # ======================================================================= common BG tiles

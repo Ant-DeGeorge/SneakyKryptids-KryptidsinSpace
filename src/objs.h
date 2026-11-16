@@ -99,6 +99,11 @@ void eb_fire(uint8_t cx, uint8_t cy, uint8_t d, uint8_t spd, uint8_t big);
 void eb_ring(uint8_t cx, uint8_t cy, uint8_t n, uint8_t phase, uint8_t spd, uint8_t big);
 int8_t e_new(uint8_t type, uint8_t x, uint8_t y);
 void boom_at(uint8_t x, uint8_t y);
+// recharging shield (scrolling missions and Escape Run): takes one hit, comes back after a few seconds
+extern uint8_t shield_on;
+void shield_reset(void);
+uint8_t shield_absorb(void);     // 1 = the shield took this hit
+void shield_tick(void);
 void add_score(uint16_t pts);
 void spawn_pickup(uint8_t x, uint8_t y, uint8_t kind);
 void e_kill(uint8_t i);

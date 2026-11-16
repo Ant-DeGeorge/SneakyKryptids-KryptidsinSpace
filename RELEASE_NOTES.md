@@ -7,6 +7,26 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
 - `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows DEMO V1.4 UNLOCKED)
 
+## Demo v1.5 (2026-11-16)
+- **Title music** now runs from the title screen through the pilot, mission, armory and briefing
+  screens until the mission starts. Debriefs keep Contract Terms.
+- **Mission screen:** a picture of where the chosen mission goes, the target's name, the mission
+  list, and the chosen mission's stars, best score and how the hunt ended (CAGED / SLAIN / FLED).
+- **Rimemaw:** two new attacks. Hail: ice shakes loose, hangs, then drops down its columns with a
+  lane left open. Rain: rows of ink across the screen with a moving gap. Cadet and Pilot now get a
+  third phase with a slow ink spiral. Health: Cadet 500, Pilot 700 (was 420), Hunter 820.
+- **Pickups** each have their own shape: twin (two bolts in a box), spread (a fan), wisp (a little
+  ghost), bomb, heart, spare ship.
+- **Shield:** a dome over the ship's nose takes one hit, then recharges (Cadet 4 s, Pilot 7 s,
+  Hunter 15 s). Scrolling missions 1-4 and Escape Run. Shielded hits do not count against you.
+- **Escape Run, Cadet:** chevrons mark the safe lane toward the next gap, and arrows beside the ship
+  say which way to move for walls, falling rocks and lasers.
+- **Game over / quit card:** the place, "SHIP LOST" or "CONTRACT DROPPED", the target still out
+  there, score. Pause now offers SELECT: QUIT in every mission.
+- **Armory:** every item says what it does and how to use it; the weapon rune page shows the three
+  gun pickups and explains pips.
+- Saves: unchanged (version 5).
+
 ## Demo v1.4 (2026-11-12)
 - **Six missions.** The main game is the flying game again: missions 1-6, and the ending plays after
   Escape Run. The Tree Line is its own ROM for now (`tree_line.gbc`, `make treeline`), with its own save.

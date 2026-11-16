@@ -39,7 +39,9 @@ extern const uint16_t white_pal[];  // bank 2, 4
 #define ST_BUDZ3 112
 #define ST_SPARK 116
 #define ST_RUNE 118
-extern const uint8_t spr_tiles[];  // bank 2, 1920
+#define ST_SHIELD 124                    // VRAM bank 1 (bank 0's last 8 sprite tiles are the weapon effects); data follows spr_tiles
+#define SHIELD_SRC (spr_tiles + 120 * 16)
+extern const uint8_t spr_tiles[];  // bank 2, 1984
 #define N_SPR_TILES 120
 #define T_FONT 0
 extern const uint8_t ascii_map[];  // bank 2, 128
