@@ -323,15 +323,7 @@ static void targets_gather(void) {
         if (ht_rx[n]) { y = ht_y[n] - ht_ry[n]; if (y < ht_y0) ht_y0 = y; y = ht_y[n] + ht_ry[n]; if (y > ht_y1) ht_y1 = y; }
         n++;
     }
-    ht_n = n;
-    n = 0;
-    tb_y0 = 255; tb_y1 = 0;
-    for (j = 0; j < MAXEB; j++) if (eb_on[j] == 1) {
-        tb_j[n] = j; tb_x[n] = (eb_x[j] >> 8) + 3; y = (eb_y[j] >> 8) + 3; tb_y[n] = y;
-        if (y < tb_y0) tb_y0 = y; if (y > tb_y1) tb_y1 = y;
-        n++;
-    }
-    tb_n = n; tb_y0 -= 7; tb_y1 += 7;
+    ht_n = n;                                                // the enemy-bullet table (tb_*) is filled by ebullets_update, which already has the positions
 }
 static uint8_t shot_hits(uint8_t bx, uint8_t by, uint8_t *seg) {
     uint8_t k, j, s, c, r;
@@ -355,8 +347,11 @@ static uint8_t shot_hits(uint8_t bx, uint8_t by, uint8_t *seg) {
     return 0xFF;
 }
 static void pbullets_update(void) {
-    uint8_t i, j, bx, by, tx, t, seg, ty, k;
+    uint8_t i, j, bx, by, tx, t, seg, ty, k, bcx = 0;
+    for (i = 0; i < MAXPB; i++) if (pb_on[i]) break;
+    if (i == MAXPB) return;                                  // no shots in the air: nothing to do
     targets_gather();
+    if (k_hpmax) bcx = boss_cx();
     for (i = 0; i < MAXPB; i++) {
         if (!pb_on[i]) continue;
         t = pb_type[i];
@@ -374,7 +369,7 @@ static void pbullets_update(void) {
                 }
             }
         } else if (HOMING(t) && k_hpmax && k_state < 20) {
-            tx = boss_cx() - 4;
+            tx = bcx - 4;
             if (tx > pb_x[i] + 1 && pb_vx[i] < 2) pb_vx[i]++;
             else if (tx + 1 < pb_x[i] && pb_vx[i] > -2) pb_vx[i]--;
         }
@@ -420,7 +415,7 @@ static void pbullets_update(void) {
             break;
         }
         if (!pb_on[i] || !k_hpmax || k_state >= 20) continue;
-        if (NEAR(bx, boss_cx(), k_hw) && by > k_hy0 - k_retreat && by < k_hy1 - k_retreat) {
+        if (NEAR(bx, bcx, k_hw) && by > k_hy0 - k_retreat && by < k_hy1 - k_retreat) {
             pb_on[i] = 0;
             boss_hit(pb_dmg[i]);
         }
@@ -430,7 +425,7 @@ static void pbullets_update(void) {
 static void ebullets_update(void) {
     uint8_t i, x, y, r;
     uint8_t pcx = px + 8, pcy = py + 12;
-    uint8_t hb = HUNTER ? 2 : 3;
+    uint8_t hb = HUNTER ? 2 : 3, n = 0, y0 = 255, y1 = 0;
     for (i = 0; i < MAXEB; i++) {
         if (!eb_on[i]) continue;
         if (eb_on[i] > 1) { eb_on[i]--; if (eb_on[i] == 1) eb_on[i] = 0; continue; }
@@ -441,9 +436,14 @@ static void ebullets_update(void) {
             r = eb_big[i] ? 3 + hb : 2 + hb;
             if (NEAR(x + (eb_big[i] ? 4 : 3), pcx, r) && NEAR(y + (eb_big[i] ? 4 : 3), pcy, r)) {
                 eb_on[i] = 0; player_hit();
+                continue;
             }
         }
+        tb_j[n] = i; tb_x[n] = x + 3; y += 3; tb_y[n] = y;   // table for next frame's shot checks
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+        n++;
     }
+    tb_n = n; tb_y0 = y0 - 7; tb_y1 = y1 + 7;
 }
 
 static void catch_buddy(uint8_t i) {

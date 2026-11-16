@@ -48,6 +48,11 @@ weaponfx:
 	python3 tools/gen_weapon_fx2.py
 	python3 tools/cvd_check.py
 
+# The per-frame code gets a much deeper register-allocation search: smaller and faster output
+# (stage.c: about 500 bytes less), at the cost of a minute or two of compile time per file.
+HOT = stage core objs s1 s2 s3 s4 escape cockpit
+$(HOT:%=build/obj/%.o): CFLAGS += -Wf--max-allocs-per-node50000
+
 build/obj/%.o: src/%.c $(HDR)
 	@mkdir -p $(dir $@)
 	$(LCC) $(CFLAGS) -c -o $@ $<
