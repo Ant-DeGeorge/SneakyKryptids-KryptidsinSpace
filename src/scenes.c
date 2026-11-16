@@ -575,17 +575,18 @@ static void ending(void) {
 // Top half: a picture of the place the chosen mission goes, with the target's name under it.
 // Bottom half: the mission list, then the chosen mission's stars, best score and how the hunt ended.
 static const uint8_t map_scene[N_MISSIONS] = {2, 3, 4, 7, 9, 10, 10};
-static void map_detail(uint8_t sel) {
-    load_scene(map_scene[sel]);
+static void map_text(uint8_t sel) {
     txt_fill(0, 8, 20, 1, txt_tile(' '), 7, 0);
     txt_put(0, 8, "TARGET:", 0, 6); txt_put(8, 8, boss_names[sel], 0, 7);
     txt_fill(0, 16, 20, 1, txt_tile(' '), 7, 0);
+    if (!pf_hi[profile][sel] && !pf_out[profile][sel]) { center(16, "NOT FLOWN YET", 4); return; }
     put_rating(1, 16, profile, sel);
-    if (pf_hi[profile][sel]) put_num(7, 16, pf_hi[profile][sel], 7, 7);
+    put_num(7, 16, pf_hi[profile][sel], 7, 7);
     if (pf_out[profile][sel]) txt_put(15, 16, pf_out[profile][sel] == OUT_CAPTURE ? "CAGED" : pf_out[profile][sel] == OUT_KILL ? "SLAIN" : "FLED ", 0, pf_out[profile][sel] == OUT_CAPTURE ? 5 : 6);
 }
+static void map_detail(uint8_t sel) { load_scene(map_scene[sel]); map_text(sel); }
 static uint8_t mission_map(void) {
-    uint8_t sel, t = 0, s, y, top = pf_unlock[profile];
+    uint8_t sel, t = 0, s, y, top = pf_unlock[profile], pend = 0;
     if (top >= N_PLAY) top = N_PLAY - 1;
 #ifdef UNLOCK_ALL
     top = N_PLAY - 1;                 // test build (make unlocked): every mission selectable
@@ -618,7 +619,8 @@ static uint8_t mission_map(void) {
         s = sel;
         if ((joy_new & J_UP) && sel) sel--;
         if ((joy_new & J_DOWN) && sel < top) sel++;
-        if (s != sel) { sfx_play(SFX_SELECT); screen_off(); map_detail(sel); screen_on(LCDC_SCREEN); }
+        if (s != sel) { sfx_play(SFX_SELECT); map_text(sel); pend = 16; }      // words now; the picture when the cursor rests
+        if (pend && !--pend) { screen_off(); map_detail(sel); screen_on(LCDC_SCREEN); }
         // the Sneaky Kryptid parks next to the chosen mission
         oam_fixed(1, 0 * 8 + 8, (10 + sel) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP, 0);
         oam_fixed(2, 1 * 8 + 8, (10 + sel) * 8 + 16 - 4 + ((t >> 4) & 1), ST_SHIP_TOP + 2, 0);
@@ -645,11 +647,12 @@ static void game_over(uint8_t sid, uint8_t res) {
     center(10, res == RES_QUIT ? "CONTRACT DROPPED" : "SHIP LOST", 5);
     center(12, boss_names[sid], 7);
     center(13, "IS STILL OUT THERE", 7);
-    if (res != RES_QUIT) {
+    if (res == RES_QUIT) { center(15, "THE CREW WILL NEVER", 6); center(16, "LET YOU FORGET THIS.", 6); }
+    else {
         txt_put(3, 15, "SCORE", 0, 6); put_num(10, 15, score, 7, 7);
         if (score > pf_hi[profile][sid]) { pf_hi[profile][sid] = score; save_write(); center(16, "NEW HIGH SCORE!", 5); }
     }
-    center(17, "KRYPTIDS IN SPACE", 6);
+    center(17, "KRYPTIDS IN SPACE", 5);
     screen_on(LCDC_SCREEN);
     if (res == RES_QUIT) music_stop(); else music_play(MUS_OVER);
     wait_frames(60);

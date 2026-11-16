@@ -35,6 +35,15 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - Hunter at full weapon power, frames that ran long: 3-12% before, 1-7% after. Escape Run: about
   a third fewer.
 
+### Polish (2026-11-16)
+- Mission screen: the words change at once and the picture loads when the cursor rests, so moving
+  through the list no longer blinks on every step. Missions you have not flown say NOT FLOWN YET.
+- Shield: flickers out when it breaks, flickers in just before it returns, and is solid for half a
+  second when it is back.
+- Rimemaw: Static and the Captain call out hail and ink rain the first time each is used.
+- Escape Run, Cadet: three arrows instead of two, lit for longer.
+- Quit card: a line from the crew.
+
 ## Demo v1.4 (2026-11-12)
 - **Six missions.** The main game is the flying game again: missions 1-6, and the ending plays after
   Escape Run. The Tree Line is its own ROM for now (`tree_line.gbc`, `make treeline`), with its own save.

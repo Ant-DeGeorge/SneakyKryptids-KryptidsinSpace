@@ -514,16 +514,17 @@ static void draw_all(void) {
         oam_fixed(2, ox, oy - 16, k, 1 | 0x40); oam_fixed(3, ox + 8, oy - 16, k + 2, 1 | 0x40);
     }
     oam_begin();
-    if (shield_on && st == ST_PLAY && (flame_t & 1)) { oam_add(ox, oy + 6, ST_SHIELD, 2 | 8 | 0x40); oam_add(ox + 8, oy + 6, ST_SHIELD + 2, 2 | 8 | 0x40); }
+    if (st == ST_PLAY && shield_show()) { oam_add(ox, oy + 6, ST_SHIELD, 2 | 8 | 0x40); oam_add(ox + 8, oy + 6, ST_SHIELD + 2, 2 | 8 | 0x40); }
     if (GM == MODE_CADET && st == ST_PLAY) {                  // Cadet: the safe lane is marked, and arrows say which way
         if (g_y) for (i = 0; i < 3; i++) {
             y = py - YO + 20 + i * 24 + ((flame_t >> 1) & 7);
             if (y + 8 < g_y && y < FIELD_BOT - 12) oam_add(g_x - 12, y + 16, ER_ST_CHEV, 6 | 8);
         }
-        if (g_dir && (flame_t & 4)) {
+        if (g_dir && (flame_t & 12)) {
             k = g_dir < 0 ? 0x20 : 0;
             oam_add(px - 12 + g_dir * 15, py - 20, ST_ARROW, 2 | k);
             oam_add(px - 12 + g_dir * 23, py - 20, ST_ARROW, 2 | k);
+            oam_add(px - 12 + g_dir * 31, py - 20, ST_ARROW, 2 | k);
         }
     }
     if (dash_t) for (i = 0; i < 3; i++) if ((flame_t + i) & 1) { oam_add(trail_x[i] - 16, trail_y[i] - 24, ST_SHIP_TOP, 2 | 0x40); oam_add(trail_x[i] - 8, trail_y[i] - 24, ST_SHIP_TOP + 2, 2 | 0x40); }
