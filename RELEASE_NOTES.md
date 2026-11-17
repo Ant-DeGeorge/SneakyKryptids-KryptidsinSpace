@@ -55,6 +55,16 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - Clumsy test bot on Hunter: mission 5 went from never clearing (three ships lost inside 45 s) to
   clearing with 0-2 continues; mission 6 from 1-3 continues to 0-1.
 
+### Boss fight speed (2026-11-16)
+- **Face changes no longer skip a frame.** A boss blinking or changing expression rewrote 19-34
+  background tiles at once; it now does 5 per loop.
+- **Boss health bar** only recalculates when the health changes, with 16-bit maths.
+- **Score** on the HUD redraws every 8th frame while it is climbing, not on every hit.
+- **Tentacles, arms and the Ashmare's tail** are positioned every other loop.
+- Pilot, spread at full power, loops that ran long during the boss: mission 1 91% -> 6%,
+  mission 2 5% -> 1%, mission 3 27% -> 4%, mission 4 97% -> 14%. Worst single loop about 1000
+  scanlines -> about 270.
+
 ## Demo v1.4 (2026-11-12)
 - **Six missions.** The main game is the flying game again: missions 1-6, and the ending plays after
   Escape Run. The Tree Line is its own ROM for now (`tree_line.gbc`, `make treeline`), with its own save.

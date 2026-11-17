@@ -266,6 +266,7 @@ void s4_boss_start(void) BANKED {
     k_shake = 30;
 }
 
+static uint8_t limb_tk;                                     // counts game loops, not screen frames, so both limbs always get a turn
 static void arm_update(uint8_t n) {
     uint8_t k, a, L;
     int8_t side = n ? 1 : -1;
@@ -292,6 +293,8 @@ static void arm_update(uint8_t n) {
         break;
     }
     if (k_state >= 20 && arm_len[n] > 1 && (arm_t[n] & 1)) arm_len[n]--;
+    if (!n) limb_tk++;
+    if ((limb_tk ^ n) & 1) return;                       // place each arm every other frame (see s1.c tentacle_update)
     L = arm_len[n];
     a = (uint8_t)arm_base[n];
     for (k = 0; k < 6; k++) {

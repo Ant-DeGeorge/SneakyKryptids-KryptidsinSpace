@@ -170,7 +170,7 @@ void add_score(uint16_t p) {
         sfx_play(SFX_ONEUP);
         next_extend = next_extend == 30000UL ? 80000UL : next_extend + 100000UL;
     }
-    hud_dirty = 1;
+    if (!hud_dirty) hud_dirty = 2;                           // score only: the stage redraws it every 8th frame, not on every hit
 }
 
 int8_t e_new(uint8_t type, uint8_t x, uint8_t y) {
@@ -338,23 +338,34 @@ void boss_load(void) {
     ld_copy(SD->dbank, k_swap_pos, SD->bswap, SD->n_swap);
     k_face = 0xFF;
 }
-void boss_face(uint8_t v) {
-    uint8_t i, n = SD->n_swap;
-    const uint8_t *src;
-    if (v == k_face) return;
-    k_face = v;
-    src = SD->bvar + (uint16_t)v * n * 16;
-    for (i = 0; i < n; i++) ld_bkg_data(SD->dbank, 1, k_swap_pos[i], 1, src + (uint16_t)i * 16);
+// Face swaps rewrite up to a few dozen background tiles. Done in one go that cost a whole frame
+// (a visible skip every blink), so the swap is spread out: 5 tiles a loop, finished by boss_bar().
+static uint8_t face_i = 0xFF;
+static void boss_face_step(void) {
+    uint8_t i, n = SD->n_swap, end;
+    const uint8_t *src = SD->bvar + (uint16_t)k_face * n * 16;
+    end = face_i + 5; if (end > n) end = n;
+    for (i = face_i; i < end; i++) ld_bkg_data(SD->dbank, 1, k_swap_pos[i], 1, src + (uint16_t)i * 16);
+    face_i = end >= n ? 0xFF : end;
 }
+void boss_face(uint8_t v) {
+    if (v == k_face) return;
+    k_face = v; face_i = 0;
+    if (!k_hpmax) while (face_i != 0xFF) boss_face_step();    // no fight running (setup): do it all now
+}
+static uint16_t bar_hp;
 void boss_bar(void) {
     uint8_t n, i;
     if (!k_hpmax) return;
+    if (face_i != 0xFF) boss_face_step();
     if (bar_last == 0xFF) {
         uint8_t l = (uint8_t)strlen(boss_name);
         txt_put(0, 0, boss_name, 1, 5 | 0x80);
         bar_x0 = l + 1; bar_len = 20 - bar_x0;
     }
-    n = (uint8_t)(((uint32_t)k_hp * bar_len + k_hpmax - 1) / k_hpmax);
+    else if (k_hp == bar_hp) return;                         // nothing changed: skip the divide (it cost ~20 scanlines a frame)
+    bar_hp = k_hp;
+    n = (uint8_t)((k_hp * bar_len + k_hpmax - 1) / k_hpmax);   // 16-bit is enough: hp <= 1350, bar <= 19 cells
     if (n == bar_last) return;
     bar_last = n;
     for (i = 0; i < bar_len; i++) set_win_tile_xy(bar_x0 + i, 0, i < n ? T_HUD_BAR : T_HUD_BARE);
