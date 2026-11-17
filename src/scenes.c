@@ -135,6 +135,7 @@ static void save_parse(uint8_t *q, uint8_t n, uint8_t g) {   // n = missions, g 
         memcpy(pf_gear[p], q, g); q += g;
     }
 }
+uint8_t save_ok = 1;                                         // 0: this cart's save RAM did not keep what was written
 void save_read(void) {
     uint8_t buf[SAVE_LEN];
     ENABLE_RAM; SWITCH_RAM(0);
@@ -171,6 +172,19 @@ void save_write(void) {
     buf[SAVE_LEN - 1] = sum8(buf, SAVE_LEN - 1);
     ENABLE_RAM; SWITCH_RAM(0);
     memcpy(SAVE, buf, SAVE_LEN);
+    if (memcmp(SAVE, buf, SAVE_LEN)) save_ok = 0;          // read it back: a cart that drops writes says so on screen
+    DISABLE_RAM;
+}
+// Boot check: can this cartridge keep anything in save RAM at all? Flips one scratch byte at the
+// end of the 8 KB bank (unused by every save block) and reads it back.
+static void save_probe(void) {
+    volatile uint8_t *t = (volatile uint8_t *)0xBFFF;
+    uint8_t keep;
+    ENABLE_RAM; SWITCH_RAM(0);
+    keep = *t;
+    *t = 0x5A; if (*t != 0x5A) save_ok = 0;
+    *t = 0xA5; if (*t != 0xA5) save_ok = 0;
+    *t = keep;
     DISABLE_RAM;
 }
 
@@ -314,6 +328,7 @@ static void title_screen(void) {
     center(14, "KRYPTIDS IN SPACE", 7);
 #endif
     center(17, DEMO_VERSION, 7);
+    if (!save_ok) center(15, "NO SAVE MEMORY!", 6);    // the cartridge is not keeping saves
     if (skip) title_wait(15);                  // don't let the skip press also start the game
     while (1) {
         wait_vbl_done(); input_poll();
@@ -550,7 +565,7 @@ static void results(uint8_t sid) {
 #ifdef SOLO_DEMO
     center(17, "FULL GAME: GITHUB", 7);
 #else
-    center(17, "SPEND IT AT FORGE'S", 7);
+    center(17, save_ok ? "SPEND IT AT FORGE'S" : "NOT SAVED: NO RAM!", save_ok ? 7 : 6);
 #endif
     screen_on(LCDC_SCREEN);
     music_play(MUS_CLEAR);
@@ -685,6 +700,7 @@ void game_main(void) BANKED {
     sound_init();
     isr_install();
     SPRITES_8x16;
+    save_probe();
     save_read();
     profile = 0;
     while (1) {
