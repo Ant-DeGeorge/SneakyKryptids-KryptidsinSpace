@@ -11,6 +11,7 @@
 #include "sound.h"
 #include "game.h"
 #include "objs.h"
+#include "arcade.h"
 #include "weapon_fx.h"
 #include "weapon_fx2.h"
 
@@ -63,7 +64,7 @@ static void wpal_update(void) {
     if (sw_t) {                                          // weapon change: the ship flashes white twice
         sw_t--;
         if (sw_t & 4) { set_sprite_palette(0, 1, wpn_flash); set_sprite_palette(1, 1, wpn_flash); }
-        else { ld_spr_pal(BANK_A2, 0, 2, obj_pals); wpal_cur = 0xFF; }
+        else { ship_pal(); wpal_cur = 0xFF; }
     }
     if (w == wpal_cur) return;
     wpal_cur = w;
@@ -225,7 +226,7 @@ static void use_bomb(void) {
 
 static void player_hit(void);
 static void player_update(void) {
-    uint8_t spd = HUNTER ? 0xC0 : 0xA0;
+    uint8_t spd = p_spd;
     uint8_t ymax = k_hpmax ? 100 + YO : 108 + YO;
     uint16_t t;
     if (!p_alive) return;
@@ -425,7 +426,7 @@ static void pbullets_update(void) {
 static void ebullets_update(void) {
     uint8_t i, x, y, r;
     uint8_t pcx = px + 8, pcy = py + 12;
-    uint8_t hb = HUNTER ? 2 : 3, n = 0, y0 = 255, y1 = 0;
+    uint8_t hb = p_hb, n = 0, y0 = 255, y1 = 0;
     for (i = 0; i < MAXEB; i++) {
         if (!eb_on[i]) continue;
         if (eb_on[i] > 1) { eb_on[i]--; if (eb_on[i] == 1) eb_on[i] = 0; continue; }
@@ -545,7 +546,7 @@ static void enemies_common(void) {
         if (t == E_BOOM) {
             e_t[i]++;
             if (e_t[i] >= 20) e_type[i] = E_NONE;
-            if (scroll_on) e_y[i] += 0x80;
+            if (scroll_on) e_y[i] += scr_dy;
         } else if (t == E_SLEEPER) {
             e_t[i]++;
             e_y[i] += 0x48;
@@ -870,6 +871,7 @@ static void stage_load(void) {
     VBK_REG = 1; ld_spr_data(SD->dbank, 0, SD->n_spr, SD->spr); VBK_REG = 0;
     ld_spr_pal(BANK_A2, 0, 3, obj_pals);
     ld_spr_pal(BANK_A2, 7, 1, obj_pals + 28);
+    if (ship_sel) ship_gfx();
     ld_spr_pal(SD->dbank, 3, 4, SD->objpal);
     set_sprite_data(ST_SHOT_TWIN, 6, fx_shot_tiles);          // weapon flair art (bank 1)
     set_sprite_data(FX_FIRST, 8, fx_new_tiles);
@@ -929,6 +931,8 @@ uint8_t stage_run(uint8_t sid) BANKED {
     bounty_pts = 0; bounty_out = OUT_NONE; mid_out = OUT_NONE;
     if (start_cp == 2 && wlevel < 1) wlevel = 1;              // boss practice: start powered up
     next_extend = 30000UL;
+    p_spd = HUNTER ? 0xC0 : 0xA0; p_hb = HUNTER ? 2 : 3; scr_n = 3; scr_dy = 0x55;
+    if (g_arc) arc_begin();                                   // arcade: ship stats, carried score and weapons, faster scroll
     restart_from(start_cp);
     while (1) {
         wait_vbl_done();
@@ -959,7 +963,8 @@ uint8_t stage_run(uint8_t sid) BANKED {
         if (++sec_t >= 60) { sec_t = 0; play_seconds++; }
 
         if (scroll_on && !mb_active && st != ST_BOSS) {
-            if (frame_count & 1) {
+            if (++scr_k >= scr_n) {                             // 20 px/s in the story (was 30), 30 in arcade
+                scr_k = 0;
                 if (pos < (SD->n_rows - 18) * 8) { pos++; scroll_rows(); }
                 else if (st == ST_PLAY) {
                     st = ST_BOSS; scroll_on = 0;
@@ -998,7 +1003,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
                     st = k_hpmax ? ST_BOSS : ST_PLAY;
                     hud_dirty = 1;
                 } else {
-                    if (!continue_prompt()) return RES_GAMEOVER;
+                    if (g_arc || !continue_prompt()) return RES_GAMEOVER;   // arcade: no continues
                     continues_used++;
                     if (HUNTER) { score = 0; bounty_pts = 0; } else bounty_pts >>= 1;   // continues cost the bounty
                     lives = 3 + g_gear[GEAR_HULL]; hearts = MAXHEARTS; bombs = (HUNTER ? 3 : 5) + g_gear[GEAR_BOMBS];

@@ -99,6 +99,13 @@ void eb_fire(uint8_t cx, uint8_t cy, uint8_t d, uint8_t spd, uint8_t big);
 void eb_ring(uint8_t cx, uint8_t cy, uint8_t n, uint8_t phase, uint8_t spd, uint8_t big);
 int8_t e_new(uint8_t type, uint8_t x, uint8_t y);
 void boom_at(uint8_t x, uint8_t y);
+// Arcade mode and ship choice (arcade.c). In story play g_arc, ship_sel and arc_bspd are all 0.
+extern uint8_t g_arc, ship_sel, arc_bspd;   // arcade running; ship 0-6; extra enemy-shot speed
+extern uint16_t arc_shield;                 // arcade: shield recharge in frames
+extern uint8_t p_spd, p_hb;                 // player speed (8.8 fraction added per frame) and hitbox half-size
+extern uint8_t scr_n, scr_k, scr_dy;        // scroll: one pixel every scr_n loops; ground objects move scr_dy/256 px a loop
+void ship_pal(void);                        // just the two ship palettes (OBJ 0-1)
+void ship_gfx(void);                        // load the chosen ship's tiles and palettes over the default ship
 // recharging shield (scrolling missions and Escape Run): takes one hit, comes back after a few seconds
 extern uint8_t shield_on;
 void shield_reset(uint8_t late);  // late = 1 in missions 5 and 6, where Hunter's shield returns sooner

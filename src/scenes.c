@@ -5,6 +5,8 @@
 #include <gb/cgb.h>
 #include <stdint.h>
 #include <string.h>
+#include "arcade.h"
+#include "objs.h"
 #include "chart_art.h"
 #include "core.h"
 #include "assets.h"
@@ -95,9 +97,9 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #elif defined(TREELINE_DEMO)
 #define DEMO_VERSION "ON FOOT DEMO V1.0"
 #elif defined(UNLOCK_ALL)
-#define DEMO_VERSION "DEMO V1.5 UNLOCKED"
+#define DEMO_VERSION "DEMO V1.6 UNLOCKED"
 #else
-#define DEMO_VERSION "DEMO V1.5"
+#define DEMO_VERSION "DEMO V1.6"
 #endif
 #define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
 #define SV_LEN(n, g) (4 + N_PROFILES * PF_LEN(n, g) + 1)
@@ -577,16 +579,19 @@ static void ending(void) {
 // rows are the info bar: number and name, then a line that cycles target / record / buttons.
 // Palettes: chart 0-6 (0 doubles as white text), 7 = yellow text and stars.
 static const uint8_t map_scene[N_MISSIONS] = {2, 3, 4, 7, 9, 10, 10};     // for the game-over card
-static const uint8_t chart_stop[N_PLAY][2] = CHART_STOPS;
+static const uint8_t chart_stop[N_PLAY + 1][2] = CHART_STOPS;
 static const uint16_t pal_chart_hi[4] = { RGB8(8, 10, 28), RGB8(26, 38, 78), RGB8(232, 96, 24), RGB8(248, 208, 56) };
+#define ARC_SEL N_PLAY                                        // the slot after the last mission on the chart: Arcade
 static void map_name(uint8_t sel) {
     char c[2]; c[0] = '1' + sel; c[1] = 0;
     txt_fill(0, 16, 20, 1, txt_tile(' '), 0, 0);
+    if (sel == ARC_SEL) { txt_put(1, 16, "+", 0, 7); txt_put(3, 16, "ARCADE", 0, 0); return; }
     txt_put(1, 16, c, 0, 7);
     txt_put(3, 16, mission_names[sel], 0, 0);
 }
 static void map_line(uint8_t sel, uint8_t k) {
     txt_fill(0, 17, 20, 1, txt_tile(' '), 0, 0);
+    if (sel == ARC_SEL) { center(17, k == 0 ? "ENDLESS RUN" : k == 1 ? "PICK A SHIP AND FLY" : "A:GO  START:ARMORY", k == 1 ? 0 : 7); return; }
     if (k == 0) { txt_put(1, 17, "TARGET:", 0, 7); txt_put(9, 17, boss_names[sel], 0, 0); }
     else if (k == 1) {
         if (!pf_hi[profile][sel] && !pf_out[profile][sel]) { center(17, "NOT FLOWN YET", 0); return; }
@@ -614,8 +619,8 @@ static uint8_t mission_map(void) {
     while (1) {
         wait_vbl_done(); input_poll(); t++;
         s = sel;
-        if ((joy_new & (J_UP | J_LEFT)) && sel) sel--;
-        if ((joy_new & (J_DOWN | J_RIGHT)) && sel < top) sel++;
+        if (joy_new & (J_UP | J_LEFT)) { if (sel == ARC_SEL) sel = top; else if (sel) sel--; }
+        if (joy_new & (J_DOWN | J_RIGHT)) { if (sel < top) sel++; else sel = ARC_SEL; }     // past the last open mission: Arcade
         if (s != sel) { sfx_play(SFX_SELECT); map_name(sel); k = 0; lt = 0; map_line(sel, 0); }
         if (++lt == 110) { lt = 0; if (++k == 3) k = 0; map_line(sel, k); }
         // the ship bobs beside the chosen stop; locked stops further down the route are not reachable yet
@@ -626,10 +631,19 @@ static uint8_t mission_map(void) {
             sfx_play(SFX_START);
             start_cp = (joy & J_SELECT) ? 2 : 0;
             wait_frames(20);
-            return sel;
+            return sel == ARC_SEL ? 0xFD : sel;
         }
         if (joy_new & J_B) return 0xFF;
     }
+}
+static uint8_t ships_open(void) {
+#ifdef UNLOCK_ALL
+    return 7;
+#else
+    uint8_t p, m = 0;
+    for (p = 0; p < N_PROFILES; p++) if (pf_unlock[p] > m) m = pf_unlock[p];
+    return m > 6 ? 7 : m + 1;                                 // one more ship for every story mission cleared
+#endif
 }
 
 // ------------------------------------------------------------------ game over / quit card
@@ -697,6 +711,7 @@ void game_main(void) BANKED {
         while (pilot_select()) {
             while ((sid = mission_map()) != 0xFF) {
                 if (sid == 0xFE) { armory_run(); save_write(); continue; }
+                if (sid == 0xFD) { arcade_run(ships_open()); continue; }
                 memcpy(g_gear, pf_gear[profile], N_GEAR);
                 if (!start_cp) cutscene(intro_meta[sid], intro_text[sid], intro_count[sid]);
                 res = sid == GRD_SID ? ground_run() : sid == ESC_SID ? escape_run() : sid == FLAT_SID ? cockpit_run() : stage_run(sid);

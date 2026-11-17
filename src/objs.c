@@ -7,6 +7,7 @@
 #include "assets.h"
 #include "sound.h"
 #include "objs.h"
+#include "alt_ships.h"
 
 const int8_t sin64[64] = {
     0,12,25,37,49,60,71,81,90,98,106,112,117,122,125,126,127,126,125,122,117,112,106,98,90,81,71,60,49,37,25,12,
@@ -84,7 +85,7 @@ int8_t wind;
 static const uint16_t mid_cap_thr[2][N_STAGES] = {{10000, 10000, 10000, 10000}, {15000, 16000, 16000, 16000}};
 extern const uint8_t mid_comm[], boss_out_comm[];
 // boss outcome thresholds (points this mission, boss bonus included) [mode][stage]
-static const uint32_t cap_thr[2][N_STAGES] = {{45000, 45000, 45000, 45000}, {64000, 68000, 69000, 72000}};   // Hunter: a clean run captures
+static const uint32_t cap_thr[2][N_STAGES] = {{52000, 52000, 52000, 52000}, {66000, 78000, 86000, 86000}};   // raised for the longer missions (v1.6)   // Hunter: a clean run captures
 static const uint32_t kill_thr[2][N_STAGES] = {{30000, 30000, 30000, 30000}, {48000, 52000, 54000, 52000}};
 uint8_t outro_t;
 
@@ -151,7 +152,7 @@ void eb_fire(uint8_t cx, uint8_t cy, uint8_t d, uint8_t spd, uint8_t big) {
         eb_on[i] = 1; eb_big[i] = big;
         eb_x[i] = (uint16_t)(cx - (big ? 4 : 3)) << 8;
         eb_y[i] = (uint16_t)(cy - (big ? 4 : 3)) << 8;
-        d &= 31;
+        d &= 31; spd += arc_bspd;
         eb_vx[i] = ((int16_t)dsin[d] * spd) >> 2;
         eb_vy[i] = ((int16_t)DCOS(d) * spd) >> 2;
         return;
@@ -387,7 +388,7 @@ static uint8_t shield_late;
 void shield_reset(uint8_t late) { shield_on = 1; shield_t = 0; shield_fx = 0; shield_late = late; }
 uint8_t shield_absorb(void) {
     if (!shield_on) return 0;
-    shield_on = 0; shield_t = shield_cd[shield_late][gmode]; shield_fx = 20;
+    shield_on = 0; shield_t = g_arc ? arc_shield : shield_cd[shield_late][gmode]; shield_fx = 20;
     sfx_play(SFX_BOSSHIT);
     return 1;
 }
@@ -400,4 +401,13 @@ void shield_tick(void) {
 uint8_t shield_show(void) {
     if (shield_on) return shield_fx || (frame_count & 1);
     return (shield_fx || shield_t < 30) && (frame_count & 4);
+}
+
+// ------------------------------------------------------------------ arcade / ship choice
+uint8_t g_arc, ship_sel, arc_bspd, p_spd, p_hb, scr_n, scr_k, scr_dy;
+uint16_t arc_shield;
+void ship_pal(void) { ld_spr_pal(BANK(alt_ships), 0, 2, alt_ship_pals + ship_sel * 8); }   // index 0 is the default ship
+void ship_gfx(void) {
+    ld_spr_data(BANK(alt_ships), ST_SHIP_TOP, ALT_SHIP_NT, alt_ship_tiles + (uint16_t)ship_sel * (ALT_SHIP_NT * 16));
+    ship_pal();
 }
