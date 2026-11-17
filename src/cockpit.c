@@ -164,6 +164,11 @@ static uint8_t orb_count(void) {
     for (i = 0; i < CK_MAXO; i++) if (ck_type[i] == O_ORB || ck_type[i] == O_BIGORB) n++;
     return n;
 }
+static uint8_t type_count(uint8_t t) {
+    uint8_t i, n = 0;
+    for (i = 0; i < CK_MAXO; i++) if (ck_type[i] == t) n++;
+    return n;
+}
 static uint8_t foe_count(void) {
     uint8_t i, n = 0;
     for (i = 0; i < CK_MAXO; i++) if (ck_type[i] >= O_UFO && ck_type[i] <= O_ROCK) n++;
@@ -175,9 +180,9 @@ static uint8_t foe_count(void) {
 #define CK_HEARTS (HUNTER ? 2 : MAXHEARTS)
 static void orb_fire(uint8_t x, uint8_t y, uint8_t big) {
     int8_t i;
-    uint8_t n = HUNTER ? 86 : MIDMODE ? 94 : 120;
+    uint8_t n = HUNTER ? 100 : MIDMODE ? 94 : 120;
     int16_t dx, dy;
-    if (orb_count() >= (HUNTER ? 5 : MIDMODE ? 4 : 3) + big) return;
+    if (orb_count() >= 3 + big) return;                      // at most 3 orbs in the air, every mode (Hunter was 5)
     i = o_new(big ? O_BIGORB : O_ORB);
     if (i < 0) return;
     if (big) n += 44;
@@ -468,20 +473,20 @@ static void objects_update(void) {
             if (ck_st[i] == 0) {                                     // fly in
                 ck_z[i] -= 3;
                 if ((i ^ ck_t[i]) & 1) project(i);                   // every other frame is plenty
-                if (ck_z[i] <= (t == O_ELITE ? 80 : 104)) {
+                if (ck_z[i] <= (t == O_ELITE ? 92 : 104)) {             // elites hover just past full size: 2 sprites a line, not 4
                     project(i);
                     ck_st[i] = 1; ck_t[i] = 0; ck_hx[i] = ck_sx[i]; ck_hy[i] = ck_sy[i];
-                    ck_ft[i] = (HUNTER ? 45 : MIDMODE ? 60 : 90) + ((i * 13) & 31);
+                    ck_ft[i] = (HUNTER ? 75 : MIDMODE ? 60 : 90) + ((i * 13) & 31);
                 }
             } else if (ck_st[i] == 1) {                              // hover, strafe, shoot
                 ck_sx[i] = (ck_b[i] & 4) ? ck_hx[i] + (sin64[(ck_t[i] * 2) & 63] >> 3) : ck_hx[i];
                 ck_sy[i] = ck_hy[i] + ((ck_t[i] >> 5) & 1);
                 if (st != ST_DYING && --ck_ft[i] == 0) {
-                    if (t == O_ELITE && !(ck_b[i] & 8)) { orb_fire(ck_sx[i], ck_sy[i] + 6, 0); ck_b[i] |= 8; ck_ft[i] = 18; }   // elites fire pairs
+                    if (t == O_ELITE && !HUNTER && !(ck_b[i] & 8)) { orb_fire(ck_sx[i], ck_sy[i] + 6, 0); ck_b[i] |= 8; ck_ft[i] = 18; }   // elites fire pairs (Hunter: one shot, they have more armour)
                     else {
-                        orb_fire(ck_sx[i], ck_sy[i] + 6, t == O_ELITE && HUNTER);
+                        orb_fire(ck_sx[i], ck_sy[i] + 6, 0);
                         ck_b[i] &= ~8;
-                        ck_ft[i] = HUNTER ? 95 : MIDMODE ? 115 : 150;
+                        ck_ft[i] = HUNTER ? 130 : MIDMODE ? 115 : 150;
                     }
                 }
                 if (ck_t[i] >= 250) ck_st[i] = 2;
@@ -533,8 +538,13 @@ static void waves_update(void) {
         ck_pc++;
         if (w->type == W_COMM) { comm_queue_add((uint8_t)w->x); continue; }
         if (w->type == W_CP) { if (ck_cp < 2 && cp_tick[ck_cp + 1] == 0) { ck_cp++; cp_pc[ck_cp] = ck_pc; cp_tick[ck_cp] = ck_tick; } continue; }
-        if ((w->p & HN) && !HUNTER) continue;
+        if (w->p & HN) continue;                                 // Hunter-only extras are gone (v1.0): too much on screen
         if ((w->p & NC) && gmode == MODE_CADET) continue;
+        // Keep the screen readable: big close-up sprites past these counts break up on hardware.
+        if (w->type == O_ROCK) {
+            if (type_count(O_ROCK) >= 3) continue;
+            if (HUNTER && !(w->x > -16 && w->x < 16 && w->y > -12 && w->y < 12) && (ck_pc & 1)) continue;   // Hunter: half the stray rocks
+        } else if (type_count(O_UFO) + type_count(O_ELITE) >= 3 || (w->type == O_ELITE && type_count(O_ELITE))) continue;   // 3 shooters, 1 elite
         i = o_new(w->type);
         if (i < 0) continue;
         ck_wx[i] = w->x; ck_wy[i] = w->y; ck_z[i] = 250;
@@ -623,7 +633,6 @@ static void boss_update(void) {
             break;
         case A_BIG:
             if (b_at == 20) orb_fire(bx, by - 4, 1);
-            if (b_at == 62 && HUNTER) orb_fire(bx, by - 4, 1);
             if (b_at >= 70) { b_atk = A_WAIT; b_at = 0; boss_pose(0); }
             break;
         case A_CHARGE:
@@ -798,7 +807,7 @@ static void draw_all(void) {
         else spr32(x, y, t_large[t], p);
     }
     // speed streaks
-    for (i = 0; i < 6; i++) {
+    for (i = 0; i < 4; i++) {
         star_x[i] += star_vx[i]; star_y[i] += star_vy[i];
         if (star_age[i] > 24) { star_x[i] += star_vx[i]; star_y[i] += star_vy[i]; }      // they speed up as they pass
         star_age[i]++;

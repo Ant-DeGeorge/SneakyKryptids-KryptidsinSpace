@@ -78,8 +78,8 @@ static uint8_t bst_x[NBST], bst_y[NBST], last_step;
 
 // [cadet, pilot, hunter]
 static const uint8_t spd_tab[3][3] = {{32, 24, 40}, {32, 28, 44}, {36, 32, 48}};      // scroll, 1/16 px per frame, per phase
-static const uint8_t cd_tab[3][3] = {{120, 220, 95}, {104, 190, 78}, {98, 160, 62}};   // frames between attacks, per phase
-static const uint8_t bspd_tab[3] = {17, 22, 24};                                      // bullet speed, 1/16 px
+static const uint8_t cd_tab[3][3] = {{120, 220, 95}, {104, 190, 78}, {112, 190, 80}};   // frames between attacks, per phase
+static const uint8_t bspd_tab[3] = {17, 22, 23};                                      // bullet speed, 1/16 px
 // Hunter flies the escape with two hits per ship: no guns here, so one-hit ships ended runs in the first minute
 #define ER_HEARTS (HUNTER ? 2 : MAXHEARTS)
 static const uint8_t gain_tab[3] = {3, 2, 2};                                         // boost per graze
@@ -153,7 +153,7 @@ static void gen_row(uint8_t r) {
         g_corr--;
         if (!(g_corr & 1)) { d = grnd() % 3; if (d == 0 && g_c > hw + 2) g_c--; else if (d == 2 && g_c < 17 - hw) g_c++; }
         er_wall[r] = 1; er_wl[r] = g_c - hw - 1; er_wr[r] = g_c + hw;
-        if (!g_corr) g_cd = HUNTER ? 10 : 13;
+        if (!g_corr) g_cd = HUNTER ? 12 : 13;
         return;
     }
     if (g_cd) {
@@ -256,7 +256,7 @@ static void shots_update(void) {
 }
 static void mis_fire(uint8_t x, uint8_t y) {
     uint8_t i;
-    for (i = 0; i < (HUNTER ? MAXMIS : 2); i++) if (!er_mis_on[i]) {
+    for (i = 0; i < 2; i++) if (!er_mis_on[i]) {                // at most two missiles, every mode
         er_mis_on[i] = 1; er_mis_d[i] = 0; er_mis_t[i] = 0;
         er_mis_x[i] = (uint16_t)x << 8; er_mis_y[i] = (uint16_t)y << 8;
         sfx_play(SFX_WHOOSH);
@@ -368,13 +368,12 @@ static void attack(uint8_t a) {
         d = aim(muz_x(m), muz_y(), px, py);
         eb_fire(muz_x(m), muz_y(), d, sp + 3, 0);
         if (GM != MODE_CADET) { eb_fire(muz_x(m), muz_y(), d + 3, sp + 3, 0); eb_fire(muz_x(m), muz_y(), d - 3, sp + 3, 0); }
-        if (HUNTER && phase) eb_fire(muz_x(4), muz_y() + 6, aim(muz_x(4), muz_y() + 6, px, py), sp, 1);   // the extra aimed orb waits until after the opening chase
         sfx_play(SFX_SPIT);
         break;
     case A_CURTAIN:                                          // a row of shots with one gap, falling together
         gap = 1 + rnd() % 6;
         for (i = 0; i < 8; i++) {
-            if (i == gap || i == gap + 1 || (!HUNTER && i + 1 == gap)) continue;
+            if (i == gap || i == gap + 1 || i + 1 == gap) continue;   // a three-wide gap in every mode
             x = XO + 10 + i * 20;
             eb_fire(x, muz_y(), 0, sp - 4, 0);
         }
@@ -383,18 +382,16 @@ static void attack(uint8_t a) {
     case A_ROCK:
         if (GM == MODE_CADET) rock_spawn(XO + 16 + rnd() % 128);
         else rock_spawn((uint8_t)(px + 40) > XO + 150 ? px - 40 : px + 40);
-        if (HUNTER) rock_spawn(px);
         break;
     case A_MISSILE:
         mis_fire(muz_x(4), muz_y() + 4);
-        if (HUNTER && phase == 2) mis_fire(muz_x(0), muz_y());      // a second missile only in the dive
         break;
     case A_RAIN:                                             // crossing diagonals from the outer cannons
-        burst_n = GM == MODE_CADET ? 4 : MIDMODE ? 6 : 8; burst_t = 0; burst_k = 0;
+        burst_n = GM == MODE_CADET ? 4 : 6; burst_t = 0; burst_k = 0;
         break;
     case A_RING:
         if (GM == MODE_CADET) { attack(A_FAN); break; }
-        for (i = 0; i < 7; i++) if (HUNTER || (i & 1) == 0) eb_fire(muz_x(4), muz_y() + 4, (uint8_t)(26 + i * 2), sp, 0);
+        for (i = 0; i < 7; i++) if ((i & 1) == 0) eb_fire(muz_x(4), muz_y() + 4, (uint8_t)(26 + i * 2), sp, 0);
         sfx_play(SFX_SPIT);
         break;
     case A_LASER:
@@ -405,14 +402,14 @@ static void attack(uint8_t a) {
 static void attacks_update(void) {
     const uint8_t *tab;
     if (burst_n && !burst_t--) {
-        burst_t = HUNTER ? 9 : 13; burst_n--;
+        burst_t = 13; burst_n--;
         if (burst_k ^= 1) eb_fire(muz_x(0), muz_y(), 3 + (burst_n & 1), bspd_tab[GM], 0);
         else eb_fire(muz_x(3), muz_y(), 29 - (burst_n & 1), bspd_tab[GM], 0);
         sfx_play(SFX_SPIT);
     }
     if (er_row >= ROW_BREAK) {                                // the flagship is gone: only burning debris on the way down
         if (atk_cd) atk_cd--;
-        else if (er_row < ROW_END - 50) { attack(A_ROCK); atk_cd = GM == MODE_CADET ? 70 : MIDMODE ? 55 : 40; }
+        else if (er_row < ROW_END - 50) { attack(A_ROCK); atk_cd = GM == MODE_CADET ? 70 : 60; }
         return;
     }
     if (er_row >= ROW_BREAK - 20 || er_vis < 12) return;      // about to pull up, or not in yet

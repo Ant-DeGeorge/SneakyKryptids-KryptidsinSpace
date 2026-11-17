@@ -1,11 +1,29 @@
-# Sneaky Kryptid: Kryptids in Space — Demo v1.4
+# Sneaky Kryptid: Kryptids in Space — v1.0
 
 Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromatic
 
 ## Download
-- `sneaky_kryptid.gbc` — the demo, with saves (use this one)
+- `sneaky_kryptid.gbc` — the game, with saves (use this one)
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
-- `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows DEMO V1.4 UNLOCKED)
+- `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows V1.0 UNLOCKED)
+
+## v1.0 (2026-11-17)
+- **New soundtrack: Frostbite OST.** All 17 songs rebuilt from the track Frostbite Circuit; the
+  title screen is a Game Boy Color cover of it.
+- **Mission 5 (gun-cam) is calmer, most of all on Hunter.** Hunter-only enemies and rocks are gone.
+  At most 3 shooters (1 elite) and 3 rocks at once, in every mode; at most 3 orbs in the air (Hunter
+  was 5). On Hunter, enemies wait longer before their first shot and between shots, orbs take
+  longer to arrive, elites fire one plain orb instead of a pair with a big one, half the stray rocks
+  are gone, and the boss no longer adds a big orb to its volleys.
+- **Mission 5 no longer breaks up on screen.** Elite saucers hover a little further out (drawn at
+  16 px, not 32), and there are 4 speed streaks instead of 6. Frames with more than 10 sprites on a
+  line (the hardware limit, where sprites flicker or vanish): about 33-41% before, 4-10% now.
+- **Mission 6 (Escape Run) on Hunter** uses the same attack patterns as Pilot: no extra aimed orb,
+  second missile or extra rock, a three-wide gap in shot curtains, fewer shots in rain and ring
+  attacks, at most two missiles, attacks less often. Hunter keeps faster shots and two-hit ships.
+- Clumsy test bot on Hunter: mission 5 went from 6-11 hits to 0-1; mission 6 from 14-16 hits and
+  2 continues to 3-4 hits and none.
+- Title screen shows V1.0.
 
 ## Demo v1.6 (2026-11-16)
 - **Arcade: Endless Run.** On the mission screen, move past the last open mission to ARCADE. Pick a
