@@ -97,9 +97,9 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #elif defined(TREELINE_DEMO)
 #define DEMO_VERSION "ON FOOT DEMO V1.0"
 #elif defined(UNLOCK_ALL)
-#define DEMO_VERSION "DEMO V1.6 UNLOCKED"
+#define DEMO_VERSION "V1.0 UNLOCKED"
 #else
-#define DEMO_VERSION "DEMO V1.6"
+#define DEMO_VERSION "V1.0"
 #endif
 #define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
 #define SV_LEN(n, g) (4 + N_PROFILES * PF_LEN(n, g) + 1)
