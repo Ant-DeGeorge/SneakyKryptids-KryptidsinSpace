@@ -7,6 +7,22 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - `sneaky_kryptid_nosave.gbc` — for flash carts without save RAM
 - `sneaky_kryptid_unlocked.gbc` — test build with every mission open (title shows DEMO V1.4 UNLOCKED)
 
+## Demo v1.6 (2026-11-16)
+- **Arcade: Endless Run.** On the mission screen, move past the last open mission to ARCADE. Pick a
+  ship, then fly missions 1-4 in a loop with no continues: score, ships, hull, bombs and weapons
+  carry from stage to stage, enemy shots get faster every stage and the shield takes longer to
+  return. Faster scroll than the story. Best score is saved per difficulty.
+- **Seven ships** (arcade only). One more unlocks for each story mission cleared:
+  SNEAKY KRYPTID (twin gun, 2 pips), INTERDICTOR (twin gun at full power, 2 bombs), GLYPH FANG
+  (wisp gun, 5 bombs), RUST RUNNER (5 ships, spread gun, slow), DEEP SPACE (shield returns twice as
+  fast, starts with a buddy), NIGHT HULL (fast, smaller hitbox, 2 ships), DRYDOCK (spread gun at
+  full power, 4 ships, slow, slow shield).
+- **Missions 1-4 are longer.** The scroll runs at 20 px/s (was 30), so the flight to each boss
+  takes 1.5x as long, and each mission has about half as many waves again to fill it, including one
+  new hazard run (ice, storm clouds, wisps, turrets). Capture scores were raised to match.
+- **Boss fights no longer skip or drag** (see "Boss fight speed" below).
+- Saves: the story save is unchanged (version 5). Arcade keeps its own small block.
+
 ## Demo v1.5 (2026-11-16)
 - **Title music** now runs from the title screen through the pilot, mission, armory and briefing
   screens until the mission starts. Debriefs keep Contract Terms.

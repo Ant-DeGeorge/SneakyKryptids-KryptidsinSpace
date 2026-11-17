@@ -196,6 +196,6 @@ with open(os.path.join(SRC, 'chart_art.h'), 'w') as f:
     f.write('#define CHART_NT %d\n#define CHART_NPAL %d\n' % (len(uniq), len(PALS)))
     f.write('extern const uint8_t chart_tiles[], chart_map[], chart_attr[];\nextern const uint16_t chart_pals[];\n')
     f.write('// where the ship parks for each mission (sprite x, y), next to its stop on the chart\n')
-    PARK = [(4, 42), (34, 54), (70, 18), (142, 58), (82, 84), (84, 112)]      # screen x, y of the 16x16 ship, clear of each world
+    PARK = [(4, 42), (34, 54), (70, 18), (142, 58), (82, 84), (84, 112), (28, 96)]   # the last one is Arcade, in the open lower left      # screen x, y of the 16x16 ship, clear of each world
     f.write('#define CHART_STOPS {%s}\n#endif\n' % ', '.join('{%d, %d}' % (x + 8, y + 16) for x, y in PARK))
 print('chart_art:', len(uniq), 'tiles,', len(data) + 720 + len(pals) * 2, 'bytes')
