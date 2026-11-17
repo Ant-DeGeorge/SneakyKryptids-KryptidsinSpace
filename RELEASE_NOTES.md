@@ -24,6 +24,10 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 - Clumsy test bot on Hunter: mission 5 went from 6-11 hits to 0-1; mission 6 from 14-16 hits and
   2 continues to 3-4 hits and none.
 - Title screen shows V1.0.
+- **Saves on ModRetro cartridges:** the header now declares 32 KB of save RAM (was 8 KB), matching
+  the FRAM on ModRetro carts. At power-on the game tests save memory; if writes don't stick, the
+  title says NO SAVE MEMORY! and the mission results say NOT SAVED: NO RAM!, and every save is
+  read back after writing.
 
 ## Demo v1.6 (2026-11-16)
 - **Arcade: Endless Run.** On the mission screen, move past the last open mission to ARCADE. Pick a

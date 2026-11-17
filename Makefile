@@ -59,7 +59,7 @@ build/obj/%.o: src/%.c $(HDR)
 
 # MBC5 + RAM + BATTERY (0x1B): keeps high scores
 build/$(NAME).gbc: $(OBJ) $(CARD_O)
-	$(LCC) $(CFLAGS) -Wm-ya1 -Wm-yt0x1B -o $@ $(OBJ) $(CARD_O)
+	$(LCC) $(CFLAGS) -Wm-ya4 -Wm-yt0x1B -o $@ $(OBJ) $(CARD_O)
 
 # plain MBC5 (0x19): same game, no save
 build/$(NAME)_nosave.gbc: $(OBJ) $(CARD_O)
@@ -72,7 +72,7 @@ build/obj/scenes_unlocked.o: src/scenes.c $(HDR)
 	@mkdir -p build/obj
 	$(LCC) $(CFLAGS) -Wf-DUNLOCK_ALL -c -o $@ $<
 build/$(NAME)_unlocked.gbc: $(OBJ) $(CARD_O) build/obj/scenes_unlocked.o
-	$(LCC) $(CFLAGS) -Wm-ya1 -Wm-yt0x1B -o $@ $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_unlocked.o $(CARD_O)
+	$(LCC) $(CFLAGS) -Wm-ya4 -Wm-yt0x1B -o $@ $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_unlocked.o $(CARD_O)
 
 # Flatwoods Drift on its own: the gun-cam mission as a standalone demo (title -> pilot -> mission 5)
 .PHONY: flatwoods
@@ -83,7 +83,7 @@ build/obj/scenes_flatwoods.o: src/scenes.c $(HDR)
 FW_OBJ = $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_flatwoods.o $(CARD_O)
 FW_CF  = $(filter-out -Wm-yn"$(TITLE)",$(CFLAGS)) -Wm-yn"FLATWOODS"
 build/flatwoods_drift.gbc: $(OBJ) $(CARD_O) build/obj/scenes_flatwoods.o
-	$(LCC) $(FW_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(FW_OBJ)
+	$(LCC) $(FW_CF) -Wm-ya4 -Wm-yt0x1B -o $@ $(FW_OBJ)
 build/flatwoods_drift_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_flatwoods.o
 	$(LCC) $(FW_CF) -Wm-yt0x19 -o $@ $(FW_OBJ)
 
@@ -95,7 +95,7 @@ build/obj/scenes_escape.o: src/scenes.c $(HDR)
 ER_OBJ = $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_escape.o $(CARD_O)
 ER_CF  = $(filter-out -Wm-yn"$(TITLE)",$(CFLAGS)) -Wm-yn"ESCAPERUN"
 build/escape_run.gbc: $(OBJ) $(CARD_O) build/obj/scenes_escape.o
-	$(LCC) $(ER_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(ER_OBJ)
+	$(LCC) $(ER_CF) -Wm-ya4 -Wm-yt0x1B -o $@ $(ER_OBJ)
 build/escape_run_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_escape.o
 	$(LCC) $(ER_CF) -Wm-yt0x19 -o $@ $(ER_OBJ)
 
@@ -107,7 +107,7 @@ build/obj/scenes_treeline.o: src/scenes.c $(HDR)
 TL_OBJ = $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_treeline.o $(CARD_O)
 TL_CF  = $(filter-out -Wm-yn"$(TITLE)",$(CFLAGS)) -Wm-yn"TREELINE"
 build/tree_line.gbc: $(OBJ) $(CARD_O) build/obj/scenes_treeline.o
-	$(LCC) $(TL_CF) -Wm-ya1 -Wm-yt0x1B -o $@ $(TL_OBJ)
+	$(LCC) $(TL_CF) -Wm-ya4 -Wm-yt0x1B -o $@ $(TL_OBJ)
 build/tree_line_nosave.gbc: $(OBJ) $(CARD_O) build/obj/scenes_treeline.o
 	$(LCC) $(TL_CF) -Wm-yt0x19 -o $@ $(TL_OBJ)
 
@@ -130,4 +130,4 @@ build/obj/scenes_endtest.o: src/scenes.c $(HDR)
 	@mkdir -p build/obj
 	$(LCC) $(CFLAGS) -Wf-DTEST_ENDING -c -o $@ $<
 build/endtest.gbc: $(OBJ) $(CARD_O) build/obj/scenes_endtest.o
-	$(LCC) $(CFLAGS) -Wm-ya1 -Wm-yt0x1B -o $@ $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_endtest.o $(CARD_O)
+	$(LCC) $(CFLAGS) -Wm-ya4 -Wm-yt0x1B -o $@ $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_endtest.o $(CARD_O)
