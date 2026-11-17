@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Escape Run</title>
 <meta name="description" content="Play Escape Run, the no-guns Sneaky Kryptid: Kryptids in Space demo for Game Boy Color, in your browser.">
 
@@ -16,7 +16,7 @@
   --display:"Pixelify Sans","Courier New",monospace; --body:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
   color-scheme:dark;
 }
-html,body{background:var(--void);color:var(--ink);touch-action:manipulation}
+html,body{background:var(--void);color:var(--ink);touch-action:manipulation;overscroll-behavior:none;-webkit-text-size-adjust:100%}
 body{font-family:var(--body);font-size:16px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;
   background-image:radial-gradient(1px 1px at 14% 12%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 78% 6%,#fff6 50%,transparent 51%),radial-gradient(1.5px 1.5px at 90% 38%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 26% 70%,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 60% 92%,#fff7 50%,transparent 51%)}
 .wrap{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
@@ -27,7 +27,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,8.5vw,40px);l
 .shell{background:linear-gradient(165deg,var(--hull-hi),var(--hull) 45%,var(--hull-lo));border-radius:16px 16px 44px 16px;padding:16px 16px 22px;box-shadow:inset 0 2px 0 #ffffff30,inset 0 -6px 14px #0007,0 18px 40px #000a;position:relative;touch-action:manipulation}
 .shell::before{content:"";position:absolute;left:18px;right:60px;top:8px;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:.7}
 .bezel{background:#12161c;border-radius:10px 10px 24px 10px;padding:12px 14px 8px}
-.screenbox{position:relative;aspect-ratio:10/9;max-width:100%;background:#000;border-radius:2px;overflow:hidden}
+.screenbox{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative;aspect-ratio:10/9;max-width:100%;background:#000;border-radius:2px;overflow:hidden}
 canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
 .poster[hidden],.err[hidden]{display:none}
 .poster{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:radial-gradient(circle at 50% 40%,#1e2a58,#060818);color:var(--ink);cursor:pointer;border:0;width:100%;font:inherit}
@@ -249,6 +249,15 @@ try{if(!window.indexedDB)window.__noStore=true;}catch(e){window.__noStore=true;t
   document.querySelector('.screenbox').addEventListener('dblclick',noDblClickZoom);
   document.querySelector('.pad').addEventListener('dblclick',noDblClickZoom);
   document.querySelector('.ss').addEventListener('dblclick',noDblClickZoom);
+  /* iOS Safari ignores user-scalable=no, so also block its double-tap zoom,
+     pinch zoom and page dragging inside the handheld shell. */
+  (function(){
+    var shell=document.querySelector('.shell'),lastTap=0;
+    shell.addEventListener('touchend',function(e){var t=Date.now();if(t-lastTap<350){e.preventDefault()}lastTap=t},{passive:false});
+    shell.addEventListener('touchmove',function(e){e.preventDefault()},{passive:false});
+    document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false});
+    ['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},{passive:false})});
+  })();
   window.addEventListener('keydown',function(e){if(started&&[37,38,39,40,32].indexOf(e.keyCode)>-1)e.preventDefault()},{passive:false});
 })();
 </script>
