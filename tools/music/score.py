@@ -149,7 +149,7 @@ class Score:
         if not (target == 0 and not end_silent and n % 64 == 0):
             for row in last_rows:
                 tgt = target
-                for c in (4, 3, 2, 1):
+                for c in (2, 1, 3, 4):                     # lead/chord channels first: their last pattern is unique anyway
                     cell = self.rows[c][row]
                     if cell.fx == 0 and cell.param == 0:
                         cell.fx, cell.param = 0xB, tgt + 1          # hUGEDriver: B01 = first order (B00 = next order)
