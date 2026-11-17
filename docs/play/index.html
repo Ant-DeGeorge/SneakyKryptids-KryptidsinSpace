@@ -70,7 +70,7 @@ footer a{color:var(--teal)}
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Rejected By The Machines · Demo v1.2</div>
+    <div class="eyebrow">Rejected By The Machines · v1.0</div>
     <h1>Sneaky Kryptid</h1>
     <div class="sub">Kryptids in Space · a Game Boy Color shooter</div>
   </header>
@@ -108,7 +108,8 @@ footer a{color:var(--teal)}
     <h2>Pick your pilot</h2>
     <table>
       <tr><th></th><th>Cadet</th><th>Pilot</th><th>Hunter</th></tr>
-      <tr><td>Health</td><td>5 hearts</td><td>3 hearts</td><td>One hit</td></tr>
+      <tr><td>Health</td><td>5 hearts</td><td>3 hearts</td><td>One hit (two in missions 5-6)</td></tr>
+      <tr><td>Shield</td><td>Back in 4 s</td><td>Back in 7 s</td><td>Back in 10-25 s</td></tr>
       <tr><td>Fire</td><td>Auto</td><td>Auto</td><td>Hold A</td></tr>
       <tr><td>Bombs</td><td>5</td><td>5</td><td>3</td></tr>
       <tr><td>Continues</td><td>Unlimited</td><td>Unlimited</td><td>9-second prompt</td></tr>
@@ -122,7 +123,7 @@ footer a{color:var(--teal)}
       <dt>D-PAD</dt><dd>Fly in 8 directions (drag on the pad). In mission 5 it aims the gun-cam crosshair.</dd>
       <dt>A</dt><dd>Fire. Cadet and Pilot fire on their own. Your shots knock enemy bullets out of the air. In mission 6 (no guns): dash when the BOOST meter is full.</dd>
       <dt>B</dt><dd>Kryptid Bomb: clears bullets, hurts everything. In mission 6: shield pulse.</dd>
-      <dt>START</dt><dd>Pause. On the mission map: Forge's Armory</dd>
+      <dt>START</dt><dd>Pause (then SELECT quits the mission). On the mission map: Forge's Armory.</dd>
       <dt>SELECT</dt><dd>Hold it and press A on the mission map to practice that boss. On the title, hold it and press B to erase saves.</dd>
     </dl>
   </section>
@@ -130,13 +131,14 @@ footer a{color:var(--teal)}
   <section>
     <h2>The bounties</h2>
     <ol>
-      <li><b>Rimeveil Lane</b>: krakenlings, the ice ring, Nubs' scrap gunship, then the Space Kraken.</li>
-      <li><b>Stormwall Nebula</b>: Impundulu lightning birds, Lindworms, thunderclouds, Mothman, then the Thunderbird.</li>
-      <li><b>Barrens Belt</b>: Pukwudgies, Devil's eggs, will-o'-the-wisps, Nubs Mk II, then the Jersey Devil.</li>
-      <li><b>Frostbite Moon</b>: mine turrets, frost bats, Tatzelwurms, ice storms, the Beast of Bray Road, then the Wendigo.</li>
-      <li><b>Flatwoods Drift</b>: the helm is jammed, so you work the gun cam: aim the crosshair, shoot down saucers, rocks and green orbs, then the Flatwoods Monster.</li>
+      <li><b>Rimeveil Lane</b>: krakenlings, falling ice, Nubs' scrap gunship, then the Rimemaw (old Earth: kraken).</li>
+      <li><b>Stormwall Nebula</b>: storm wind, eels, thunderclouds, then the Voltwake (old Earth: thunderbird).</li>
+      <li><b>Barrens Belt</b>: imps, wisps, a stomp to dodge, Nubs again, then the Ashmare (old Earth: Jersey Devil).</li>
+      <li><b>Frostbite Moon</b>: mine turrets, frost bats, the Brayhound, then Marrow (old Earth: wendigo).</li>
+      <li><b>Lamp Drift</b>: the helm is jammed, so you work the gun cam: aim the crosshair, shoot down saucers, rocks and green orbs, then Lamptall.</li>
+      <li><b>Escape Run</b>: a rival gang knocks your guns out. No shooting: dodge, graze and dash your way down to the planet.</li>
       <li>Score high and the boss is <b>captured</b> (triple pay); a good run <b>kills</b> it (double); a weak one lets it <b>escape</b>. Spend your pay at Forge's Armory.</li>
-      <li>Fly into a sleeping baby cryptid to make it your wingman.</li>
+      <li><b>Arcade</b>: move past the last open mission on the star chart. Pick one of seven ships (one more unlocks per mission cleared) and fly missions 1-4 on a loop until your ships run out.</li>
     </ol>
   </section>
 
@@ -173,8 +175,8 @@ try{if(!window.indexedDB)window.__noStore=true;}catch(e){window.__noStore=true;t
     saving=true;
     try{
       if(ramLoc===null) ramLoc=await WB._getWasmConstant('CARTRIDGE_RAM_LOCATION');
-      var ram=new Uint8Array(await WB._getWasmMemorySection(ramLoc,ramLoc+0x2000));
-      var sig=Array.prototype.join.call(ram.subarray(0x200,0x280),',');
+      var ram=new Uint8Array(await WB._getWasmMemorySection(ramLoc,ramLoc+0x8000));   /* 32 KB, as the cartridge header says */
+      var sig=Array.prototype.join.call(ram.subarray(0x200,0x420),',');              /* story save at 0x200, arcade best scores at 0x400 */
       if(sig!==lastRam){
         await WB.saveLoadedCartridge();               /* makes sure this cartridge has an entry */
         var db=await idb();
