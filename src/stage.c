@@ -1018,7 +1018,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
             if (st_t > 60 && py > 8 + YO) py -= 2;
             if (st_t >= 150) { oam_clear(); return RES_CLEAR; }
         }
-        if (hud_dirty) hud_draw();
+        if (hud_dirty == 1 || (hud_dirty && !(frame_count & 7))) hud_draw();
         raster();
         draw_player();
         draw_all();

@@ -251,11 +251,13 @@ void s3_boss_start(void) BANKED {
     k_shake = 30;
 }
 
+static uint8_t tail_tk;
 static void tail_update(void) {
     // tail hangs from the body and swings like a pendulum
     uint8_t k, n = HUNTER ? 7 : 6, a;
     int16_t x = (int16_t)(96 - 20 + k_sway) << 7, y = (int16_t)(YO + 54 - k_retreat) << 7;
     tail_ph += (k_phase == 1) ? 2 : 3;
+    if (bp_n == n && (tail_tk++ & 1)) return;                // place the tail every other loop (the multiplies are the cost)
     for (k = 0; k < n; k++) {
         a = (uint8_t)((int8_t)(sin64[(tail_ph - k * 5) & 63] >> 4) * (k + 3) / 4);
         x += (int16_t)sin64[a & 63] * 7;
