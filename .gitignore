@@ -10,3 +10,7 @@ __pycache__/
 test/sameboy/sb_harness
 ref/IMG_*.png
 *.ram
+*.pyc
+*.sav
+.DS_Store
+Thumbs.db

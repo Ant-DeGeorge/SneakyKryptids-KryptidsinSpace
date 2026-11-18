@@ -1,6 +1,6 @@
 """Screenshots of the title intro and the ending (build/endtest.gbc).
 usage: python3 test/shot_ending.py ROM OUTDIR PROFILE OUTS BESTS [title]
-  OUTS  = one digit per mission (5 public, 4 family), bounty outcome per mission (1 escaped, 2 killed, 3 captured)
+  OUTS  = one digit per mission, bounty outcome per mission (1 escaped, 2 killed, 3 captured)
   BESTS = 5 digits, best rating per mission (1..5)
 """
 import os, sys

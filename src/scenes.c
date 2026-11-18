@@ -62,8 +62,8 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 
 // ------------------------------------------------------------------ save (SRAM 0xA200)
 // The demo keeps its own save block with its own signature ('S','K','D'), away from the
-// family build's block at 0xA000 ('K','S'), so a cart that already holds family saves
-// starts the demo clean and the family saves survive if that ROM is flashed back.
+// block other builds use at 0xA000 ('K','S'), so a cart that already holds those saves
+// starts the demo clean and they survive if that ROM is flashed back.
 // FLATWOODS_DEMO / ESCAPE_DEMO: one mission on its own (make flatwoods / make escape_demo). Each has
 // its own block and signature ('S','K','F' at 0xA400, 'S','K','E' at 0xA600), so a demo never
 // touches a Sneaky Kryptid save on the same cart. SOLO_DEMO covers both; SOLO_SID is the mission.
