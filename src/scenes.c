@@ -650,13 +650,7 @@ static uint8_t mission_map(void) {
     }
 }
 static uint8_t ships_open(void) {
-#ifdef UNLOCK_ALL
-    return 7;
-#else
-    uint8_t p, m = 0;
-    for (p = 0; p < N_PROFILES; p++) if (pf_unlock[p] > m) m = pf_unlock[p];
-    return m > 6 ? 7 : m + 1;                                 // one more ship for every story mission cleared
-#endif
+    return 7;                                                 // every arcade ship is open from the start
 }
 
 // ------------------------------------------------------------------ game over / quit card

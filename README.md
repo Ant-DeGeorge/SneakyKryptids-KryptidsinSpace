@@ -25,7 +25,7 @@ or click **Full screen** to fill the monitor with just the game. Progress saves 
 - **Six missions, all open from the start:** four scrolling shooter stages, a first-person gun-cam mission and a no-guns escape run.
 - **Bounties with consequences.** Your score decides how each boss fight ends: **captured** (triple
   pay), **killed** (double pay) or **escaped** (base pay).
-- **Arcade: Endless Run.** Missions 1-4 in a loop with no continues, seven ships (one more unlocks for each story mission cleared) and a
+- **Arcade: Endless Run.** Missions 1-4 in a loop with no continues, all seven ships open from the start and a
   best score saved per difficulty. Each map runs twice with no break: a warp at the end of lap 1, then lap 2 in new colours with
   angrier enemies and the boss. Arcade-only weapons: **Prism** (a rainbow fan that bounces off the walls), **Helix** (twin orbs
   that wind through enemies) and **Nova** (an orb that bursts into a ring of stars).
