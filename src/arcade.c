@@ -13,6 +13,7 @@
 #include "stage_def.h"
 #include "alt_ships.h"
 #include "arcade.h"
+#include "arcx.h"
 
 // ------------------------------------------------------------------ the ships
 // spd: added to the pilot's base speed. hb: added to the hitbox half-size. sh: shield recharge in
@@ -51,6 +52,11 @@ void arc_begin(void) BANKED {
     arc_bspd = a_n > 6 ? 21 : a_n * 3;                       // enemy shots speed up every stage (tops out in loop 2)
     t = (sh_base[gmode] >> 2) * s->sh + (uint16_t)(a_n > 12 ? 12 : a_n) * 120;  // and the shield takes two seconds longer each stage
     arc_shield = t;
+    // two laps per map: lap 1 scrolls on past the map's end into lap 2 (see arcx.c)
+    arc_lap = 0; arc_fan = 0;
+    scroll_end += 18 * 8; row_end = SD->n_rows + 20;
+    pal_tint = (a_n >> 2) & 1 ? 2 : 0;                        // loop 2 starts recoloured too
+    arc_tint2 = (a_n >> 2) & 1 ? 3 : 1;
 }
 
 // ------------------------------------------------------------------ save block: best score per difficulty, last ship
@@ -153,15 +159,6 @@ static uint8_t ship_select(uint8_t n_ships) {
         if (joy_new & J_B) { ship_sel = 0; return 0; }
     }
 }
-static void stage_card(uint8_t sid) {
-    screen_prep();
-    txt_put(6, 6, "STAGE", 0, 6); put_n(12, 6, a_n + 1, 7);
-    center(8, stage_names[sid], 7);
-    if (a_n) center(11, "SHOTS GET FASTER", 5);
-    if (a_n >= 4) { txt_put(7, 13, "LOOP", 0, 5); put_n(12, 13, (a_n >> 2) + 1, 6); }
-    screen_on(LCDC_SCREEN);
-    wait_a(110);
-}
 static void over_card(uint8_t quit) {
     uint8_t best = score > a_hi[gmode];
     if (best) a_hi[gmode] = score;
@@ -190,16 +187,15 @@ void arcade_run(uint8_t n_ships) BANKED {
         if (ships[ship_sel].bud) g_gear[GEAR_KENNEL] = 2;
         while (1) {
             sid = a_n & 3;
-            stage_card(sid);
-            res = stage_run(sid);
+            res = stage_run(sid);                             // no card between maps: straight on to the next one
             if (res != RES_CLEAR) break;
             add_score(2000 + (uint16_t)a_n * 500);            // stage bonus, growing each stage
             a_hearts = hearts; a_score = score; a_lives = lives; a_bombs = bombs; a_wtype = wtype; a_wlevel = wlevel;
             if (a_n < 250) a_n++;
         }
-        g_arc = 0; arc_bspd = 0;
+        g_arc = 0; arc_bspd = 0; pal_tint = 0; arc_fan = 0; arc_lap = 0;
         over_card(res == RES_QUIT);
         ship_sel = 0;
     }
-    ship_sel = 0; g_arc = 0; arc_bspd = 0;
+    ship_sel = 0; g_arc = 0; arc_bspd = 0; pal_tint = 0; arc_fan = 0; arc_lap = 0;
 }

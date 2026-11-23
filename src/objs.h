@@ -102,6 +102,12 @@ void boom_at(uint8_t x, uint8_t y);
 // Arcade mode and ship choice (arcade.c). In story play g_arc, ship_sel and arc_bspd are all 0.
 extern uint8_t g_arc, ship_sel, arc_bspd;   // arcade running; ship 0-6; extra enemy-shot speed
 extern uint16_t arc_shield;                 // arcade: shield recharge in frames
+// Arcade laps (arcx.c): each map runs twice without a reload. Story play leaves all of these 0
+// except scroll_end/row_end, which stage_run sets to the map's end.
+extern uint8_t pal_tint;                     // BG colour scheme: 0 as drawn, 1-3 recoloured, 4 warp wash
+extern uint8_t arc_fan, arc_lap, arc_tint2;  // enemies fire 3-shot fans; lap (0, 1); lap 2's scheme
+extern uint16_t lap_base, scroll_end, row_end;   // rows scrolled in earlier laps; where the scroll stops; rows to load
+extern uint8_t lap8;                         // (lap_base * 8) & 255, added to the scroll
 extern uint8_t p_spd, p_hb;                 // player speed (8.8 fraction added per frame) and hitbox half-size
 extern uint8_t scr_n, scr_k, scr_dy;        // scroll: one pixel every scr_n loops; ground objects move scr_dy/256 px a loop
 void ship_pal(void);                        // just the two ship palettes (OBJ 0-1)

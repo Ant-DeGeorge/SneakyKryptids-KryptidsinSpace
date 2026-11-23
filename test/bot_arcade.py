@@ -8,6 +8,7 @@ stages = int(sys.argv[6]) if len(sys.argv) > 6 and not sys.argv[6].startswith('-
 shots = sys.argv[sys.argv.index('--shots') + 1] if '--shots' in sys.argv else None
 if shots: os.makedirs(shots, exist_ok=True)
 b = Bot(rom, mode, prof, seed, None, False, stage=0); g = b.g
+b.start = lambda: None                                   # the menus are driven here, not by Bot.start
 g.tick(760)
 for k in range(3): g.s8('pf_unlock', 6, k)
 g.press('start'); g.tick(30)
@@ -22,7 +23,7 @@ g.press('a'); g.tick(40)
 out = []
 for n in range(stages):
     if shots: g.shot(f'{shots}/card_{n}.png')
-    g.press('a'); g.tick(120)                            # stage card -> stage
+    g.tick(120)                                          # maps follow each other with no card
     if mode == 'hunter': g.hold('a'); b.held.add('a')
     f0 = g.frame; b.maxframes = g.frame + 60 * 60 * 9
     if shots: g.tick(400); g.shot(f'{shots}/stage_{n}.png')
@@ -31,7 +32,7 @@ for n in range(stages):
     if not r['cleared']: break
     for k in b.held.copy(): g.release(k)
     b.held.clear()
-    g.tick(200)                                          # ST_CLEAR fly-off, back to the stage card
+    g.tick(200)                                          # ST_CLEAR fly-off, then the next map loads
 if not out[-1]['cleared']:
     g.tick(400)
     if shots: g.shot(f'{shots}/over.png')

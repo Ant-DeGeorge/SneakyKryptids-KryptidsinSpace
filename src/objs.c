@@ -145,7 +145,13 @@ uint8_t aim(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 }
 
 // fire an enemy bullet from centre (cx, cy) in direction d (0-31), speed in 1/16 px/frame
+static uint8_t in_ring;
+static void eb_one(uint8_t cx, uint8_t cy, uint8_t d, uint8_t spd, uint8_t big);
 void eb_fire(uint8_t cx, uint8_t cy, uint8_t d, uint8_t spd, uint8_t big) {
+    eb_one(cx, cy, d, spd, big);
+    if (arc_fan && !big && !in_ring) { eb_one(cx, cy, d + 3, spd, 0); eb_one(cx, cy, d - 3, spd, 0); }   // arcade lap 2: aimed shots come in fans
+}
+static void eb_one(uint8_t cx, uint8_t cy, uint8_t d, uint8_t spd, uint8_t big) {
     uint8_t i;
     if (cy < 20 || cy > SCR_BOTTOM) return;
     for (i = 0; i < MAXEB; i++) if (!eb_on[i]) {
@@ -160,7 +166,9 @@ void eb_fire(uint8_t cx, uint8_t cy, uint8_t d, uint8_t spd, uint8_t big) {
 }
 void eb_ring(uint8_t cx, uint8_t cy, uint8_t n, uint8_t phase, uint8_t spd, uint8_t big) {
     uint8_t k, step = 32 / n;
+    in_ring = 1;
     for (k = 0; k < n; k++) eb_fire(cx, cy, phase + k * step, spd, big);
+    in_ring = 0;
 }
 
 void add_score(uint16_t p) {
@@ -245,9 +253,29 @@ void e_damage(uint8_t i, uint8_t dmg) {
 }
 
 uint8_t cur_bp[8];
+uint8_t pal_tint, arc_fan, arc_lap, arc_tint2, lap8;
+uint16_t lap_base, scroll_end, row_end;
+// arcade recolouring: channel swaps keep each map's light and dark, the warp washes it pale cyan
+static void tint4(uint16_t *v) {
+    uint8_t i, r, g, b, t;
+    for (i = 0; i < 4; i++) {
+        r = v[i] & 31; g = (v[i] >> 5) & 31; b = (v[i] >> 10) & 31;
+        switch (pal_tint) {
+        case 1: t = r; r = b; b = g; g = t; break;
+        case 2: t = r; r = g; g = b; b = t; break;
+        case 3: t = r; r = b; b = t; break;
+        default: t = (uint8_t)((r + g + g + b) >> 3) + 14; r = t - 8; g = t; b = 31; break;
+        }
+        v[i] = r | ((uint16_t)g << 5) | ((uint16_t)b << 10);
+    }
+}
 void set_pal_slot(uint8_t slot, uint8_t bp) {
+    uint16_t v[4];
     cur_bp[slot] = bp;
-    ld_bkg_pal(BANK_A2, slot, 1, bg_pal_lib + (uint16_t)bp * 4);
+    if (!pal_tint || slot == 5) { ld_bkg_pal(BANK_A2, slot, 1, bg_pal_lib + (uint16_t)bp * 4); return; }
+    ld_copy(BANK_A2, v, bg_pal_lib + (uint16_t)bp * 4, 8);
+    tint4(v);
+    ld_bkg_pal(BANK_A2, slot, 1, v);
 }
 
 // ------------------------------------------------------------------ comms (window rows 2-5, shown at the top by a raster split)

@@ -14,16 +14,20 @@
 #include "arcade.h"
 #include "weapon_fx.h"
 #include "weapon_fx2.h"
+#include "weapon_fx3.h"
+#include "arcx.h"
 
 extern const uint8_t comm_buddy_hint, comm_buddy_got;
 
-static uint16_t next_row;
+uint16_t next_row;
 static uint8_t checkpoint;
 static uint8_t pxf, pyf;
-static uint8_t p_inv, p_fire_cd, p_alive, p_intro;
-static uint8_t bomb_t, flash_t;
-static uint8_t pb_on[MAXPB], pb_x[MAXPB], pb_y[MAXPB], pb_type[MAXPB], pb_dmg[MAXPB], pb_tgt[MAXPB];
-static int8_t pb_vx[MAXPB], pb_vy[MAXPB];
+static uint8_t p_inv, p_alive, p_intro;
+uint8_t p_fire_cd;
+static uint8_t bomb_t;
+uint8_t flash_t;
+uint8_t pb_on[MAXPB], pb_x[MAXPB], pb_y[MAXPB], pb_type[MAXPB], pb_dmg[MAXPB], pb_tgt[MAXPB];
+int8_t pb_vx[MAXPB], pb_vy[MAXPB];
 static uint8_t hud_row;
 
 // ------------------------------------------------------------------ weapon flair
@@ -33,8 +37,8 @@ static uint8_t hud_row;
 // the bomb flash is a soft single fade instead of a hard white frame.
 // Shot types: 0 twin, 1 spread, 2 wisp, 3 twin heavy lance (lv 2+), 4 buddy shot,
 // 5 piercing lance (Lance Rune), 6 ricochet star (Ricochet Rune), 7 chained wisp (Chain Rune).
-static uint8_t pop_t;                                    // HUD name pop frames left (weapon names over the score)
-static const char *pop_s;
+uint8_t pop_t;                                    // HUD name pop frames left (weapon names over the score)
+const char *pop_s;
 #define PB_BUDDY 4
 #define PB_PIERCE 5
 #define PB_RICO 6
@@ -43,13 +47,13 @@ static const char *pop_s;
 #define NHS 4
 static uint8_t hs_t[NHS], hs_x[NHS], hs_y[NHS], hs_k[NHS], hs_i;   // hit sparks (ring buffer); kind 0 sparks, 1 star, 2 frost
 static uint8_t pb_was[MAXPB];                            // shot drawn last frame, as type + 1 (a shot that vanished in the field hit something)
-static uint8_t mz_t, mz_k;                               // muzzle flash frames left, and which weapon fired
+uint8_t mz_t, mz_k;                               // muzzle flash frames left, and which weapon fired
 static uint8_t ring_t, ring_in, ring_a;                  // bomb rune circle (out) / power-up ring (in), circle angle
 static uint8_t bfx_t;                                    // bomb palette fade
 static uint8_t wpal_cur, sw_t;                           // weapon palette shown; ship flash after a weapon change
 static uint8_t zap_t, zap_x, zap_y;                      // Chain Rune spark between two targets
 static uint8_t kp_t, kp_cx, kp_cy, kp_big;               // kill pop (shards)
-static const uint8_t hit_kind[8] = {0, 1, 2, 0, 0, 0, 1, 2};
+static const uint8_t hit_kind[N_PBTYPES] = {0, 1, 2, 0, 0, 0, 1, 2, 1, 1, 0, 0, 1};
 static void hit_spark(uint8_t x, uint8_t y, uint8_t k) { hs_i = (hs_i + 1) & (NHS - 1); hs_t[hs_i] = 8; hs_x[hs_i] = x; hs_y[hs_i] = y; hs_k[hs_i] = k; }
 #define fx_add oam_add_fx
 // a weapon's max-level rune (bought at Forge's armory) is live
@@ -66,6 +70,7 @@ static void wpal_update(void) {
         if (sw_t & 4) { set_sprite_palette(0, 1, wpn_flash); set_sprite_palette(1, 1, wpn_flash); }
         else { ship_pal(); wpal_cur = 0xFF; }
     }
+    if (wtype > 2) { if (!(sw_t & 4)) arcx_wpal(); return; }
     if (w == wpal_cur) return;
     wpal_cur = w;
     set_sprite_palette(2, 1, wpn_pals + (uint16_t)w * 4);
@@ -104,7 +109,7 @@ static void hud_draw(void) {
     hud_tile(5, HUNTER ? txt_tile(' ') : txt_tile('0' + lives));
     hud_tile(6, T_HUD_BOMB); hud_tile(7, txt_tile('0' + bombs));
     hud_tile(8, bud_n ? T_HUD_BUD : txt_tile(' '));
-    hud_tile(9, txt_tile(wtype == 0 ? 'T' : wtype == 1 ? 'S' : 'H'));
+    hud_tile(9, txt_tile("TSHPXN"[wtype]));
     for (i = 0; i < 3; i++) hud_tile(10 + i, i <= wlevel ? T_HUD_PIP : T_HUD_PIPE);
     if (pop_t) for (i = 0; i < 7; i++) hud_tile(13 + i, txt_tile(pop_s[i]));
     else score_tiles(hud_buf + 13);
@@ -132,8 +137,10 @@ static void logic_boss_start(void) {
 
 // ------------------------------------------------------------------ scrolling
 static void scroll_rows(void) {
-    while (next_row < SD->n_rows && next_row <= (pos >> 3) + 19) {
-        ld_level_row(next_row, (uint8_t)(31 - (next_row & 31)));
+    uint16_t r;
+    while (next_row < row_end && next_row <= (pos >> 3) + 19) {
+        r = next_row; if (r >= SD->n_rows) r -= SD->n_rows;   // arcade lap 1 runs on into lap 2's first rows
+        ld_level_row(r, (uint8_t)(31 - ((next_row + lap_base) & 31)));
         next_row++;
     }
 }
@@ -168,6 +175,7 @@ static uint8_t nearest_target(uint8_t x) {
 static void player_fire(void) {
     uint8_t x = px + 4, y = py - 6, n, i;
     if (p_fire_cd) { p_fire_cd--; return; }
+    if (wtype > 2) { arcx_fire(); return; }
     switch (wtype) {
     case 0:
         pb_spawn(x, y, 0, -6, rune_on() ? PB_PIERCE : wlevel ? 3 : 0, wlevel ? 3 : 2);
@@ -356,6 +364,7 @@ static void pbullets_update(void) {
     for (i = 0; i < MAXPB; i++) {
         if (!pb_on[i]) continue;
         t = pb_type[i];
+        if (t >= PB_PRISM) { arcx_move(i); if (!pb_on[i]) continue; }
         if (HOMING(t) && pb_tgt[i] != 0xFF) {
             j = pb_tgt[i];
             if (e_type[j] == E_NONE || e_type[j] == E_BOOM || (e_fl[j] & EF_HIDDEN)) pb_tgt[i] = 0xFF;
@@ -385,7 +394,7 @@ static void pbullets_update(void) {
         bx = pb_x[i] + 4; by = pb_y[i] + 3;
         j = shot_hits(bx, by, &seg);
         if (j != 0xFF) {
-            if (t == PB_PIERCE) {                            // Lance Rune: through everything, each enemy once
+            if (PIERCES(t)) {                                // Lance Rune: through everything, each enemy once
                 if (j != pb_tgt[i]) { pb_tgt[i] = j; e_damage(j, seg ? 1 : pb_dmg[i]); hit_spark(bx - 4, by - 3, 0); }
             } else {
                 e_damage(j, seg ? 1 : pb_dmg[i]);
@@ -410,7 +419,7 @@ static void pbullets_update(void) {
                 pb_on[i] = 0;
                 if (!g_gear[GEAR_RUNES]) { sfx_play(SFX_TICK); break; }
                 if (eb_big[j] == 1) { eb_big[j] = 2; sfx_play(SFX_TICK); break; }
-            } else if (t != PB_PIERCE) pb_on[i] = 0;    // the lance plows through small bullets
+            } else if (!PIERCES(t)) pb_on[i] = 0;       // the lance plows through small bullets
             eb_on[j] = 9; eb_vx[j] = 0; eb_vy[j] = 0;      // spark, then gone
             add_score(10);
             break;
@@ -495,6 +504,7 @@ static void collide_bodies(void) {
     }
 }
 
+static const char * const wname[6] = {"TWIN   ", "SPREAD ", "WISP   ", "PRISM! ", "HELIX! ", "NOVA!  "};
 static void pickups_update(void) {
     uint8_t i, kind, cycle, n;
     for (i = 0; i < MAXPK; i++) {
@@ -506,7 +516,7 @@ static void pickups_update(void) {
         if (p_alive && !p_intro && NEAR((pk_x[i] >> 8) + 8, px + 8, 14) && NEAR((pk_y[i] >> 8) + 8, py + 12, 16)) {
             kind = pk_kind[i]; pk_on[i] = 0;
             if (kind == PK_WEAP) {
-                cycle = (pk_t[i] / (HUNTER ? 64 : 110)) % 3;
+                cycle = (pk_t[i] / (HUNTER || g_arc ? 64 : 110)) % (g_arc ? 6 : 3);
                 n = cycle != wtype;                         // new weapon (name pop) or a power-up
                 if (!n) { if (wlevel < 2) wlevel++; else add_score(1000); }
                 else wtype = cycle;
@@ -514,7 +524,7 @@ static void pickups_update(void) {
                 if (!ring_t) { ring_t = 16; ring_in = 1; }
                 sw_t = 16;
                 if (rune_on()) name_pop(wtype == 0 ? "LANCE! " : wtype == 1 ? "BOUNCE!" : "CHAIN! ");
-                else if (n) name_pop(wtype == 0 ? "TWIN   " : wtype == 1 ? "SPREAD " : "WISP   ");
+                else if (n) name_pop(wname[wtype]);
                 else name_pop(wlevel == 2 ? "MAX!   " : "POWER! ");
             } else if (kind == PK_BOMB) { if (bombs < 9) bombs++; sfx_play(SFX_PICKUP); }
             else if (kind == PK_HEART) { if (hearts < MAXHEARTS) hearts++; else add_score(500); sfx_play(SFX_PICKUP); }
@@ -600,10 +610,13 @@ static void player_hit(void) {
 // ------------------------------------------------------------------ rendering
 static uint8_t flame_t;
 // player shot tile / attributes by [type * 2 + animation phase]; type 3 = twin heavy lance
-static const uint8_t shot_t[16] = {ST_SHOT_TWIN, ST_SHOT_TWIN, ST_SHOT_SPREAD, ST_SHOT_SPREADB,
+static const uint8_t shot_t[N_PBTYPES * 2] = {ST_SHOT_TWIN, ST_SHOT_TWIN, ST_SHOT_SPREAD, ST_SHOT_SPREADB,
                                    ST_SHOT_WISP, ST_SHOT_WISP, ST_SHOT_TWIN2, ST_SHOT_TWIN2,
-                                   0, 0, FX_LANCE_A, FX_LANCE_B, ST_SHOT_SPREAD, ST_SHOT_SPREADB, ST_SHOT_WISP, ST_SHOT_WISP};
-static const uint8_t shot_p[16] = {2, 2, 2, 2, 2, 2 | 0x20, 2, 2, 2 | 8, 2 | 8, 2 | 8, 2 | 8, 2, 2, 2, 2 | 0x20};
+                                   0, 0, FX_LANCE_A, FX_LANCE_B, ST_SHOT_SPREAD, ST_SHOT_SPREADB, ST_SHOT_WISP, ST_SHOT_WISP,
+                                   FX3_PRISM_A, FX3_PRISM_B, FX3_SPARK, FX3_SPARK, FX3_HELIX_A, FX3_HELIX_B, FX3_HELIX_B, FX3_HELIX_A, FX3_NOVA_A, FX3_NOVA_B};
+static const uint8_t shot_p[N_PBTYPES * 2] = {2, 2, 2, 2, 2, 2 | 0x20, 2, 2, 2 | 8, 2 | 8, 2 | 8, 2 | 8, 2, 2, 2, 2 | 0x20,
+                                   2 | 8, 2 | 8, 2 | 8, 2 | 8 | 0x20, 2 | 8, 2 | 8, 2 | 8, 2 | 8, 2 | 8, 2 | 8};
+static const uint8_t pk_ic[6] = {ST_PK_T, ST_PK_S, ST_PK_H, FX3_PK_P, FX3_PK_X, FX3_PK_N};
 static const uint8_t bud_shot[4] = {FX_BUD_INK, FX_BUD_BOLT, FX_BUD_ARROW, FX_BUD_FROST};
 static void draw_player(void) {
     uint8_t ox, oy, vis;
@@ -714,12 +727,12 @@ static void draw_all(void) {
             continue;
         }
         switch (pk_kind[i]) {
-            case PK_WEAP: { uint8_t cy = (pk_t[i] / (HUNTER ? 64 : 110)) % 3; t = cy == 0 ? ST_PK_T : cy == 1 ? ST_PK_S : ST_PK_H; } break;
-            case PK_BOMB: t = ST_PK_B; break;
-            case PK_HEART: t = ST_PK_HEART; break;
-            default: t = ST_PK_1UP;
+            case PK_WEAP: p = (pk_t[i] / (HUNTER || g_arc ? 64 : 110)) % (g_arc ? 6 : 3); t = pk_ic[p]; p = p > 2 ? 7 | 8 : 7; break;
+            case PK_BOMB: t = ST_PK_B; p = 7; break;
+            case PK_HEART: t = ST_PK_HEART; p = 7; break;
+            default: t = ST_PK_1UP; p = 7;
         }
-        oam_add(x, y, t, 7); oam_add(x + 8, y, t + 2, 7);
+        oam_add(x, y, t, p); oam_add(x + 8, y, t + 2, p);
         if (s >= 8 && s < 16 && (s & 2)) oam_add_fx(x + 9, y - 3, ST_SPARK, 7);   // a glint
     }
     for (i = 0; i < MAXEB; i++) {
@@ -802,7 +815,7 @@ static void draw_all(void) {
 
 // ------------------------------------------------------------------ raster
 static void raster(void) {
-    uint8_t scy = (uint8_t)(112 - pos);
+    uint8_t scy = (uint8_t)(112 - pos) - lap8;
     uint8_t shake = 0;
     if (k_shake) { k_shake--; shake = (k_shake & 2) ? 2 : 0; }
     if (k_hpmax) {
@@ -881,6 +894,7 @@ static void stage_load(void) {
     ld_bkg_data(SD->dbank, 0, N_COMMON, SD->n_scen0, SD->scen0);
     if (SD->n_scen1) ld_bkg_data(SD->dbank, 1, 0, SD->n_scen1, SD->scen1);
     boss_load();
+    if (g_arc) arcx_load();
     txt_fill(0, 0, 20, 6, txt_tile(' '), 5 | 0x80, 1);
     oam_clear();
 }
@@ -932,6 +946,7 @@ uint8_t stage_run(uint8_t sid) BANKED {
     if (start_cp == 2 && wlevel < 1) wlevel = 1;              // boss practice: start powered up
     next_extend = 30000UL;
     p_spd = HUNTER ? 0xC0 : 0xA0; p_hb = HUNTER ? 2 : 3; scr_n = 3; scr_dy = 0x55;
+    scroll_end = (SD->n_rows - 18) * 8; row_end = SD->n_rows; lap_base = 0; lap8 = 0;
     if (g_arc) arc_begin();                                   // arcade: ship stats, carried score and weapons, faster scroll
     restart_from(start_cp);
     while (1) {
@@ -965,15 +980,18 @@ uint8_t stage_run(uint8_t sid) BANKED {
         if (scroll_on && !mb_active && st != ST_BOSS) {
             if (++scr_k >= scr_n) {                             // 20 px/s in the story (was 30), 30 in arcade
                 scr_k = 0;
-                if (pos < (SD->n_rows - 18) * 8) { pos++; scroll_rows(); }
-                else if (st == ST_PLAY) {
+                if (pos < scroll_end) { pos++; scroll_rows(); }
+                else if (st != ST_PLAY) ;
+                else if (g_arc && !arc_lap) { arcx_lap(); logic_reset(0); checkpoint = 0; mb_done = 0; }   // arcade: the map runs on into lap 2
+                else {
                     st = ST_BOSS; scroll_on = 0;
-                    bstar_take((uint8_t)(112 - pos));          // clear the stars in the boss band so they don't sway with it
+                    bstar_take((uint8_t)(112 - pos) - lap8);          // clear the stars in the boss band so they don't sway with it
                     logic_boss_start();
                     hud_init(1);
                 }
             }
         }
+        if (g_arc) arcx_tick();
         if (checkpoint < 2 && (pos >> 3) >= SD->cp[checkpoint + 1] && SD->cp[checkpoint + 1]) checkpoint++;
         comm_update();
         shield_tick();
