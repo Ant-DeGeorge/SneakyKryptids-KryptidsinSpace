@@ -328,7 +328,6 @@ static void title_screen(void) {
 #ifdef DEMO_VERSION
     center(17, DEMO_VERSION, 7);
 #endif
-    if (!save_ok) center(15, "NO SAVE MEMORY!", 6);    // the cartridge is not keeping saves
     if (skip) title_wait(15);                  // don't let the skip press also start the game
     while (1) {
         wait_vbl_done(); input_poll();
@@ -567,7 +566,7 @@ static void results(uint8_t sid) {
 #ifdef SOLO_DEMO
     center(17, "FULL GAME: GITHUB", 7);
 #else
-    center(17, save_ok ? "SPEND IT AT FORGE'S" : "NOT SAVED: NO RAM!", save_ok ? 7 : 6);
+    center(17, "SPEND IT AT FORGE'S", 7);
 #endif
     screen_on(LCDC_SCREEN);
     music_play(MUS_CLEAR);

@@ -128,10 +128,23 @@ disc(x, y, 34, PL, lx=0.45, ly=-0.75, tex=land, k=4.6)
 for a in range(0, 2880):                             # thin lit atmosphere on the sunward limb
     t = math.radians(a / 8.0); ang = math.atan2(math.sin(t), math.cos(t))
     if -3.05 < ang < -0.9: put(int(round(x + 35.4 * math.cos(t))), int(round(y + 35.4 * math.sin(t))), PL[0])
+# Arcade: an endless loop, a warp gate shaped like an infinity sign, in the open lower left
+GX, GY, GA = 54, 104, 24
+for k in range(0, 2400):
+    t = 2 * math.pi * k / 2400; d = 1 + math.sin(t) ** 2
+    xx, yy = GX + GA * math.cos(t) / d, GY + GA * math.sin(t) * math.cos(t) / d * 1.25
+    for ox, oy in ((0, -1), (0, 1), (-1, 0), (1, 0)): put(int(round(xx + ox)), int(round(yy + oy)), TEAL)
+for k in range(0, 2400):
+    t = 2 * math.pi * k / 2400; d = 1 + math.sin(t) ** 2
+    put(int(round(GX + GA * math.cos(t) / d)), int(round(GY + GA * math.sin(t) * math.cos(t) / d * 1.25)), YEL if (k // 100) % 3 else WHITE)
+for sx, sy in [(GX - 17, GY), (GX + 17, GY)]:            # a bright core in each loop
+    for d in (-1, 1): put(sx + d, sy, YEL); put(sx, sy + d, YEL)
+    put(sx, sy, WHITE)
 # stop markers: a teal box with the mission number
 DIG = {1: ["010", "110", "010", "010", "111"], 2: ["110", "001", "010", "100", "111"], 3: ["110", "001", "010", "001", "110"],
-       4: ["101", "101", "111", "001", "001"], 5: ["111", "100", "110", "001", "110"], 6: ["011", "100", "110", "101", "010"]}
-MARK = [(2, 1), (6, 4), (12, 0), (18, 3), (11, 9), (13, 14)]            # tile column, row of each number box
+       4: ["101", "101", "111", "001", "001"], 5: ["111", "100", "110", "001", "110"], 6: ["011", "100", "110", "101", "010"],
+       7: ["010", "101", "111", "101", "101"]}                  # A: Arcade
+MARK = [(2, 1), (6, 4), (12, 0), (18, 3), (11, 9), (13, 14), (6, 10)]            # tile column, row of each number box
 for n, (mx, my) in enumerate(MARK, 1):
     bx, by = mx * 8 + 2, my * 8 + 3
     for yy in range(-2, 8):
@@ -196,6 +209,6 @@ with open(os.path.join(SRC, 'chart_art.h'), 'w') as f:
     f.write('#define CHART_NT %d\n#define CHART_NPAL %d\n' % (len(uniq), len(PALS)))
     f.write('extern const uint8_t chart_tiles[], chart_map[], chart_attr[];\nextern const uint16_t chart_pals[];\n')
     f.write('// where the ship parks for each mission (sprite x, y), next to its stop on the chart\n')
-    PARK = [(4, 42), (34, 54), (70, 18), (142, 58), (82, 84), (84, 112), (28, 96)]   # the last one is Arcade, in the open lower left      # screen x, y of the 16x16 ship, clear of each world
+    PARK = [(4, 42), (34, 54), (70, 18), (142, 58), (82, 84), (84, 112), (4, 96)]   # the last one is Arcade, in the open lower left      # screen x, y of the 16x16 ship, clear of each world
     f.write('#define CHART_STOPS {%s}\n#endif\n' % ', '.join('{%d, %d}' % (x + 8, y + 16) for x, y in PARK))
 print('chart_art:', len(uniq), 'tiles,', len(data) + 720 + len(pals) * 2, 'bytes')

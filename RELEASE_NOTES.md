@@ -23,7 +23,8 @@ everything they offered is in the game, with every mission open from the start.
 - **Arcade-only weapons** in the weapon capsule's cycle: **Prism** (a rainbow fan of shards that bounce
   off the walls at full power), **Helix** (two orbs that wind around each other and go through enemies)
   and **Nova** (a slow orb that goes through enemies, then bursts into a ring of stars).
-- **Title screen:** no version line.
+- **Title screen:** no version line and no save-memory warning (the debrief no longer shows NOT SAVED either).
+- **Star chart:** Arcade has its own stop, an infinity-loop warp gate marked A, beside the spot where your ship parks.
 - **Arcade ship select** has its own background: a neon sun behind your ship, mountains, a grid floor
   and a console panel for the ship's stats.
 - **Browser player:** game controllers (Xbox, PlayStation, Switch) and a full-screen mode (F key, the
