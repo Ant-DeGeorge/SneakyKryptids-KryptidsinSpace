@@ -14,6 +14,7 @@
 #include "alt_ships.h"
 #include "arcade.h"
 #include "arcx.h"
+#include "arcade_art.h"
 
 // ------------------------------------------------------------------ the ships
 // spd: added to the pilot's base speed. hb: added to the hitbox half-size. sh: shield recharge in
@@ -120,7 +121,7 @@ static void wait_a(uint16_t max) {
 static void ship_page(uint8_t n_ships) {
     const Ship *s = &ships[ship_sel];
     uint8_t open = ship_sel < n_ships;
-    txt_fill(0, 2, 20, 12, txt_tile(' '), 7, 0);
+    ld_image(BANK(arcade_art), 0, 2, 20, 12, arc_art_map + 40, arc_art_attr + 40, 0, 0, 0);   // art back under the old text
     txt_put(6, 2, "SHIP", 0, 5); put_n(11, 2, ship_sel + 1, 7); txt_put(12, 2, "/7", 0, 5);
     if (open) {
         ship_gfx();
@@ -135,6 +136,9 @@ static void ship_page(uint8_t n_ships) {
 static uint8_t ship_select(uint8_t n_ships) {
     uint8_t t = 0, open, y;
     screen_prep();
+    ld_bkg_data(BANK(arcade_art), 1, 0, ARC_ART_NT, arc_art_tiles);      // neon sun, grid floor, console panel
+    ld_bkg_pal(BANK(arcade_art), 0, ARC_ART_NPAL, arc_art_pals);
+    ld_image(BANK(arcade_art), 0, 0, 20, 18, arc_art_map, arc_art_attr, 0, 0, 0);
     center(0, "ARCADE: ENDLESS RUN", 6);
     txt_put(3, 14, "BEST", 0, 6); put_u32(9, 14, a_hi[gmode], 7);
     center(16, "PAD: CHANGE SHIP", 5);

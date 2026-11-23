@@ -23,6 +23,8 @@ everything they offered is in the game, with every mission open from the start.
   off the walls at full power), **Helix** (two orbs that wind around each other and go through enemies)
   and **Nova** (a slow orb that goes through enemies, then bursts into a ring of stars).
 - **Title screen:** no version line.
+- **Arcade ship select** has its own background: a neon sun behind your ship, mountains, a grid floor
+  and a console panel for the ship's stats.
 - **Browser player:** game controllers (Xbox, PlayStation, Switch) and a full-screen mode (F key, the
   Full screen button, or click a controller stick). The standalone demo pages are gone; the site is the game.
 
