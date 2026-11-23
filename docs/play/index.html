@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Sneaky Kryptid: Kryptids in Space</title>
-<meta name="description" content="Play the Sneaky Kryptid: Kryptids in Space Game Boy Color demo in your browser.">
+<meta name="description" content="Play Sneaky Kryptid: Kryptids in Space, a Game Boy Color space shooter, in your browser. Keyboard, touch or controller, windowed or full screen.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Barlow+Semi+Condensed:wght@400;600&display=swap">
@@ -64,25 +64,41 @@ td.k{color:var(--kraken)}
 ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 footer{color:var(--mute);font-size:13px;text-align:center}
 footer a{color:var(--teal)}
+.fsbar{display:flex;justify-content:center}
+.fsbtn{background:var(--panel);color:var(--teal);border:1px solid #2a3a5c;border-radius:10px;padding:9px 18px;font-family:var(--display);font-size:15px;letter-spacing:.06em;cursor:pointer}
+.fsbtn:hover{border-color:var(--teal)}
+.tvhint{display:none}
+/* full-screen mode: only the game screen, as big as the window allows, pixels kept sharp */
+body.tv{padding:0;overflow:hidden;background:#000}
+body.tv .screenbox{position:fixed;inset:0;z-index:50;aspect-ratio:auto;background:#000;border-radius:0;display:flex;align-items:center;justify-content:center}
+body.tv canvas{width:min(100vw,100vh*10/9);height:min(100vh,100vw*.9)}
+body.tv .poster{inset:auto;width:min(100vw,100vh*10/9);height:min(100vh,100vw*.9)}
+body.tv .tvhint{display:block;position:fixed;z-index:60;left:50%;bottom:18px;transform:translateX(-50%);background:#000c;color:#c9d4e0;border:1px solid #2a3a5c;border-radius:10px;padding:8px 16px;font-size:14px;transition:opacity .6s;pointer-events:none;white-space:nowrap}
+body.tv .tvhint.gone{opacity:0}
+body.tv .tvx{display:block}
+.tvx{display:none;position:fixed;z-index:60;top:12px;right:12px;background:#000a;color:#c9d4e0;border:1px solid #2a3a5c;border-radius:8px;padding:6px 12px;font-family:var(--display);font-size:13px;cursor:pointer;opacity:.35}
+.tvx:hover,.tvx:focus-visible{opacity:1}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Rejected By The Machines · v1.0</div>
+    <div class="eyebrow">Rejected By The Machines</div>
     <h1>Sneaky Kryptid</h1>
     <div class="sub">Kryptids in Space · a Game Boy Color shooter</div>
   </header>
 
   <div class="shell">
     <div class="bezel">
-      <div class="screenbox">
+      <div class="screenbox" id="box">
         <canvas id="screen" width="160" height="144"></canvas>
         <button class="poster" id="poster" type="button" aria-label="Start the game">
           <span class="play">▶ PLAY</span>
           <span class="hint">Sound on. Tap or press Enter.</span>
         </button>
+        <div class="tvhint" id="tvhint">Esc or F to leave full screen · controller: click a stick (L3/R3)</div>
+        <button class="tvx" id="tvx" type="button" aria-label="Leave full screen">✕ EXIT</button>
       </div>
       <div class="brand">SNEAKY KRYPTID · COLOR</div>
     </div>
@@ -100,7 +116,9 @@ footer a{color:var(--teal)}
       <button data-k="Enter" aria-label="Start">START</button>
     </div>
   </div>
-  <div class="keys">Keyboard: arrows fly · X = A (fire) · Z = B (bomb) · Enter = START · Shift = SELECT</div>
+  <div class="fsbar"><button class="fsbtn" id="fs" type="button">⛶ FULL SCREEN</button></div>
+  <div class="keys">Keyboard: arrows fly · X = A (fire) · Z = B (bomb) · Enter = START · Shift = SELECT · F = full screen</div>
+  <div class="keys" id="pad">Controller: plug in or pair an Xbox, PlayStation or Switch pad and press any button. Stick or D-pad flies · A / Cross = fire · B / Circle = bomb · Start / Options = START · Back / Share = SELECT</div>
   <div class="save" id="save">Progress saves in <b>this browser</b> as you play.</div>
   <div class="err" id="err" hidden></div>
 
@@ -138,13 +156,14 @@ footer a{color:var(--teal)}
       <li><b>Lamp Drift</b>: the helm is jammed, so you work the gun cam: aim the crosshair, shoot down saucers, rocks and green orbs, then Lamptall.</li>
       <li><b>Escape Run</b>: a rival gang knocks your guns out. No shooting: dodge, graze and dash your way down to the planet.</li>
       <li>Score high and the boss is <b>captured</b> (triple pay); a good run <b>kills</b> it (double); a weak one lets it <b>escape</b>. Spend your pay at Forge's Armory.</li>
-      <li><b>Arcade</b>: move past the last open mission on the star chart. Pick one of seven ships (one more unlocks per mission cleared) and fly missions 1-4 on a loop until your ships run out.</li>
+      <li>All six missions are open from the start: play them in any order.</li>
+      <li><b>Arcade</b>: move past the last mission on the star chart. Pick one of seven ships (one more unlocks per story mission cleared) and fly missions 1-4 on a loop until your ships run out. Each map runs twice with no break: warp at the end of lap 1, then lap 2 in new colours with angrier enemies and the boss. Grab capsules for the arcade-only weapons: <b>Prism</b>, <b>Helix</b> and <b>Nova</b>.</li>
     </ol>
   </section>
 
   <footer>A game by Anthony DeGeorge · Rejected By The Machines. Free to play; not for resale.<br>
   Want it on a cartridge? <a href="https://github.com/Ant-DeGeorge/SneakyKryptids-KryptidsinSpace">Download the ROM on GitHub</a>.<br>
-  Short on time? Play one mission on its own: <a href="../flatwoods/">Flatwoods Drift</a> or <a href="../escape/">Escape Run</a>.<br>
+
   Browser play is powered by <a href="https://github.com/torch2424/wasmBoy">WasmBoy</a> (GPL-3.0).</footer>
 </div>
 
@@ -263,6 +282,61 @@ try{if(!window.indexedDB)window.__noStore=true;}catch(e){window.__noStore=true;t
     document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false});
     ['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},{passive:false})});
   })();
+  /* game controllers (Gamepad API): polled every frame, only changes are sent */
+  var padEl=document.getElementById('pad'), padHeld={}, padOn=false, padL3=false;
+  var PADMAP=[[0,'x'],[3,'x'],[5,'x'],[7,'x'],[1,'z'],[2,'z'],[4,'z'],[6,'z'],[9,'Enter'],[8,'Shift'],
+              [12,'ArrowUp'],[13,'ArrowDown'],[14,'ArrowLeft'],[15,'ArrowRight']];
+  function pressed(b){return b&&(b.pressed||b.value>0.5)}
+  function padLoop(){
+    var want={}, any=false, name='';
+    var list=navigator.getGamepads?navigator.getGamepads():[];
+    for(var i=0;i<list.length;i++){var g=list[i]; if(!g||!g.connected)continue; name=name||g.id;
+      PADMAP.forEach(function(m){if(pressed(g.buttons[m[0]])){want[m[1]]=1;any=true}});
+      var x=g.axes[0]||0, y=g.axes[1]||0;
+      if(x<-0.45)want.ArrowLeft=1; if(x>0.45)want.ArrowRight=1;
+      if(y<-0.45)want.ArrowUp=1;   if(y>0.45)want.ArrowDown=1;
+      if(g.axes.length>9&&!g.mapping){var h=g.axes[9];               /* some pads report the D-pad as a hat axis */
+        if(h>-1.1&&h<1.1){var d=Math.round((h+1)/2*7);
+          if(d===7||d===0||d===1)want.ArrowUp=1; if(d>=1&&d<=3)want.ArrowRight=1;
+          if(d>=3&&d<=5)want.ArrowDown=1; if(d>=5&&d<=7)want.ArrowLeft=1;}}
+    }
+    if(name&&!padOn){padOn=true; padEl.textContent='Controller connected: '+name.replace(/\s*\(.*$/,'').slice(0,40)+
+      '. Stick or D-pad flies · A = fire · B = bomb · Start = START · Back = SELECT · click a stick = full screen'; padEl.style.color='var(--teal)'}
+    if(!name&&padOn){padOn=false; padEl.textContent='Controller disconnected. Plug it back in and press any button.'; padEl.style.color=''}
+    var l3=false; for(var j=0;j<list.length;j++){var q=list[j]; if(q&&q.connected&&(pressed(q.buttons[10])||pressed(q.buttons[11])))l3=true}
+    if(l3&&!padL3)setTV(!tvOn); padL3=l3;
+    if(any&&!started)start();
+    Object.keys(padHeld).forEach(function(k){if(!want[k]){delete padHeld[k];fire('keyup',k)}});
+    Object.keys(want).forEach(function(k){if(!padHeld[k]){padHeld[k]=1;fire('keydown',k)}});
+    requestAnimationFrame(padLoop);
+  }
+  window.addEventListener('gamepadconnected',function(){});
+  requestAnimationFrame(padLoop);
+  /* full-screen mode: CSS view of just the screen, plus the browser's real full screen when it allows it */
+  var tvOn=false, hintT=0, hintEl=document.getElementById('tvhint');
+  function realFS(){return document.fullscreenElement||document.webkitFullscreenElement}
+  function setTV(on){
+    if(on===tvOn)return; tvOn=on; document.body.classList.toggle('tv',on);
+    if(on){
+      var el=document.documentElement, rq=el.requestFullscreen||el.webkitRequestFullscreen;
+      if(rq&&!realFS()){try{var pr=rq.call(el,{navigationUI:'hide'}); if(pr&&pr.catch)pr.catch(function(){})}catch(e){}}
+      hintEl.classList.remove('gone'); clearTimeout(hintT); hintT=setTimeout(function(){hintEl.classList.add('gone')},3500);
+    }else{
+      var ex=document.exitFullscreen||document.webkitExitFullscreen;
+      if(realFS()&&ex){try{var p2=ex.call(document); if(p2&&p2.catch)p2.catch(function(){})}catch(e){}}
+    }
+  }
+  window.__setTV=setTV;
+  function onFSChange(){if(!realFS()&&tvOn)setTV(false)}
+  document.addEventListener('fullscreenchange',onFSChange); document.addEventListener('webkitfullscreenchange',onFSChange);
+  document.getElementById('fs').addEventListener('click',function(){setTV(true); if(!started)start()});
+  document.getElementById('tvx').addEventListener('click',function(){setTV(false)});
+  window.addEventListener('keydown',function(e){
+    if(!e.isTrusted)return;
+    if((e.key==='f'||e.key==='F')&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();setTV(!tvOn)}
+    else if(e.key==='Escape'&&tvOn)setTV(false);
+  });
+  if(/[?&#](full|tv)\b/i.test(location.search+location.hash))setTV(true);   /* ?full opens straight into full-screen view */
   window.addEventListener('keydown',function(e){if(started&&[37,38,39,40,32].indexOf(e.keyCode)>-1)e.preventDefault()},{passive:false});
 })();
 </script>

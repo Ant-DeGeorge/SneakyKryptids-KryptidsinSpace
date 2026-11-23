@@ -97,10 +97,8 @@ static const uint16_t pal_dim[4] = { RGB8(0, 0, 8), RGB8(6, 8, 24), RGB8(40, 52,
 #elif defined(TREELINE_DEMO)
 #define DEMO_VERSION "ON FOOT DEMO V1.0"
 #elif defined(UNLOCK_ALL)
-#define DEMO_VERSION "V1.0 UNLOCKED"
-#else
-#define DEMO_VERSION "V1.0"
-#endif
+#define DEMO_VERSION "UNLOCKED TEST BUILD"
+#endif                                        // the release ROM shows no version line on the title
 #define PF_LEN(n, g) (2 + (n) + 4 * (n) + (n) + 2 + (g))
 #define SV_LEN(n, g) (4 + N_PROFILES * PF_LEN(n, g) + 1)
 #define SAVE_LEN SV_LEN(N_MISSIONS, N_GEAR)
@@ -327,7 +325,9 @@ static void title_screen(void) {
 #else
     center(14, "KRYPTIDS IN SPACE", 7);
 #endif
+#ifdef DEMO_VERSION
     center(17, DEMO_VERSION, 7);
+#endif
     if (!save_ok) center(15, "NO SAVE MEMORY!", 6);    // the cartridge is not keeping saves
     if (skip) title_wait(15);                  // don't let the skip press also start the game
     while (1) {
@@ -346,7 +346,9 @@ static void title_screen(void) {
                 if (joy_new & J_B) { sfx_play(SFX_SELECT); break; }
             }
             txt_fill(0, 16, 20, 2, txt_tile(' '), 7, 0);
+#ifdef DEMO_VERSION
             center(17, DEMO_VERSION, 7);
+#endif
             t = 31;
             continue;
         }
@@ -616,13 +618,9 @@ static void map_line(uint8_t sel, uint8_t k) {
     } else center(17, "A:GO  START:ARMORY", 7);
 }
 static uint8_t mission_map(void) {
-    uint8_t sel, t = 0, s, k = 0, top = pf_unlock[profile];
+    uint8_t sel = pf_unlock[profile], t = 0, s, k = 0, top = N_PLAY - 1;   // every story mission is open from the start
     uint16_t lt = 0;
-    if (top >= N_PLAY) top = N_PLAY - 1;
-#ifdef UNLOCK_ALL
-    top = N_PLAY - 1;                 // test build (make unlocked): every mission selectable
-#endif
-    sel = top;
+    if (sel > top) sel = top;         // the cursor starts on the next mission you haven't cleared
     screen_prep();
     ld_bkg_data(BANK(chart_art), 1, 0, CHART_NT, chart_tiles);
     ld_bkg_pal(BANK(chart_art), 0, CHART_NPAL, chart_pals);

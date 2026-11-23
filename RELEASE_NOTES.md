@@ -5,16 +5,26 @@ Game Boy Color · 512 KB · MBC5 + RAM + battery · tested on a ModRetro Chromat
 ## Downloads
 | File | What it is |
 |---|---|
-| `sneaky_kryptid.gbc` | The full game, with saves (use this one) |
+| `sneaky_kryptid.gbc` | The game, with saves (use this one) |
 | `sneaky_kryptid_nosave.gbc` | For flash carts without save RAM |
-| `sneaky_kryptid_unlocked.gbc` | Every mission open from the start (title shows V1.0 UNLOCKED) |
-| `flatwoods_drift.gbc` | Flatwoods Drift: the gun-cam mission as a standalone demo |
-| `escape_run.gbc` | Escape Run: the no-guns mission as a standalone demo |
-| `tree_line.gbc` | The Tree Line: an on-foot mission preview |
 
-Each demo also has a `_nosave` version and keeps its own save block, so it never touches a full-game save.
+The standalone demos (Flatwoods Drift, Escape Run, The Tree Line) and the unlocked test ROM are retired:
+everything they offered is in the game, with every mission open from the start.
 
 ---
+
+## Final release (2026-11-23)
+- **Every story mission is open from the start.** Play the six missions in any order; the star chart
+  starts on the next one you haven't cleared. Arcade ships still unlock one per story mission cleared.
+- **Arcade laps:** each map runs twice with no reload. At the end of lap 1 the scroll speeds up into a
+  warp, then lap 2 runs in new colours with enemies that fire three-shot fans and faster shots, and the
+  boss at its end. The next map follows with no stage card.
+- **Arcade-only weapons** in the weapon capsule's cycle: **Prism** (a rainbow fan of shards that bounce
+  off the walls at full power), **Helix** (two orbs that wind around each other and go through enemies)
+  and **Nova** (a slow orb that goes through enemies, then bursts into a ring of stars).
+- **Title screen:** no version line.
+- **Browser player:** game controllers (Xbox, PlayStation, Switch) and a full-screen mode (F key, the
+  Full screen button, or click a controller stick). The standalone demo pages are gone; the site is the game.
 
 ## v1.0 (2026-11-17)
 - **New soundtrack:** all 17 songs rebuilt around the track *Frostbite Circuit*; the title screen

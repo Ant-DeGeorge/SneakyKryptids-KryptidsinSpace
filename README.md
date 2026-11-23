@@ -10,7 +10,8 @@ the last mission is a run for your life.
 
 ### [▶ Play in your browser](https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/play/)
 
-Touch controls on phones, keyboard on desktop. Progress saves in your browser.
+Touch controls on phones; keyboard or a game controller (Xbox, PlayStation, Switch) on desktop. Press **F**
+or click **Full screen** to fill the monitor with just the game. Progress saves in your browser.
 
 | | | | |
 |:---:|:---:|:---:|:---:|
@@ -21,11 +22,13 @@ Touch controls on phones, keyboard on desktop. Progress saves in your browser.
 
 ## Features
 
-- **Six missions:** four scrolling shooter stages, a first-person gun-cam mission and a no-guns escape run.
+- **Six missions, all open from the start:** four scrolling shooter stages, a first-person gun-cam mission and a no-guns escape run.
 - **Bounties with consequences.** Your score decides how each boss fight ends: **captured** (triple
   pay), **killed** (double pay) or **escaped** (base pay).
 - **Arcade: Endless Run.** Missions 1-4 in a loop with no continues, seven ships (one more unlocks for each story mission cleared) and a
-  best score saved per difficulty.
+  best score saved per difficulty. Each map runs twice with no break: a warp at the end of lap 1, then lap 2 in new colours with
+  angrier enemies and the boss. Arcade-only weapons: **Prism** (a rainbow fan that bounces off the walls), **Helix** (twin orbs
+  that wind through enemies) and **Nova** (an orb that bursts into a ring of stars).
 - **Forge's Armory.** Spend your pay on hull plating, cannon tuning, bomb racks, buddy bays, Rune
   Rounds and weapon runes.
 - **Weapons and wingmen.** Twin cannons, spread shot and homing wisps, each with three power levels.
@@ -61,23 +64,19 @@ Three save slots, one per difficulty, each with its own missions, stars, high sc
 | SELECT + A | On the mission map: practice the boss |
 | SELECT + B | On the title screen: erase saves |
 
-Browser keyboard: arrow keys, **X** = A, **Z** = B, **Enter** = START, **Shift** = SELECT.
+Browser keyboard: arrow keys, **X** = A, **Z** = B, **Enter** = START, **Shift** = SELECT, **F** = full screen.
+Browser controller: stick or D-pad flies, A / Cross = A, B / Circle = B, Start = START, Back / Share = SELECT, click a stick = full screen.
 
-## Downloads and standalone demos
+## Downloads
 
-| Game | Browser | ROM (`rom/`) |
-|---|---|---|
-| **Sneaky Kryptids** (full game) | [Play](https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/play/) | `sneaky_kryptid.gbc` |
-| **Flatwoods Drift**, the gun-cam mission on its own | [Play](https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/flatwoods/) | `flatwoods_drift.gbc` |
-| **Escape Run**, the no-guns mission on its own | [Play](https://ant-degeorge.github.io/SneakyKryptids-KryptidsinSpace/escape/) | `escape_run.gbc` |
-| **The Tree Line**, an on-foot mission (preview) | | `tree_line.gbc` |
+| | ROM (`rom/`) |
+|---|---|
+| **Sneaky Kryptids** | `sneaky_kryptid.gbc` |
+| For flash carts without save RAM | `sneaky_kryptid_nosave.gbc` |
 
-- Every ROM has a `_nosave` version for flash carts without save RAM.
-  `sneaky_kryptid_unlocked.gbc` opens every mission from the start.
-- ROMs are also on the [Releases](../../releases) page. Checksums are in `rom/SHA256SUMS.txt`.
+- Checksums are in `rom/SHA256SUMS.txt`.
 - Emulators: SameBoy, Emulicious, BGB or mGBA in Game Boy Color mode. Game Boy Color only.
-- Hardware: any flash cart that takes a 512 KB MBC5 ROM. Each demo keeps its own save block, so they
-  can share a cart's save RAM with the full game.
+- Hardware: any flash cart that takes a 512 KB MBC5 ROM with 32 KB save RAM.
 
 **ModRetro Chromatic (ChroMagician):** C. MAGICIAN on → back up the cart → Write Homebrew →
 `sneaky_kryptid.gbc` → verify → C. MAGICIAN off → power-cycle. If the cart refuses the save header,
@@ -90,11 +89,9 @@ are committed, so a normal build needs only GBDK.
 
 ```sh
 make GBDK_HOME=/path/to/gbdk          # every ROM, written to build/
-make GBDK_HOME=/path/to/gbdk flatwoods escape_demo treeline unlocked   # individual targets
 ```
 
-On Windows, run `build.bat` (expects GBDK at `C:\gbdk`, or set `GBDK_HOME`). It builds the full game,
-Flatwoods Drift and Escape Run.
+On Windows, run `build.bat` (expects GBDK at `C:\gbdk`, or set `GBDK_HOME`).
 
 - Don't use `make -j`: lcc writes intermediate files side by side. A clean build takes several minutes.
 - To regenerate data after editing art, music or dialog (Python 3, Pillow, numpy):
@@ -118,7 +115,7 @@ colour-vision-deficiency simulations.
 | `art/`, `ref/` | Source art the generators read |
 | `test/` | PyBoy test bots and a SameBoy harness |
 | `rom/` | Prebuilt ROMs and checksums |
-| `docs/` | GitHub Pages site: browser players and screenshots |
+| `docs/` | GitHub Pages site: the browser player and screenshots |
 | `third_party/` | hUGEDriver sources |
 
 ## Credits
