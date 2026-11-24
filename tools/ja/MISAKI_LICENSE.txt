@@ -1,0 +1,5 @@
+The kana glyphs in tools/ja/misaki.json come from the Misaki font (美咲フォント) by Num Kadoma
+(門真 なむ), https://littlelimit.net/misaki.htm, taken from the misakiUTF16 font data in
+https://github.com/Tamakichi/Arduino-misakiUTF16. The font's licence grants unlimited permission to
+use, copy and distribute it, with or without modification, commercially or not; it is provided as is,
+without warranty. Only the kana and Japanese punctuation (U+3000-30FF) are kept here.

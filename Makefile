@@ -132,3 +132,29 @@ build/obj/scenes_endtest.o: src/scenes.c $(HDR)
 	$(LCC) $(CFLAGS) -Wf-DTEST_ENDING -c -o $@ $<
 build/endtest.gbc: $(OBJ) $(CARD_O) build/obj/scenes_endtest.o
 	$(LCC) $(CFLAGS) -Wm-ya4 -Wm-yt0x1B -o $@ $(filter-out build/obj/scenes.o,$(OBJ)) build/obj/scenes_endtest.o $(CARD_O)
+
+# Japanese version (kana): tools/ja/gen_ja.py writes build/ja_src/ (the sources whose text changes,
+# plus the glyph cache src ja.c); every other object is the English one. src/ is not touched, so
+# the English ROM is unchanged. Needs Python 3 only.
+.PHONY: japanese
+JA_DIR = build/ja_src
+JA_CF  = $(filter-out -Wm-yn"$(TITLE)",$(CFLAGS)) -Wm-yn"SNEAKYKRYJA" -Wf-DLANG_JA
+JA_CHG = $(notdir $(basename $(wildcard $(JA_DIR)/*.c)))
+# lcc -autobank rewrites the bank numbers inside the objects it links, so the Japanese link uses
+# copies of the English objects (build/ja/en/) and never touches build/obj or build/card.
+JA_OBJ = $(foreach o,$(OBJ) $(CARD_O),$(if $(filter $(basename $(notdir $(o))),$(JA_CHG)),build/ja/obj/$(notdir $(o)),build/ja/en/$(o))) build/ja/obj/ja.o
+build/ja/en/%.o: %.o
+	@mkdir -p $(dir $@)
+	cp $< $@
+japanese:
+	python3 tools/ja/gen_ja.py
+	$(MAKE) build/$(NAME)_ja.gbc build/$(NAME)_ja_nosave.gbc
+$(addprefix build/ja/obj/,$(addsuffix .o,$(filter $(HOT),$(JA_CHG)))): JA_CF += -Wf--max-allocs-per-node50000
+build/ja/obj/%.o: $(JA_DIR)/%.c $(HDR)
+	@mkdir -p build/ja/obj
+	$(LCC) $(JA_CF) -c -o $@ $<
+build/ja/obj/ja.o: $(JA_DIR)/ja_font.inc
+build/$(NAME)_ja.gbc: $(JA_OBJ)
+	$(LCC) $(JA_CF) -Wm-ya4 -Wm-yt0x1B -o $@ $(JA_OBJ)
+build/$(NAME)_ja_nosave.gbc: $(JA_OBJ)
+	$(LCC) $(JA_CF) -Wm-yt0x19 -o $@ $(JA_OBJ)

@@ -73,6 +73,8 @@ Browser controller: stick or D-pad flies, A / Cross = A, B / Circle = B, Start =
 |---|---|
 | **Sneaky Kryptids** | `sneaky_kryptid.gbc` |
 | For flash carts without save RAM | `sneaky_kryptid_nosave.gbc` |
+| **日本語版** (Japanese, kana) | `sneaky_kryptid_ja.gbc` |
+| 日本語版, no save RAM | `sneaky_kryptid_ja_nosave.gbc` |
 
 - Checksums are in `rom/SHA256SUMS.txt`.
 - Emulators: SameBoy, Emulicious, BGB or mGBA in Game Boy Color mode. Game Boy Color only.
@@ -98,6 +100,19 @@ On Windows, run `build.bat` (expects GBDK at `C:\gbdk`, or set `GBDK_HOME`).
   `make script`, `make music`, `make assets`, `make cockpit`, `make escape`, `make weaponfx`.
   Some source paintings used by `make assets` are not included in this repository.
 - `make jukebox` builds a sound test ROM with every song and effect.
+- `make japanese` builds the Japanese ROMs (see below).
+
+**Japanese version.** All text (menus, HUD, briefings, crew comms, ending) is in kana; the logo stays
+English. `tools/ja/gen_ja.py` writes `build/ja_src/`: copies of the sources whose text changes, with the
+Japanese from `tools/ja/text_code.py` (game strings, keyed by the English) and `tools/ja/text_script.py`
+(story script). `src/` is never edited, so the English ROM is byte for byte the same.
+- Kana are drawn from the Misaki 8x8 font in the game's font style. A Japanese string is one byte per
+  character, so layouts, `strlen` and centring work unchanged.
+- The Game Boy can't hold every kana at once, so `tools/ja/ja.c` loads each glyph into a free VRAM tile
+  the first time it is drawn and reuses tiles that are no longer on screen.
+- A translation must fit the English string's width (the generator checks). A screen can show about 50
+  different characters at a time; `test/ja_check.py BOT ROM ...` runs any test bot and fails if a glyph
+  didn't fit or a cached glyph was overwritten. `test/ja_tour.py ROM DIR` screenshots every menu.
 
 **Testing.** With `pip install pyboy`, the bots in `test/` play the game headlessly, for example
 `python3 test/bot.py build/sneaky_kryptid.gbc pilot pro --stage 1`. `sh test/suite.sh ROM` runs every
@@ -126,6 +141,8 @@ Design, story, characters and music are original. Creature designs are from the 
 Built with [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020). Music plays through
 [hUGEDriver](https://github.com/SuperDisk/hUGEDriver) (public domain). The browser player uses
 [WasmBoy](https://github.com/torch2424/wasmboy) (GPL-3.0, license in `docs/play/vendor/`).
+Japanese kana: the [Misaki font](https://littlelimit.net/misaki.htm) by Num Kadoma (free licence,
+`tools/ja/MISAKI_LICENSE.txt`).
 
 ## License
 
