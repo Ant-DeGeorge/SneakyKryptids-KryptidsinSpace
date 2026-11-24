@@ -607,7 +607,7 @@ static void map_name(uint8_t sel) {
 }
 static void map_line(uint8_t sel, uint8_t k) {
     txt_fill(0, 17, 20, 1, txt_tile(' '), 0, 0);
-    if (sel == ARC_SEL) { center(17, k == 0 ? "ENDLESS RUN" : k == 1 ? "PICK A SHIP AND FLY" : "A:GO  START:ARMORY", k == 1 ? 0 : 7); return; }
+    if (sel == ARC_SEL) { center(17, k == 0 ? "ENDLESS RUN" : k == 1 ? "PICK A SHIP AND FLY" : "A OR START: GO", k == 1 ? 0 : 7); return; }
     if (k == 0) { txt_put(1, 17, "TARGET:", 0, 7); txt_put(9, 17, boss_names[sel], 0, 0); }
     else if (k == 1) {
         if (!pf_hi[profile][sel] && !pf_out[profile][sel]) { center(17, "NOT FLOWN YET", 0); return; }
@@ -637,8 +637,8 @@ static uint8_t mission_map(void) {
         // the ship bobs beside the chosen stop; locked stops further down the route are not reachable yet
         oam_fixed(1, chart_stop[sel][0], chart_stop[sel][1] + ((t >> 4) & 1), ST_SHIP_TOP, 0);
         oam_fixed(2, chart_stop[sel][0] + 8, chart_stop[sel][1] + ((t >> 4) & 1), ST_SHIP_TOP + 2, 0);
-        if (joy_new & J_START) { sfx_play(SFX_SELECT); return 0xFE; }
-        if (joy_new & J_A) {
+        if ((joy_new & J_START) && sel != ARC_SEL) { sfx_play(SFX_SELECT); return 0xFE; }   // armory: START on any mission stop
+        if (joy_new & (J_A | J_START)) {                      // on Arcade, START flies too
             sfx_play(SFX_START);
             start_cp = (joy & J_SELECT) ? 2 : 0;
             wait_frames(20);

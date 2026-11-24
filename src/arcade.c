@@ -158,8 +158,8 @@ static uint8_t ship_select(uint8_t n_ships) {
             oam_fixed(2, 72 + 8, y + 16, (t & 4) ? ST_SHIP_BOT : ST_SHIP_BOTB, 1);
             oam_fixed(3, 80 + 8, y + 16, ((t & 4) ? ST_SHIP_BOT : ST_SHIP_BOTB) + 2, 1);
         } else for (y = 0; y < 4; y++) oam_fixed(y, 0, 0, 0, 0);
-        if ((joy_new & J_A) && open) { sfx_play(SFX_START); wait_frames(20); return 1; }
-        if ((joy_new & J_A) && !open) sfx_play(SFX_HURT);
+        if ((joy_new & (J_A | J_START)) && open) { sfx_play(SFX_START); wait_frames(20); return 1; }
+        if ((joy_new & (J_A | J_START)) && !open) sfx_play(SFX_HURT);
         if (joy_new & J_B) { ship_sel = 0; return 0; }
     }
 }
