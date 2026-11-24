@@ -617,9 +617,8 @@ static void map_line(uint8_t sel, uint8_t k) {
     } else center(17, "A:GO  START:ARMORY", 7);
 }
 static uint8_t mission_map(void) {
-    uint8_t sel = pf_unlock[profile], t = 0, s, k = 0, top = N_PLAY - 1;   // every story mission is open from the start
+    uint8_t sel = ARC_SEL, t = 0, s, k = 0, top = N_PLAY - 1;   // every story mission is open; the cursor always starts on Arcade
     uint16_t lt = 0;
-    if (sel > top) sel = top;         // the cursor starts on the next mission you haven't cleared
     screen_prep();
     ld_bkg_data(BANK(chart_art), 1, 0, CHART_NT, chart_tiles);
     ld_bkg_pal(BANK(chart_art), 0, CHART_NPAL, chart_pals);

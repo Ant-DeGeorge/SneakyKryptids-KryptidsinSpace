@@ -15,7 +15,7 @@ everything they offered is in the game, with every mission open from the start.
 
 ## Final release (2026-11-23)
 - **Every story mission is open from the start.** Play the six missions in any order; the star chart
-  starts on the next one you haven't cleared.
+  always opens with the cursor on Arcade.
 - **All seven Arcade ships are open from the start.**
 - **Arcade laps:** each map runs twice with no reload. At the end of lap 1 the scroll speeds up into a
   warp, then lap 2 runs in new colours with enemies that fire three-shot fans and faster shots, and the

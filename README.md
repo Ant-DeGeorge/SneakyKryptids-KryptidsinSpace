@@ -22,7 +22,7 @@ or click **Full screen** to fill the monitor with just the game. Progress saves 
 
 ## Features
 
-- **Six missions, all open from the start:** four scrolling shooter stages, a first-person gun-cam mission and a no-guns escape run.
+- **Six missions, all open from the start** (the star chart opens on Arcade): four scrolling shooter stages, a first-person gun-cam mission and a no-guns escape run.
 - **Bounties with consequences.** Your score decides how each boss fight ends: **captured** (triple
   pay), **killed** (double pay) or **escaped** (base pay).
 - **Arcade: Endless Run.** Missions 1-4 in a loop with no continues, all seven ships open from the start and a
