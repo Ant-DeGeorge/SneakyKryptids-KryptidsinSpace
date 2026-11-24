@@ -139,10 +139,15 @@ def transform(name, text):
 KINSOKU = set("。、!?ー…・ゃゅょっぁぃぅぇぉャュョッァィゥェォ.,)")
 
 def jwrap(txt, w, rows):
+    # tokens: words split at spaces, and after 。、!? (no space is shown there when they share a line)
+    toks = []
+    for k, word in enumerate(txt.split(" ")):
+        parts = re.split(r"(?<=[。、!?])(?=[^。、!?.])", word)
+        for n, p in enumerate(parts): toks.append((" " if k and not n else "", p))
     lines, cur = [], ""
-    for word in txt.split(" "):
+    for sep, word in toks:
         while word:
-            add = (" " if cur else "") + word
+            add = (sep if cur else "") + word
             if len(cur) + len(add) <= w:
                 cur += add; word = ""
             elif not cur and len(word) > w:               # a word wider than a line: break it, but not before 。etc.
