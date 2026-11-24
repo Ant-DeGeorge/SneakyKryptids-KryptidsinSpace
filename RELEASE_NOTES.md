@@ -19,7 +19,8 @@ everything they offered is in the game, with every mission open from the start.
   from the ship select), so START, START, START, START from power-on starts an Arcade run. Up or Left
   reaches the missions; START on a mission stop still opens the armory.
 - **All seven Arcade ships are open from the start.**
-- **Arcade laps:** each map runs twice with no reload. At the end of lap 1 the scroll speeds up into a
+- **Arcade laps:** each map runs twice with no reload. The stage music keeps playing from the end of lap 1
+  through the warp into lap 2 (the map's boss warning only sounds on the lap that has the boss). At the end of lap 1 the scroll speeds up into a
   warp, then lap 2 runs in new colours with enemies that fire three-shot fans and faster shots, and the
   boss at its end. The next map follows with no stage card.
 - **Arcade-only weapons** in the weapon capsule's cycle: **Prism** (a rainbow fan of shards that bounce

@@ -18,6 +18,7 @@
 #include "stage_def.h"
 #include "arcx.h"
 #include "weapon_fx3.h"
+uint8_t music_cur(void);                                      // sound.c: the song playing now, or 0xFF
 
 static uint8_t ax_t[MAXPB];                                   // nova orb fuse, per shot slot
 static uint8_t ax_pal = 0xFF, warp_on;
@@ -109,8 +110,12 @@ void arcx_wpal(void) BANKED {
 // ------------------------------------------------------------------ laps
 void arcx_tick(void) BANKED {
     uint8_t i;
-    if (arc_lap || warp_on || pos < (SD->n_rows - 18) * 8) return;
+    if (arc_lap) return;
+    // lap 1 has no boss: the map's boss warning (a one-shot jingle that ends in silence) gives way to the stage theme
+    if (music_cur() == MUS_WARN || warp_on) music_play(SD->mus_stage);
+    if (warp_on || pos < (SD->n_rows - 18) * 8) return;
     warp_on = 1;                                              // the map has run out: warp
+    music_play(SD->mus_stage);
     pal_tint = 4;
     for (i = 0; i < 8; i++) if (i != 4) set_pal_slot(i, cur_bp[i]);
     scr_n = 1;                                                // a pixel a frame

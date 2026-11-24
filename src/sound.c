@@ -97,6 +97,7 @@ void music_play(uint8_t song) {
     }
 }
 
+uint8_t music_cur(void) { return playing ? cur_song : 0xFF; }
 void music_stop(void) {
     __critical {
         playing = 0; cur_song = 0xFF;
